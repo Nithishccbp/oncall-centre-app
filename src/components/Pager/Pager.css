@@ -1,0 +1,8 @@
+.pager { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 14px 0; }
+.pager__btn {
+  width: 30px; height: 30px; border-radius: 50%; border: 1px solid #e5e5ea; background: #fff;
+  display: flex; align-items: center; justify-content: center; font-size: 15px;
+}
+.pager__btn:disabled { opacity: 0.4; cursor: default; }
+.pager__btn:not(:disabled):hover { background: var(--green-100); }
+.pager__text { font-size: var(--fs-sm); font-weight: 700; color: #6b6b74; }

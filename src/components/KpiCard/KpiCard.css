@@ -1,0 +1,8 @@
+.kpi { background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.14); border-radius: var(--radius); padding: 12px 8px; text-align: center; }
+.kpi__value { font-size: 18px; font-weight: 700; color: #fff; }
+.kpi__label { font-size: var(--fs-sm); text-transform: uppercase; color: #aab2f0; letter-spacing: 0.3px; margin: 2px 0 6px; font-weight: 600; }
+.kpi__delta { display: inline-flex; align-items: center; gap: 5px; font-size: var(--fs-sm); font-weight: 700; border-radius: 8px; padding: 1px 8px; }
+.kpi__delta--good { color: var(--green-300); background: rgba(93, 202, 165, 0.18); }
+.kpi__delta--info { color: #9dbcff; background: rgba(99, 150, 255, 0.2); }
+.kpi__live { width: 7px; height: 7px; border-radius: 50%; background: #6aa0ff; animation: blink 1.2s infinite; }
+@keyframes blink { 50% { opacity: 0.3; } }

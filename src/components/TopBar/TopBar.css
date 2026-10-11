@@ -1,0 +1,64 @@
+.topbar {
+  height: var(--topbar-h); flex-shrink: 0; background: rgba(18, 60, 48, 0.97); padding: 8px 16px;
+  display: flex; align-items: center; justify-content: space-between; gap: 8px; position: relative; z-index: 40;
+}
+.topbar__brand { display: flex; align-items: center; gap: 8px; }
+.topbar__logo {
+  width: 30px; height: 30px; border-radius: 9px; background: var(--green-500); color: #fff;
+  display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px;
+}
+.topbar__name { font-size: 16px; font-weight: 600; color: #fff; }
+.topbar__right { display: flex; align-items: center; gap: 6px; position: relative; }
+.bell {
+  position: relative; width: 36px; height: 36px; border-radius: 50%; color: #fff; font-size: 17px;
+  background: linear-gradient(135deg, #ff5b52, #e2233d); box-shadow: 0 3px 10px rgba(226, 35, 61, 0.45);
+  display: flex; align-items: center; justify-content: center;
+}
+.bell__dot { position: absolute; top: -1px; right: -1px; width: 10px; height: 10px; border-radius: 50%; background: #ffd700; border: 2px solid #123c30; }
+.scorepill {
+  display: flex; align-items: center; gap: 4px; border-radius: 20px; padding: 3px 8px 3px 4px;
+  background: rgba(255, 215, 0, 0.12); border: 1px solid rgba(255, 215, 0, 0.35);
+}
+.scorepill__rank { color: #ffd700; font-weight: 700; font-size: 13.5px; }
+.avatar {
+  width: 38px; height: 38px; border-radius: 50%; padding: 2.5px;
+  background: conic-gradient(#ffd700 0deg, #5dcaa5 120deg, #1d9e75 200deg, #ffd700 360deg);
+}
+.avatar__inner {
+  width: 100%; height: 100%; border-radius: 50%; background: linear-gradient(145deg, #0a2a1e, #1d9e75);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1;
+}
+.avatar__emoji { font-size: 15px; }
+.avatar__ini { font-size: 10px; font-weight: 700; color: rgba(255, 255, 255, 0.85); margin-top: 1px; }
+.burger {
+  width: 30px; height: 30px; border-radius: 8px; background: rgba(255, 255, 255, 0.12);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+}
+.burger span { width: 14px; height: 1.5px; background: #fff; border-radius: 1px; }
+.dropdown {
+  position: absolute; top: 44px; right: 0; background: #fff; border-radius: var(--radius); min-width: 230px;
+  box-shadow: var(--shadow-pop); overflow: hidden; z-index: 500;
+}
+.dropdown__head { background: #0a1a14; padding: 12px 14px; display: flex; align-items: center; gap: 10px; }
+.dropdown__av {
+  width: 36px; height: 36px; border-radius: 50%; background: var(--green-300); color: #04342c;
+  display: flex; align-items: center; justify-content: center; font-weight: 700;
+}
+.dropdown__name { color: #fff; font-weight: 600; font-size: var(--fs-md); }
+.dropdown__sub { color: #9fe1cb; font-size: 13px; }
+.dropdown__item {
+  width: 100%; display: flex; align-items: center; gap: 10px; padding: 11px 14px; text-align: left;
+  border-bottom: 0.5px solid #f0f0f0;
+}
+.dropdown__item i { font-size: 16px; color: #555; }
+.dropdown__item:hover { background: #f7f7f9; }
+.dropdown__item.danger, .dropdown__item.danger i { color: var(--red); }
+
+@media (max-width: 768px) {
+  .topbar { padding: 8px 12px; }
+  .topbar__name { display: none; }
+}
+
+.scorepill__btn { display: flex; border-radius: 50%; }
+.scorepill__rank { background: none; }
+button.avatar { display: block; cursor: pointer; }

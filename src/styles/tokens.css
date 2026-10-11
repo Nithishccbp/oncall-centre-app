@@ -1,0 +1,13 @@
+/* Design tokens: every colour/size used in the app comes from here. */
+:root {
+  --bg: #f2f2f7; --card: #ffffff; --text: #1a1a1a; --muted: #8e8e93; --line: #ececf1;
+  --green-900: #0d2e26; --green-800: #123c30; --green-600: #0f6e56; --green-500: #1d9e75;
+  --green-300: #5dcaa5; --green-100: #e1f5ee;
+  --red: #e24b4a; --red-100: #fdecec; --amber: #c8860a; --amber-100: #fff8e1;
+  --blue: #185fa5; --blue-100: #e8f0fe; --purple: #6b2fa0; --purple-100: #f1e8fb;
+  --radius-sm: 8px; --radius: 12px; --radius-lg: 20px;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-pop: 0 8px 24px rgba(0, 0, 0, 0.18);
+  --sidebar-w: 224px; --topbar-h: 54px;
+  --fs-xs: 11.5px; --fs-sm: 12.5px; --fs-md: 14.5px; --fs-lg: 20px; --fs-xl: 26px;
+}

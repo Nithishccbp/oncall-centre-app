@@ -1,0 +1,13 @@
+.collapsible { border-radius: 10px; margin-top: 8px; border: 1px solid #e5e5ea; background: #f7f7f9; }
+.collapsible--purple { background: #f6f1fd; border-color: #e6dcf7; }
+.collapsible--amber { background: #fff8ef; border-color: #f5cf94; }
+.collapsible__head { width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 9px 12px; text-align: left; }
+.collapsible__title { font-size: 13px; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase; color: #6b6b74; }
+.collapsible--purple .collapsible__title { color: #6b2fa0; }
+.collapsible--amber .collapsible__title { color: #7c4a00; }
+.collapsible__chev { color: var(--muted); transition: transform 0.2s; }
+.collapsible__chev.is-open { transform: rotate(180deg); }
+.collapsible__body { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.25s ease; }
+.collapsible__body.is-open { grid-template-rows: 1fr; }
+.collapsible__inner { overflow: hidden; padding: 0 12px; }
+.collapsible__body.is-open .collapsible__inner { padding-bottom: 10px; }
