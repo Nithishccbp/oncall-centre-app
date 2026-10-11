@@ -4,6 +4,7 @@ import { useCall, fmtClock } from '../../context/CallContext.jsx';
 import { useConsent } from '../../context/ConsentContext.jsx';
 import { useUi } from '../../context/UiContext.jsx';
 import AiAssist from './AiAssist.jsx';
+import { setMuted as liveMute } from '../../services/liveCall.js';
 
 function ActiveCallCard() {
   const { call, sentiment, end } = useCall();
@@ -17,13 +18,14 @@ function ActiveCallCard() {
       <div className="acc__kicker">{ringing ? 'CALLING…' : consent.status === 'none' || consent.status === 'pending' ? 'CONNECTED' : hold ? 'ON HOLD' : 'CALL IN PROGRESS'}</div>
       <div className="acc__name">{call.name}</div>
       <div className="acc__time">{fmtClock(call.seconds)}</div>
+      {call.mode !== 'sim' && <span className="acc__mode">{call.mode === 'ai' ? '🤖 AI → HUMAN · LIVE' : '🎙️ HUMAN ↔ HUMAN · LIVE'}</span>}
       <div className="acc__sent">Sentiment
         <span className="acc__bar"><span className={tone} style={{ width: `${sentiment.value}%` }} /></span>
         <b className={tone}>{sentiment.label}</b>
       </div>
       <div className="acc__btns">
-        <button className={muted ? 'on' : ''} aria-pressed={muted} aria-label="Mute" onClick={() => setMuted(!muted)}><i className="ti ti-microphone-off" /></button>
-        <button className={hold ? 'on' : ''} aria-pressed={hold} aria-label="Hold" onClick={() => setHold(!hold)}><i className="ti ti-player-pause" /></button>
+        <button className={muted ? 'on' : ''} aria-pressed={muted} aria-label="Mute" onClick={() => { setMuted(!muted); if (call.mode !== 'sim') liveMute(!muted); }}><i className="ti ti-microphone-off" /></button>
+        <button className={hold ? 'on' : ''} aria-pressed={hold} aria-label="Hold" onClick={() => { setHold(!hold); if (call.mode !== 'sim') liveMute(!hold || muted); }}><i className="ti ti-player-pause" /></button>
         <button className="end" aria-label="End call" onClick={end}><i className="ti ti-phone-off" /></button>
       </div>
     </section>
@@ -59,9 +61,9 @@ function LiveTranscript() {
         {(consent.status === 'none' || consent.status === 'pending') && <div className="lt__note">Waiting for the customer's answer on recording…</div>}
         {off && <div className="lt__note">Recording is off{consent.status === 'withdrawn' ? ' (consent withdrawn)' : ''} — nothing is being transcribed. Tick the SOP chips yourself as you go.</div>}
         {call.shown.map((l, i) => (l.who === 'nudge' ? <Nudge key={i} n={l} /> : (
-          <div key={i} className={`bub bub--${l.who}`}>
-            <span className="bub__av">{l.who === 'agent' ? 'AR' : 'C'}</span>
-            <div><small>{l.who === 'agent' ? 'You' : 'Customer'}</small><p>{l.text}</p></div>
+          <div key={i} className={`bub bub--${l.who} ${l.ai ? 'bub--ai' : ''}`}>
+            <span className="bub__av">{l.ai ? 'AI' : l.who === 'agent' ? 'AR' : 'C'}</span>
+            <div><small>{l.ai ? 'Avani (AI)' : l.who === 'agent' ? 'You' : 'Customer'}</small><p>{l.text}</p></div>
           </div>
         )))}
         <div ref={endRef} />

@@ -186,3 +186,13 @@
   .cw { padding-bottom: 190px; } .rp__grid { grid-template-columns: 1fr; } .call-pill { top: 60px; font-size: 12.5px; }
   .ai__gami { grid-template-columns: auto 1fr 1fr; } .ai__gami > div:last-child { display: none; }
 }
+
+.pc__modes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; background: #f2f2f7; border-radius: 10px; padding: 3px; margin-bottom: 6px; }
+.pc__modes button { padding: 7px 4px; border-radius: 8px; font-weight: 700; font-size: 13px; color: #666; }
+.pc__modes button.on { background: #fff; color: var(--green-600); box-shadow: var(--shadow); }
+.pc__hint { font-size: 12px !important; color: var(--muted); margin: 0 0 8px !important; }
+.pc__code { display: block; font-size: 12px; font-weight: 800; color: var(--muted); margin-bottom: 8px; }
+.pc__code input { display: block; width: 100%; margin-top: 4px; padding: 10px 12px; border: 1px solid #e5e5ea; border-radius: 10px; font-size: 18px; letter-spacing: 4px; font-weight: 700; color: var(--text); }
+.pc__place:disabled { opacity: .5; cursor: default; }
+.acc__mode { display: inline-block; margin-top: 6px; font-size: 11.5px; font-weight: 800; letter-spacing: .5px; background: rgba(255,255,255,.18); border-radius: 999px; padding: 2px 10px; }
+.bub--ai p { background: #1f2a4a; }

@@ -177,3 +177,21 @@ export const customerThreads = [
   { id: 'cd-kavitha', name: 'Kavitha R.', initials: 'KR', wa: true, preview: 'When can I come see the hybrid mattress?', time: '11:15am', unread: 2, bg: '#fff8e1', color: '#c8860a' },
   { id: 'cd-ali', name: 'Ali', initials: 'AL', missed: true, preview: 'Called 9:40am · not returned yet', bg: '#fdecec', color: '#e24b4a' },
 ];
+
+/* ---------- Real calls: turn live speech into SOP ticks + sentiment ---------- */
+const sopPatterns = [
+  /(this is|calling from|calling about|following up|speaking|is this a good time|am i speaking)/i,
+  /(what matters|looking for|budget|need|prefer|size|room|who is it for|tell me)/i,
+  /(mattress|chair|pillow|grid|firm|comfort|feature|recommend|model|layer)/i,
+  /(\bemi\b|instal|no[- ]cost|per month|monthly|finance)/i,
+  /(warranty|guarantee|trial|100[- ]night|return)/i,
+  /(call you back|callback|follow up|quote|book|tomorrow|send you|whatsapp|confirm)/i,
+];
+/** Which SOP step (0-5) does this sentence cover? undefined if none. Returns the first not-yet-done match preference. */
+export const detectSopSteps = (text) => sopPatterns.map((re, i) => (re.test(text) ? i : -1)).filter((i) => i >= 0);
+
+export const moodOf = (text) => {
+  if (/(thank|great|good|yes|love|perfect|nice|sure|sounds|okay|ok\b|interested|go ahead)/i.test(text)) return 85;
+  if (/(no\b|not\b|stop|expensive|bad|angry|problem|cancel|don't|dont|too much)/i.test(text)) return 35;
+  return 62;
+};

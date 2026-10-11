@@ -16,8 +16,17 @@ import './Calling.css';
 const initials = (name) => name.split(' ').map((p) => p[0]).join('').slice(0, 2).toUpperCase();
 
 /** "Before you call X": product to champion, pitching language, cross-sell, ideal EMI, SOP checkpoints. */
+const modes = [
+  { id: 'sim', label: 'Practice', hint: 'Simulated customer — no mic needed.' },
+  { id: 'human', label: 'Human call', hint: 'Real two-way voice with a person on the customer page.' },
+  { id: 'ai', label: 'AI call', hint: 'Our AI agent (Avani) phones the person on the customer page.' },
+];
+
 function PreCall({ onPlace }) {
   const { call, lead, end } = useCall();
+  const [mode, setMode] = useState('sim');
+  const [code, setCode] = useState('');
+  const needCode = mode !== 'sim';
   const first = call.name.split(' ')[0];
   const meta = leadMeta(lead);
   return (
@@ -54,7 +63,16 @@ function PreCall({ onPlace }) {
         )}
       </div>
       <div className="pc__foot">
-        <button className="pc__place" onClick={onPlace}><i className="ti ti-phone" /> Skip · Place the call</button>
+        <div className="pc__modes" role="radiogroup" aria-label="Call type">
+          {modes.map((m) => <button key={m.id} role="radio" aria-checked={mode === m.id} className={mode === m.id ? 'on' : ''} onClick={() => setMode(m.id)}>{m.label}</button>)}
+        </div>
+        <p className="pc__hint">{modes.find((m) => m.id === mode).hint}</p>
+        {needCode && (
+          <label className="pc__code">Customer line code
+            <input value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 5))} inputMode="numeric" placeholder="5 digits shown on /customer" aria-label="Customer line code" />
+          </label>
+        )}
+        <button className="pc__place" disabled={needCode && code.length < 5} onClick={() => onPlace({ mode, code })}><i className="ti ti-phone" /> {mode === 'sim' ? 'Skip · Place the call' : 'Place the live call'}</button>
         <p>These are the same Lead SOP checkpoints your manager set — reviewing them takes 10 seconds and keeps the call on-target.</p>
       </div>
     </Modal>
@@ -100,7 +118,7 @@ export default function CallHost() {
   const { pathname } = useLocation();
   const live = ['ringing', 'consent', 'inCall'].includes(call.status);
 
-  const place = () => { if (!pathname.startsWith('/plan')) navigate('/plan/outgoing'); placeCall(); };
+  const place = (opts) => { if (!pathname.startsWith('/plan')) navigate('/plan/outgoing'); placeCall(opts); };
 
   return (
     <>

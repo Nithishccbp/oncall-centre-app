@@ -1,19 +1,20 @@
 // Calling flow + shared call history.
 // status: idle -> precheck -> ringing -> consent -> inCall -> wrapup -> idle   (incoming calls: incoming -> consent -> ...)
-import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { recentCalls as seedCalls } from '../data/calls.js';
 import { leads, leadByFirstName } from '../data/leads.js';
-import { buildScript, nudges, outcomes, sentimentLabel } from '../data/calling.js';
+import { buildScript, detectSopSteps, moodOf, nudges, outcomes, sentimentLabel } from '../data/calling.js';
+import { setAgentCaptions, setMuted, signal, startLiveCall, stopLiveCall } from '../services/liveCall.js';
 import { useConsent } from './ConsentContext.jsx';
 import { useUi } from './UiContext.jsx';
 
 const Ctx = createContext(null);
-const initial = { status: 'idle', name: '', dir: 'out', seconds: 0, script: [], shown: [], scriptIdx: 0, sopDone: [], sentiment: 70 };
+const initial = { status: 'idle', name: '', dir: 'out', seconds: 0, script: [], shown: [], scriptIdx: 0, sopDone: [], sentiment: 70, mode: 'sim', code: '' };
 
 function reducer(state, a) {
   switch (a.type) {
     case 'START': return { ...initial, status: 'precheck', name: a.name, dir: 'out' };
-    case 'RING': return { ...state, status: 'ringing' };
+    case 'RING': return { ...state, status: 'ringing', mode: a.mode || 'sim', code: a.code || '' };
     case 'CONNECT': return { ...state, status: 'consent', seconds: 0, script: a.script, shown: [], scriptIdx: 0, sopDone: [], sentiment: 70 };
     case 'TICK': return { ...state, seconds: state.seconds + 1 };
     case 'GO_LIVE': return { ...state, status: 'inCall' };
@@ -28,12 +29,13 @@ function reducer(state, a) {
     }
     case 'ADD_LINE': return {
       ...state, shown: [...state.shown, a.line],
-      sopDone: a.line.sop !== undefined && !state.sopDone.includes(a.line.sop) ? [...state.sopDone, a.line.sop] : state.sopDone,
+      sopDone: [...new Set([...state.sopDone, ...(a.line.sop !== undefined ? [a.line.sop] : []), ...(a.line.sops || [])])],
       sentiment: a.line.mood ?? state.sentiment,
     };
     case 'TOGGLE_SOP': return { ...state, sopDone: state.sopDone.includes(a.i) ? state.sopDone.filter((x) => x !== a.i) : [...state.sopDone, a.i] };
     case 'INCOMING': return { ...initial, status: 'incoming', name: a.name, dir: 'in' };
     case 'WRAPUP': return { ...state, status: 'wrapup' };
+    case 'HANGUP_REMOTE': return state.status === 'inCall' || state.status === 'consent' ? { ...state, status: 'wrapup' } : initial;
     case 'RESET': return initial;
     default: return state;
   }
@@ -50,12 +52,29 @@ export function CallProvider({ children }) {
   const { showToast } = useUi();
   const lead = leadByFirstName(call.name) || null;
 
-  // ringing -> connected after 1.5 s (then the consent question appears)
+  // Live (real) calls push the remote person's / AI's words into the transcript through this handler.
+  const onLiveLine = useCallback((l) => {
+    dispatch({ type: 'ADD_LINE', line: { who: l.who, ai: l.ai, text: l.text, mood: l.who === 'cust' ? moodOf(l.text) : undefined, sops: l.who === 'agent' ? detectSopSteps(l.text) : [] } });
+  }, []);
+  const liveHandlers = useMemo(() => ({
+    onLine: onLiveLine,
+    onEnd: (reason) => { showToast(reason); dispatch({ type: 'HANGUP_REMOTE' }); },
+  }), [onLiveLine, showToast]);
+
+  // ringing -> connected: simulated calls after 1.5 s; real calls when the other person answers
   useEffect(() => {
     if (call.status !== 'ringing') return undefined;
-    const t = setTimeout(() => { begin(); dispatch({ type: 'CONNECT', script: buildScript(lead) }); }, 1500);
-    return () => clearTimeout(t);
-  }, [call.status, begin, lead]);
+    if (call.mode === 'sim') {
+      const t = setTimeout(() => { begin(); dispatch({ type: 'CONNECT', script: buildScript(lead) }); }, 1500);
+      return () => clearTimeout(t);
+    }
+    let cancelled = false;
+    startLiveCall({ mode: call.mode, code: call.code, lead, handlers: liveHandlers })
+      .then(() => { if (!cancelled) { begin(); dispatch({ type: 'CONNECT', script: [] }); } })
+      .catch((e) => { if (!cancelled) { showToast(e.message); dispatch({ type: 'RESET' }); resetConsent(); } });
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [call.status === 'ringing']);
 
   // call clock runs while the customer is on the line
   const connected = call.status === 'consent' || call.status === 'inCall';
@@ -66,15 +85,26 @@ export function CallProvider({ children }) {
   }, [connected]);
 
   // live transcript only runs while recording is ON (no consent = nothing is captured)
-  const transcribing = call.status === 'inCall' && consent.status === 'recording';
+  const transcribing = call.status === 'inCall' && consent.status === 'recording' && call.mode === 'sim';
   useEffect(() => {
     if (!transcribing) return undefined;
     const t = setInterval(() => dispatch({ type: 'NEXT_LINE' }), LINE_MS);
     return () => clearInterval(t);
   }, [transcribing]);
 
+  // Consent is enforced on the real call too: the other side only transcribes while recording consent is ON,
+  // and the AI voice agent only starts talking once the consent step is finished.
+  const aiStarted = useRef(false);
+  useEffect(() => {
+    if (call.mode === 'sim' || !['consent', 'inCall'].includes(call.status)) { aiStarted.current = false; return; }
+    const on = consent.status === 'recording';
+    signal({ type: 'transcribe', on });
+    if (call.mode === 'human') setAgentCaptions(on, onLiveLine);
+    if (call.mode === 'ai' && call.status === 'inCall' && !aiStarted.current) { aiStarted.current = true; signal({ type: 'start' }); }
+  }, [call.status, call.mode, consent.status, onLiveLine]);
+
   const startCall = useCallback((name) => dispatch({ type: 'START', name }), []);
-  const placeCall = useCallback(() => dispatch({ type: 'RING' }), []);
+  const placeCall = useCallback((opts) => dispatch({ type: 'RING', ...(opts || {}) }), []);
   const simulateIncoming = useCallback((name) => {
     const pick = name || leads[Math.floor(Math.random() * leads.length)].name;
     dispatch({ type: 'INCOMING', name: pick });
@@ -102,6 +132,7 @@ export function CallProvider({ children }) {
 
   /** Hang up. With a live customer we go to the wrap-up form; otherwise just close. */
   const end = useCallback(() => {
+    if (call.mode !== 'sim') stopLiveCall();
     if (call.status === 'inCall' || call.status === 'consent') {
       if (call.status === 'consent') addLog(call.seconds, 'Call ended before consent was answered.');
       dispatch({ type: 'WRAPUP' });

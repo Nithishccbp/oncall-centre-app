@@ -7,6 +7,7 @@ import { CallProvider } from './context/CallContext.jsx';
 import { ConsentProvider } from './context/ConsentContext.jsx';
 import { UiProvider } from './context/UiContext.jsx';
 import PlanLayout from './pages/Plan/PlanLayout.jsx';
+import CustomerLine from './pages/Customer/CustomerLine.jsx';
 import Dashboard from './pages/Dashboard/Dashboard.jsx';
 import OutgoingCalls from './pages/Plan/OutgoingCalls.jsx';
 import IncomingCalls from './pages/Plan/IncomingCalls.jsx';
@@ -23,6 +24,7 @@ export default function App() {
       <CallProvider>
         <LeadsModalProvider>
           <Routes>
+            <Route path="customer" element={<CustomerLine />} />
             <Route element={<AppShell />}>
               <Route index element={<Dashboard />} />
               <Route path="plan" element={<PlanLayout />}>
