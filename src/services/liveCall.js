@@ -18,7 +18,7 @@ export const peerOptions = () => {
 export const speechSupported = () => typeof window !== 'undefined' && !!(window.SpeechRecognition || window.webkitSpeechRecognition);
 
 /** Listens on the microphone and calls onText for every finished sentence. Returns { stop }. */
-export function startCaptions(onText, lang = 'en-IN') {
+export function startCaptions(onText, lang = 'en-IN', onError) {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) return { stop() {} };
   let alive = true;
@@ -30,7 +30,7 @@ export function startCaptions(onText, lang = 'en-IN') {
     }
   };
   rec.onend = () => { if (alive) { try { rec.start(); } catch { /* already started */ } } };
-  rec.onerror = () => {};
+  rec.onerror = (e) => { if (e?.error && e.error !== 'no-speech' && e.error !== 'aborted') onError?.(e.error); };
   try { rec.start(); } catch { /* ignore */ }
   return { stop() { alive = false; try { rec.stop(); } catch { /* ignore */ } } };
 }

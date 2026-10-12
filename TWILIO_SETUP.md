@@ -18,6 +18,8 @@
 9. **Optional, for the live AI-call transcript:** Vercel → Storage / Marketplace → add **Upstash for Redis** and connect it to the project, then redeploy.
 10. **Optional:** add `APP_PASSCODE` with any word; the app asks for it once in the browser.
 
+**Check your setup:** open `https://oncall-centre-app.vercel.app/api/diagnose` (add `?p=YOURPASSCODE` if you set one). It ticks or fails each step above and says what to fix.
+
 **Test:** open the live site, Plan → Calls to make → Place call, choose **📞 Phone number**, type your mobile, Place the live call, allow the microphone. Your phone rings. On a trial account press any key when Twilio's message plays. Then try **🤖 AI → phone**.
 
 **If it fails:** the pre-call popup says if keys are missing. "Permission to call … not enabled" means step 3. "Unverified number" means step 4. No ring and a Twilio error means the TwiML App URL (step 7) is wrong.

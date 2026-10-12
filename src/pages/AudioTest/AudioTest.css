@@ -1,0 +1,10 @@
+.at { max-width: 560px; margin: 0 auto; padding: 20px 16px 60px; color: var(--text); background: var(--bg); min-height: 100%; }
+.at header h1 { font-size: var(--fs-xl); margin: 0 0 4px; } .at header p { color: #555; font-size: var(--fs-md); margin: 0 0 16px; }
+.at section { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; margin-bottom: 14px; }
+.at h2 { font-size: 16px; margin: 0 0 10px; }
+.at button { background: var(--green-600); color: #fff; border-radius: var(--radius-sm); padding: 10px 14px; font-weight: 700; }
+.at button:disabled { opacity: .55; }
+.at__row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.at__bar { height: 12px; background: #e8ece9; border-radius: 6px; margin: 12px 0 4px; overflow: hidden; } .at__bar span { display: block; height: 100%; background: var(--green-500); transition: width .08s; }
+.at__res { margin: 8px 0 0; font-size: var(--fs-md); } .at__res.ok { color: var(--green-600); font-weight: 700; } .at__res.bad { color: #b42318; }
+.at__hint { color: #555; font-size: var(--fs-sm); margin: 0 0 10px; } .at blockquote { margin: 10px 0 0; padding: 8px 12px; background: var(--green-100); border-radius: var(--radius-sm); }

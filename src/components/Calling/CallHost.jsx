@@ -31,7 +31,7 @@ function PreCall({ onPlace }) {
   const [code, setCode] = useState('');
   const [phone, setPhone] = useState('');
   const [cfg, setCfg] = useState(null);
-  useEffect(() => { loadConfig().then(setCfg); }, []);
+  useEffect(() => { loadConfig().then((c) => { setCfg(c); if (!c.phone && !c.aiPhone) setMode('human'); }); }, []);
   const isPhone = mode === 'phone' || mode === 'aiphone';
   const needCode = mode === 'human' || mode === 'ai';
   const phoneOk = !!normalizePhone(phone);
@@ -76,7 +76,7 @@ function PreCall({ onPlace }) {
         <div className="pc__modes" role="radiogroup" aria-label="Call type">
           {modes.map((m) => <button key={m.id} role="radio" aria-checked={mode === m.id} className={mode === m.id ? 'on' : ''} onClick={() => setMode(m.id)}>{m.label}</button>)}
         </div>
-        <p className="pc__hint">{modes.find((m) => m.id === mode).hint}</p>
+        <p className="pc__hint">{modes.find((m) => m.id === mode).hint} <a href="/audiotest" target="_blank" rel="noreferrer">Test mic and speaker</a></p>
         {isPhone && (
           <label className="pc__code">Customer's real phone number
             <input className="pc__tel" value={phone} onChange={(e) => setPhone(e.target.value.replace(/[^\d+ ]/g, '').slice(0, 16))} inputMode="tel" placeholder="e.g. 98765 43210 or +91…" aria-label="Customer phone number" />
