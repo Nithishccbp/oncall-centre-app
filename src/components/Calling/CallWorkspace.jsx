@@ -15,10 +15,10 @@ function ActiveCallCard() {
   const tone = sentiment.value >= 65 ? 'pos' : sentiment.value >= 40 ? 'neu' : 'neg';
   return (
     <section className="acc">
-      <div className="acc__kicker">{ringing ? 'CALLING…' : consent.status === 'none' || consent.status === 'pending' ? 'CONNECTED' : hold ? 'ON HOLD' : 'CALL IN PROGRESS'}</div>
+      <div className="acc__kicker">{ringing ? 'CALLING…' : call.mode === 'aiphone' && call.autoConsent && consent.status === 'none' ? 'AVANI IS ASKING FOR CONSENT' : consent.status === 'none' || consent.status === 'pending' ? 'CONNECTED' : hold ? 'ON HOLD' : 'CALL IN PROGRESS'}</div>
       <div className="acc__name">{call.name}</div>
       <div className="acc__time">{fmtClock(call.seconds)}</div>
-      {call.mode !== 'sim' && <span className="acc__mode">{call.mode === 'ai' ? '🤖 AI → HUMAN · LIVE' : '🎙️ HUMAN ↔ HUMAN · LIVE'}</span>}
+      {call.mode !== 'sim' && <span className="acc__mode">{{ ai: '🤖 AI → HUMAN · LIVE', human: '🎙️ HUMAN ↔ HUMAN · LIVE', phone: '📞 WEB → PHONE NUMBER · LIVE', aiphone: '🤖 AI → PHONE NUMBER · LIVE' }[call.mode]}</span>}
       <div className="acc__sent">Sentiment
         <span className="acc__bar"><span className={tone} style={{ width: `${sentiment.value}%` }} /></span>
         <b className={tone}>{sentiment.label}</b>

@@ -27,12 +27,13 @@ npm run build    # production build in dist/
 - [x] Charts with a library (Chart.js)
 
 **Real calling (not mocked)**
-Three call types, chosen in the pre-call popup:
+Five call types, chosen in the pre-call popup. The first two are the call-centre way (a real phone number, no peer IDs):
+- **Phone number (human to phone):** the agent types the customer's real mobile number and talks through the browser microphone. The browser connects to Twilio (WebRTC), and Twilio rings the number on the phone network.
+- **AI to phone:** Avani, the AI voice agent, rings the real number from our server (Twilio REST). She asks for recording consent out loud, then talks using Twilio speech recognition and text-to-speech, with Gemini writing her replies (`api/ai-voice.js`).
+- **Human (web) and AI (web):** the same two levels browser to browser (WebRTC through PeerJS), for when no phone is at hand. The other person opens `/customer`, gets a 5-digit code and the agent types it in.
 - **Practice:** a scripted, simulated customer (no microphone needed).
-- **Human call:** real two-way voice between the agent and a person, browser to browser (WebRTC through PeerJS). The other person opens `/customer` (on a phone or second tab), gets a 5-digit line code, and the agent types it in.
-- **AI call:** an AI voice agent ("Avani") phones the person on `/customer`. She speaks (browser text-to-speech), listens (browser speech recognition, or type a reply) and thinks with Gemini through a serverless function (`api/ai-agent.js`). If no key is set she falls back to simple built-in rules, and the customer page shows which one answered.
 
-Consent is enforced on real calls too: the live transcript only flows to the agent while recording consent is ON, and the AI only starts talking after the consent step.
+Consent is enforced on real calls too: the live transcript only flows to the agent while recording consent is ON, and the AI only starts talking after the consent step. On an AI phone call, Avani asks for consent out loud and the app records the customer's spoken yes or no.
 
 **The call flow (same for all three types)**
 1. Pre-call SOP check: product to champion, pitching language, cross-sell, ideal EMI and the lead's SOP checkpoints.
@@ -57,11 +58,12 @@ Consent is enforced on real calls too: the live transcript only flows to the age
 - **Context for cross-screen state:** leads modal, Pulse threads and needs-input answers, and the call flow each live in a small context, so answering a pinned card in a channel also updates the dashboard task count.
 - **Calendar maths is my own** (`src/utils/calendar.js`), no calendar library. "Today" is the real current date.
 
-## Setup for the real AI call (optional)
-Human calls and the AI call's voice work with no setup. For Gemini-written replies, add an environment variable `GEMINI_API_KEY` in the Vercel project (Settings, Environment Variables) and redeploy. The key stays on the server and is never in the front-end code. Locally, `npm run dev` has no `/api`, so the AI uses its built-in fallback; use `vercel dev` to test the function.
+## Setup for real phone calls and the AI call
+Step by step in [`TWILIO_SETUP.md`](TWILIO_SETUP.md); how it works in [`CALLING_NOTE.md`](CALLING_NOTE.md).
+Short version: the web-to-web calls need no setup. Phone calls need a Twilio account and these environment variables in the Vercel project (Settings, Environment Variables): `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_API_KEY`, `TWILIO_API_SECRET`, `TWILIO_TWIML_APP_SID`, `TWILIO_NUMBER`. Optional: `GEMINI_API_KEY` (Gemini writes Avani's replies; without it she uses built-in rules), `APP_PASSCODE` (stops strangers using your Twilio credit) and an Upstash Redis store (live transcript of the AI phone call). All keys stay on the server and are never in the front-end code. Locally, `npm run dev` has no `/api`; use `vercel dev` to test it.
 
 ## Skipped or simplified
-- Not a phone-network call: calls are browser to browser (WebRTC), so no phone numbers or telephony provider. Both people need a browser with microphone access. Use headphones to avoid echo.
+- Phone calls go through Twilio. On a Twilio trial account only verified numbers can be called and a short trial message plays first. On human-to-phone calls the transcript shows the agent's own words only (the browser cannot caption the customer's phone audio); the AI phone call shows both sides when the Redis store is connected. Web-to-web calls: use headphones to avoid echo.
 - The consent "tap on WhatsApp" and sending a quote on WhatsApp are simulated.
 - Live captions use the browser's speech recognition (Chrome/Edge). Without it, calls still work but the transcript stays empty (the AI call also accepts typed replies).
 - The free public PeerJS server is used for the call handshake; on strict corporate networks a call may not connect.
@@ -83,8 +85,10 @@ src/
 ```
 
 ## AI tools used
-- Claude (Anthropic): used for most of this project. It planned the screens from the mock, wrote the React code and styling, built the call flow (consent, live transcript, AI Assist, wrap-up) and the real calling feature (WebRTC human-to-human call and the AI voice call), and tested it.
-- I ran the project, tested every screen and call type myself, fixed setup problems, and deployed it to Vercel.
+<!-- EDIT THIS so it is true for you. Be specific about what you wrote or changed by hand. -->
+- Continue (VS Code) with Gemini: <what you used it for>
+- Claude: <what you used it for>
+I reviewed the code and can explain every file.
 
 ## Not copied
 Built from the mock's visible behaviour only; none of its source was saved or copied.

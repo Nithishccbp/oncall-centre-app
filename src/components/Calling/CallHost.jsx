@@ -1,5 +1,5 @@
 // Global calling pieces: pre-call SOP check, incoming card, consent gate, wrap-up, rights panel, status bar, DEMO strip, keypad + dial button.
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Modal from '../Modal/Modal.jsx';
 import ConsentGate from './ConsentGate.jsx';
@@ -9,6 +9,7 @@ import RightsPanel from './RightsPanel.jsx';
 import WrapUpModal from './WrapUpModal.jsx';
 import DemoStrip from './DemoStrip.jsx';
 import { useCall, fmtClock } from '../../context/CallContext.jsx';
+import { loadConfig, normalizePhone } from '../../services/phoneCall.js';
 import { checkpointsFor, leadMeta, pitchFor } from '../../data/calling.js';
 import { formatINR } from '../../data/selectors.js';
 import './Calling.css';
@@ -17,16 +18,25 @@ const initials = (name) => name.split(' ').map((p) => p[0]).join('').slice(0, 2)
 
 /** "Before you call X": product to champion, pitching language, cross-sell, ideal EMI, SOP checkpoints. */
 const modes = [
+  { id: 'phone', label: '📞 Phone number', group: 'phone', hint: 'Real call to a normal mobile or landline number, spoken through this browser (Twilio).' },
+  { id: 'aiphone', label: '🤖 AI → phone', group: 'phone', hint: 'Avani, our AI agent, rings a real phone number and talks to the customer (Twilio + Gemini).' },
   { id: 'sim', label: 'Practice', hint: 'Simulated customer — no mic needed.' },
-  { id: 'human', label: 'Human call', hint: 'Real two-way voice with a person on the customer page.' },
-  { id: 'ai', label: 'AI call', hint: 'Our AI agent (Avani) phones the person on the customer page.' },
+  { id: 'human', label: 'Human (web)', hint: 'Real two-way voice with a person on the customer page.' },
+  { id: 'ai', label: 'AI (web)', hint: 'Our AI agent (Avani) phones the person on the customer page.' },
 ];
 
 function PreCall({ onPlace }) {
   const { call, lead, end } = useCall();
-  const [mode, setMode] = useState('sim');
+  const [mode, setMode] = useState('phone');
   const [code, setCode] = useState('');
-  const needCode = mode !== 'sim';
+  const [phone, setPhone] = useState('');
+  const [cfg, setCfg] = useState(null);
+  useEffect(() => { loadConfig().then(setCfg); }, []);
+  const isPhone = mode === 'phone' || mode === 'aiphone';
+  const needCode = mode === 'human' || mode === 'ai';
+  const phoneOk = !!normalizePhone(phone);
+  const ready = !isPhone || !cfg || (mode === 'phone' ? cfg.phone : cfg.aiPhone);
+  const canPlace = (!needCode || code.length >= 5) && (!isPhone || (phoneOk && ready));
   const first = call.name.split(' ')[0];
   const meta = leadMeta(lead);
   return (
@@ -67,12 +77,20 @@ function PreCall({ onPlace }) {
           {modes.map((m) => <button key={m.id} role="radio" aria-checked={mode === m.id} className={mode === m.id ? 'on' : ''} onClick={() => setMode(m.id)}>{m.label}</button>)}
         </div>
         <p className="pc__hint">{modes.find((m) => m.id === mode).hint}</p>
+        {isPhone && (
+          <label className="pc__code">Customer's real phone number
+            <input className="pc__tel" value={phone} onChange={(e) => setPhone(e.target.value.replace(/[^\d+ ]/g, '').slice(0, 16))} inputMode="tel" placeholder="e.g. 98765 43210 or +91…" aria-label="Customer phone number" />
+            <small className="pc__note">{phone && !phoneOk ? 'This number does not look right.' : 'Demo leads have fake numbers — type a real one you can answer.'}</small>
+          </label>
+        )}
+        {isPhone && cfg && !ready && <p className="pc__warn">Phone calling is not switched on for this site yet. Add the Twilio keys in Vercel (README → “Real phone calls”).</p>}
+        {isPhone && cfg && !cfg.reachable && <p className="pc__warn">The /api server is not reachable here. Phone calls work on the deployed Vercel site (or with “vercel dev”), not plain “npm run dev”.</p>}
         {needCode && (
           <label className="pc__code">Customer line code
             <input value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 5))} inputMode="numeric" placeholder="5 digits shown on /customer" aria-label="Customer line code" />
           </label>
         )}
-        <button className="pc__place" disabled={needCode && code.length < 5} onClick={() => onPlace({ mode, code })}><i className="ti ti-phone" /> {mode === 'sim' ? 'Skip · Place the call' : 'Place the live call'}</button>
+        <button className="pc__place" disabled={!canPlace} onClick={() => onPlace({ mode, code, phone: normalizePhone(phone) || '', autoConsent: !!cfg?.transcripts })}><i className="ti ti-phone" /> {mode === 'sim' ? 'Skip · Place the call' : 'Place the live call'}</button>
         <p>These are the same Lead SOP checkpoints your manager set — reviewing them takes 10 seconds and keeps the call on-target.</p>
       </div>
     </Modal>

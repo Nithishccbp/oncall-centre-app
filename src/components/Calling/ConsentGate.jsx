@@ -14,7 +14,7 @@ export default function ConsentGate() {
   const [mode, setMode] = useState('whatsapp'); // 'whatsapp' | 'voice'
   const [phone, setPhone] = useState(leadMeta(lead).phone);
   useEffect(() => { setPhone(leadMeta(lead).phone); }, [call.name]); // eslint-disable-line react-hooks/exhaustive-deps
-  const open = call.status === 'consent' && (consent.status === 'none' || consent.status === 'pending');
+  const open = call.status === 'consent' && !(call.mode === 'aiphone' && call.autoConsent) && (consent.status === 'none' || consent.status === 'pending');
   const pending = consent.status === 'pending';
   const script = consentLanguages.find((l) => l.id === lang);
   const first = (call.name || '').split(' ')[0];

@@ -9,12 +9,12 @@ import { useConsent } from './ConsentContext.jsx';
 import { useUi } from './UiContext.jsx';
 
 const Ctx = createContext(null);
-const initial = { status: 'idle', name: '', dir: 'out', seconds: 0, script: [], shown: [], scriptIdx: 0, sopDone: [], sentiment: 70, mode: 'sim', code: '' };
+const initial = { status: 'idle', name: '', dir: 'out', seconds: 0, script: [], shown: [], scriptIdx: 0, sopDone: [], sentiment: 70, mode: 'sim', code: '', phone: '', autoConsent: false };
 
 function reducer(state, a) {
   switch (a.type) {
     case 'START': return { ...initial, status: 'precheck', name: a.name, dir: 'out' };
-    case 'RING': return { ...state, status: 'ringing', mode: a.mode || 'sim', code: a.code || '' };
+    case 'RING': return { ...state, status: 'ringing', mode: a.mode || 'sim', code: a.code || '', phone: a.phone || '', autoConsent: !!a.autoConsent };
     case 'CONNECT': return { ...state, status: 'consent', seconds: 0, script: a.script, shown: [], scriptIdx: 0, sopDone: [], sentiment: 70 };
     case 'TICK': return { ...state, seconds: state.seconds + 1 };
     case 'GO_LIVE': return { ...state, status: 'inCall' };
@@ -48,9 +48,11 @@ const LINE_MS = 2600;
 export function CallProvider({ children }) {
   const [call, dispatch] = useReducer(reducer, initial);
   const [recent, setRecent] = useState(seedCalls);
-  const { consent, begin, reset: resetConsent, withdraw, addLog } = useConsent();
+  const { consent, begin, reset: resetConsent, withdraw, addLog, grant, refuse } = useConsent();
+  const secsRef = useRef(0);
   const { showToast } = useUi();
   const lead = leadByFirstName(call.name) || null;
+  secsRef.current = call.seconds;
 
   // Live (real) calls push the remote person's / AI's words into the transcript through this handler.
   const onLiveLine = useCallback((l) => {
@@ -69,7 +71,12 @@ export function CallProvider({ children }) {
       return () => clearTimeout(t);
     }
     let cancelled = false;
-    startLiveCall({ mode: call.mode, code: call.code, lead, handlers: liveHandlers })
+    // Avani asks for recording consent out loud on a phone call; her server tells us what the customer answered.
+    const onConsent = (v) => {
+      if (v === 'yes') { const id = grant(secsRef.current, 'Verbal'); showToast(`Consent ${id} · recording on`); } else { refuse(secsRef.current, 'said no on the phone'); showToast('Customer declined recording'); }
+      dispatch({ type: 'GO_LIVE' });
+    };
+    startLiveCall({ mode: call.mode, code: call.code, phone: call.phone, lead, handlers: { ...liveHandlers, onConsent } })
       .then(() => { if (!cancelled) { begin(); dispatch({ type: 'CONNECT', script: [] }); } })
       .catch((e) => { if (!cancelled) { showToast(e.message); dispatch({ type: 'RESET' }); resetConsent(); } });
     return () => { cancelled = true; };
@@ -97,6 +104,8 @@ export function CallProvider({ children }) {
   const aiStarted = useRef(false);
   useEffect(() => {
     if (call.mode === 'sim' || !['consent', 'inCall'].includes(call.status)) { aiStarted.current = false; return; }
+    if (call.mode === 'phone') { setAgentCaptions(consent.status === 'recording', onLiveLine); return; }
+    if (call.mode === 'aiphone') return; // Avani and the server handle consent and transcript on that call
     const on = consent.status === 'recording';
     signal({ type: 'transcribe', on });
     if (call.mode === 'human') setAgentCaptions(on, onLiveLine);

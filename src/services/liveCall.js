@@ -3,6 +3,7 @@
 //  - 'ai' mode:    the AI voice agent (Avani) talks to the person on the /customer page; the agent watches the live transcript.
 // No backend of our own is needed: audio flows peer to peer; only the "who is calling whom" handshake uses PeerJS cloud.
 import Peer from 'peerjs';
+import { startPhoneCall, startAiPhoneCall, stopPhoneCall, setPhoneMuted, setPhoneCaptions } from './phoneCall.js';
 
 export const LINE_PREFIX = 'ogcc-';
 
@@ -40,7 +41,9 @@ let session = null;
  * Place a real call. Resolves once the customer has answered.
  * handlers: { onLine(line), onEnd(reason) }
  */
-export function startLiveCall({ mode, code, lead, handlers }) {
+export function startLiveCall({ mode, code, phone, lead, handlers }) {
+  if (mode === 'phone') return startPhoneCall({ phone, handlers });
+  if (mode === 'aiphone') return startAiPhoneCall({ phone, lead, handlers });
   return new Promise((resolve, reject) => {
     const target = `${LINE_PREFIX}${String(code).trim()}`;
     const peer = new Peer(undefined, peerOptions());
@@ -88,16 +91,18 @@ export function startLiveCall({ mode, code, lead, handlers }) {
 /** Send a small control message to the customer page (e.g. start the AI, switch transcription on/off). */
 export const signal = (msg) => { try { session?.conn?.open && session.conn.send(msg); } catch { /* ignore */ } };
 
-export const setMuted = (muted) => { session?.stream?.getAudioTracks().forEach((t) => { t.enabled = !muted; }); };
+export const setMuted = (muted) => { setPhoneMuted(muted); session?.stream?.getAudioTracks().forEach((t) => { t.enabled = !muted; }); };
 
 /** Turn the agent's own live captions on/off (human mode). Lines go to onLine. */
 export function setAgentCaptions(on, onLine) {
+  setPhoneCaptions(on, onLine);
   if (!session) return;
   if (!on) { session.captions?.stop(); session.captions = null; return; }
   if (!session.captions) session.captions = startCaptions((text) => onLine({ who: 'agent', text }));
 }
 
 export function stopLiveCall(notifyRemote = true) {
+  stopPhoneCall();
   const s = session;
   if (!s || s.ended) return;
   s.ended = true; session = null;
