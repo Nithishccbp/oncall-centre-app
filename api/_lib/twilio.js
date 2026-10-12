@@ -74,22 +74,3 @@ export const baseUrl = (req) => {
 };
 
 export const xmlEscape = (s) => String(s).replace(/[<>&"']/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&apos;' }[c]));
-
-/** Turns Twilio's raw error into a sentence that says what to fix. */
-export function friendlyTwilioError(data = {}) {
-  const code = Number(data.code) || 0;
-  const raw = data.message || 'Twilio refused the call.';
-  const map = {
-    21215: 'Calling this country is switched off on your Twilio account. Twilio Console, Voice, Settings, Geo permissions: tick India, then Save.',
-    13227: 'Calling this country is switched off on your Twilio account. Twilio Console, Voice, Settings, Geo permissions: tick India, then Save.',
-    21219: 'Twilio trial accounts can only call verified numbers. Add this phone under Phone Numbers, Manage, Verified Caller IDs.',
-    21608: 'Twilio trial accounts can only call verified numbers. Add this phone under Phone Numbers, Manage, Verified Caller IDs.',
-    21211: 'That phone number is not valid. Use the 10-digit mobile number or +country code.',
-    21214: 'That phone number is not valid. Use the 10-digit mobile number or +country code.',
-    21212: 'TWILIO_NUMBER is not a valid caller ID. Use your Twilio number in +1555... format.',
-    21606: 'TWILIO_NUMBER is not a number your Twilio account can call from. Copy it from Voice, Overview, Try Out Voice.',
-    20003: 'Twilio rejected the Account SID or Auth Token. Copy both again from the Twilio Console home page and redeploy.',
-    20404: 'Twilio could not find that item. Check TWILIO_ACCOUNT_SID matches the account the API key was made in.',
-  };
-  return { error: map[code] || raw, code: code || undefined, detail: map[code] ? raw : undefined };
-}

@@ -1,6 +1,6 @@
 // Free-trial friendly "click to call": Twilio rings the customer's phone first; when they pick up,
 // the call is connected to the agent's browser (identity), which answers automatically.
-import { allowed, env, phoneReady, toE164, twilioRest, xmlEscape, friendlyTwilioError } from './_lib/twilio.js';
+import { allowed, env, phoneReady, toE164, twilioRest, xmlEscape } from './_lib/twilio.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Use POST' });
@@ -17,6 +17,6 @@ export default async function handler(req, res) {
   if (!/^[A-Za-z0-9_-]{3,40}$/.test(String(identity || ''))) return res.status(400).json({ error: 'bad agent id' });
   const twiml = `<Response><Dial answerOnBridge="true" timeout="25"><Client>${xmlEscape(identity)}</Client></Dial></Response>`;
   const r = await twilioRest('POST', 'Calls.json', { To: number, From: env().number, Timeout: '35', Twiml: twiml });
-  if (!r.ok) return res.status(502).json(friendlyTwilioError(r.data));
+  if (!r.ok) return res.status(502).json({ error: r.data?.message || 'Twilio refused the call.', code: r.data?.code });
   return res.status(200).json({ sid: r.data.sid });
 }

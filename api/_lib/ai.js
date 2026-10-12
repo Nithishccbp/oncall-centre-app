@@ -18,7 +18,7 @@ export async function avaniReply(messages, lead = {}) {
   try {
     const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ systemInstruction: { parts: [{ text: system(lead) }] }, contents, generationConfig: { maxOutputTokens: 200, temperature: 0.7, thinkingConfig: { thinkingBudget: 0 } } }),
+      body: JSON.stringify({ systemInstruction: { parts: [{ text: system(lead) }] }, contents, generationConfig: { maxOutputTokens: 120, temperature: 0.7 } }),
     });
     const data = await r.json();
     const reply = data?.candidates?.[0]?.content?.parts?.map((p) => p.text).join(' ').trim();
