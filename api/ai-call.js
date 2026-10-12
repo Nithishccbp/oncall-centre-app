@@ -1,6 +1,6 @@
 // Starts (or ends) a REAL phone call from the AI agent, Avani, to a customer's phone number.
 // Twilio rings the number; when the customer picks up, Twilio asks api/ai-voice.js what to say.
-import { aiPhoneReady, allowed, baseUrl, toE164, twilioRest, env } from './_lib/twilio.js';
+import { aiPhoneReady, allowed, baseUrl, toE164, twilioRest, env, friendlyTwilioError } from './_lib/twilio.js';
 
 const b64u = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
 
@@ -23,6 +23,6 @@ export default async function handler(req, res) {
     To: number, From: env().number, Timeout: '35',
     Url: `${baseUrl(req)}/api/ai-voice?s=${b64u(state)}`, Method: 'POST',
   });
-  if (!r.ok) return res.status(502).json({ error: r.data?.message || 'Twilio refused the call.', code: r.data?.code });
+  if (!r.ok) return res.status(502).json(friendlyTwilioError(r.data));
   return res.status(200).json({ sid: r.data.sid });
 }
