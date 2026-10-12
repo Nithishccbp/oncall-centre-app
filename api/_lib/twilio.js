@@ -11,7 +11,11 @@ export const env = () => ({
   passcode: process.env.APP_PASSCODE || '',
 });
 
-export const phoneReady = () => { const e = env(); return !!(e.sid && e.apiKey && e.apiSecret && e.appSid && e.number); };
+// Two ways to reach a phone from the browser:
+//  'direct' (needs a TwiML App): the browser dials out through Twilio.
+//  'bridge' (works on a free trial, no TwiML App): Twilio rings the customer first, then connects them to the agent's browser.
+export const phoneMode = () => { const e = env(); return e.appSid ? 'direct' : 'bridge'; };
+export const phoneReady = () => { const e = env(); return !!(e.sid && e.apiKey && e.apiSecret && e.number && (e.appSid || e.token)); };
 export const aiPhoneReady = () => { const e = env(); return !!(e.sid && e.token && e.number); };
 
 /** "98765 43210" -> "+919876543210". Returns null if it does not look like a real number. */
@@ -43,7 +47,7 @@ export function accessToken(identity, ttl = 3600) {
   const header = { typ: 'JWT', alg: 'HS256', cty: 'twilio-fpa;v=1' };
   const payload = {
     jti: `${e.apiKey}-${now}`, iss: e.apiKey, sub: e.sid, iat: now, exp: now + ttl,
-    grants: { identity, voice: { outgoing: { application_sid: e.appSid } } },
+    grants: { identity, voice: { incoming: { allow: true }, ...(e.appSid ? { outgoing: { application_sid: e.appSid } } : {}) } },
   };
   const data = `${b64u(JSON.stringify(header))}.${b64u(JSON.stringify(payload))}`;
   const sig = crypto.createHmac('sha256', e.apiSecret).update(data).digest();

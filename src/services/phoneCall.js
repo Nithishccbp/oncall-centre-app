@@ -45,30 +45,57 @@ export function normalizePhone(raw) {
 
 let cur = null; // the call in progress
 
-/** Human → phone. Resolves when the customer picks up. handlers: { onEnd(reason) } */
+/** Human → phone. Resolves when the customer picks up. handlers: { onEnd(reason) }
+ *  'direct' mode: the browser dials out through Twilio (needs a TwiML App).
+ *  'bridge' mode (free trial): Twilio rings the customer first, then connects them to this browser. */
 export async function startPhoneCall({ phone, handlers }) {
   const to = normalizePhone(phone);
   if (!to) throw new Error('That phone number does not look right.');
-  const { token } = await api('/api/voice-token');
+  const { token, identity, mode } = await api('/api/voice-token');
   const device = new Device(token, { codecPreferences: ['opus', 'pcmu'], logLevel: 'error' });
-  const s = { kind: 'phone', device, call: null, captions: null, ended: false, sid: null };
+  const s = { kind: 'phone', device, call: null, captions: null, ended: false, sid: null, timer: null };
   cur = s;
   return new Promise((resolve, reject) => {
     let answered = false;
     const fail = (m) => { if (!answered) { teardown(); reject(new Error(m)); } };
+    const attach = (call) => {
+      s.call = call;
+      call.on('accept', () => { answered = true; clearTimeout(s.timer); resolve(); });
+      call.on('disconnect', () => { if (!s.ended) { if (answered) { handlers.onEnd('The call ended.'); teardown(); } else fail('The customer did not pick up (or the call was rejected).'); } });
+      call.on('cancel', () => fail('The call was cancelled.'));
+      call.on('reject', () => fail('The call was rejected.'));
+      call.on('error', (e) => { const m = `Call problem (${e.code || 'error'}). ${e.message || ''}`; if (answered) { handlers.onEnd(m); teardown(); } else fail(m); });
+    };
     device.on('error', (e) => {
       const m = e.code === 31208 || e.code === 31201 ? 'Microphone permission is needed for a voice call.'
         : e.code === 31205 || e.code === 20104 ? 'Call token expired — try again.' : `Call problem (${e.code || 'error'}). ${e.message || ''}`;
       if (answered) { handlers.onEnd(m); teardown(); } else fail(m);
     });
-    device.connect({ params: { To: to } }).then((call) => {
-      s.call = call;
-      call.on('accept', () => { answered = true; s.sid = call.parameters?.CallSid; resolve(); });
-      call.on('disconnect', () => { if (!s.ended) { if (answered) { handlers.onEnd('The call ended.'); teardown(); } else fail('The customer did not pick up (or the call was rejected).'); } });
-      call.on('cancel', () => fail('The call was cancelled.'));
-      call.on('reject', () => fail('The call was rejected.'));
-      call.on('error', (e) => { const m = `Call problem (${e.code || 'error'}). ${e.message || ''}`; if (answered) { handlers.onEnd(m); teardown(); } else fail(m); });
-    }).catch((e) => fail(e.message || 'Could not start the call.'));
+
+    if (mode === 'direct') {
+      device.connect({ params: { To: to } }).then(attach).catch((e) => fail(e.message || 'Could not start the call.'));
+      return;
+    }
+    // bridge mode: wait until this browser is registered, then ask the server to ring the customer
+    device.on('incoming', (call) => { attach(call); call.accept(); });
+    device.on('registered', async () => {
+      try {
+        const r = await api('/api/click-call', { method: 'POST', body: JSON.stringify({ to, identity }) });
+        s.sid = r.sid;
+        const started = Date.now();
+        const poll = async () => {
+          if (s.ended || answered) return;
+          try {
+            const d = await api(`/api/ai-call-status?sid=${s.sid}&from=0`);
+            if (['busy', 'no-answer', 'canceled', 'failed'].includes(d.status)) return fail(d.status === 'busy' ? 'The number was busy.' : d.status === 'no-answer' ? 'No answer.' : 'The call could not be completed.');
+          } catch { /* keep trying */ }
+          if (Date.now() - started > 70000) return fail('No answer after 70 seconds.');
+          s.timer = setTimeout(poll, 2000);
+        };
+        s.timer = setTimeout(poll, 3000);
+      } catch (e) { fail(e.message || 'Could not start the call.'); }
+    });
+    device.register().catch((e) => fail(e.message || 'Could not connect to Twilio.'));
   });
 }
 
@@ -121,7 +148,11 @@ function teardown() {
   s.ended = true; cur = null;
   clearTimeout(s.timer);
   s.captions?.stop();
-  if (s.kind === 'phone') { try { s.call?.disconnect(); } catch { /* ignore */ } setTimeout(() => { try { s.device.destroy(); } catch { /* ignore */ } }, 300); }
+  if (s.kind === 'phone') {
+    try { s.call?.disconnect(); } catch { /* ignore */ }
+    if (s.sid && !s.call) api('/api/click-call', { method: 'POST', body: JSON.stringify({ end: true, sid: s.sid }) }).catch(() => {});
+    setTimeout(() => { try { s.device.destroy(); } catch { /* ignore */ } }, 300);
+  }
   if (s.kind === 'aiphone') api('/api/ai-call', { method: 'POST', body: JSON.stringify({ end: true, sid: s.sid }) }).catch(() => {});
 }
 

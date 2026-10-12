@@ -1,5 +1,12 @@
 # Real phone calls: setup (about 20 minutes)
 
+**Free Twilio trial (Limited trial) path.** The free trial hides TwiML Apps and has no number to buy, but it works:
+- Your trial number is shown under Voice → Overview → Try Out Voice ("From"). Use it as `TWILIO_NUMBER`.
+- Only phones verified as testers can be called (your own mobile is added at sign-up).
+- Skip steps 2, 3 and 7 below. Without `TWILIO_TWIML_APP_SID` the app uses "click to call": Twilio rings the customer first, and when they pick up the call connects to the agent's browser. Needed variables: `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_API_KEY`, `TWILIO_API_SECRET`, `TWILIO_NUMBER`.
+- On a trial, the person called hears a short Twilio message and must press any key.
+
+
 1. **Create a Twilio account** at twilio.com and verify your email and your own mobile number.
 2. **Get a phone number:** Console → Phone Numbers → Buy a number (trial credit covers it). Voice-capable. Copy it, like `+15551234567`. This is `TWILIO_NUMBER`.
 3. **Allow calls to India:** Console → Voice → Settings → Geo permissions → tick **India** (and Save).
