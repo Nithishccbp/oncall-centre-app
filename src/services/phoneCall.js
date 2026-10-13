@@ -123,7 +123,7 @@ export async function startAiPhoneCall({ phone, lead, handlers }) {
           if (e.t === 'consent') handlers.onConsent(e.v);
           if (e.t === 'line') handlers.onLine({ who: e.who === 'ai' ? 'agent' : 'cust', ai: e.who === 'ai', text: e.text });
         });
-        if (['completed', 'failed'].includes(d.status)) return finish(answered ? 'The call finished.' : 'The call could not be completed.');
+        if (['completed', 'failed'].includes(d.status)) return finish(answered ? 'The call finished.' : `The call could not be completed.${d.detail ? ` (${d.detail})` : ''}`);
         if (['busy', 'no-answer', 'canceled'].includes(d.status)) return finish(d.status === 'busy' ? 'The number was busy.' : d.status === 'no-answer' ? 'No answer.' : 'The call was cancelled.');
         if (!answered && Date.now() - started > 60000) return finish('No answer after 60 seconds.');
       } catch (e) { if (!answered && Date.now() - started > 15000) return finish(e.message); }
