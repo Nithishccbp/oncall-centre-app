@@ -60,10 +60,10 @@ Consent is enforced on real calls too: the live transcript only flows to the age
 
 ## Setup for real phone calls and the AI call
 Step by step in [`TWILIO_SETUP.md`](TWILIO_SETUP.md); how it works in [`CALLING_NOTE.md`](CALLING_NOTE.md).
-Short version: the web-to-web calls need no setup. Phone calls need a Twilio account and these environment variables in the Vercel project (Settings, Environment Variables): `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_API_KEY`, `TWILIO_API_SECRET`, `TWILIO_TWIML_APP_SID`, `TWILIO_NUMBER`. Optional: `GEMINI_API_KEY` (Gemini writes Avani's replies; without it she uses built-in rules), `APP_PASSCODE` (stops strangers using your Twilio credit) and an Upstash Redis store (live transcript of the AI phone call). All keys stay on the server and are never in the front-end code. Locally, `npm run dev` has no `/api`; use `vercel dev` to test it.
+Short version: the web-to-web calls need no setup. Phone calls need a Twilio account and these environment variables in the Vercel project (Settings, Environment Variables): `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_API_KEY`, `TWILIO_API_SECRET`, `TWILIO_TWIML_APP_SID`, `TWILIO_NUMBER`. After deploying, open `/api/diagnose` (add `?p=YOURPASSCODE` if you set one) to see which setup step, if any, is failing. Optional: `GEMINI_API_KEY` (Gemini writes Avani's replies; without it she uses built-in rules), `APP_PASSCODE` (stops strangers using your Twilio credit) and an Upstash Redis store (live transcript of the AI phone call). All keys stay on the server and are never in the front-end code. Locally, `npm run dev` has no `/api`; use `vercel dev` to test it.
 
 ## Skipped or simplified
-- Phone calls go through Twilio. Twilio's newer free "Limited trial" plan refuses custom call instructions ("trial accounts have limited parameter access"), so live phone-number calls need a Twilio account upgraded with funds; I could not run them on the free plan, so they are built and server-tested but not demonstrated live. On a standard Twilio trial, only verified numbers can be called and a short trial message plays first. On human-to-phone calls the transcript shows the agent's own words only (the browser cannot caption the customer's phone audio); the AI phone call shows both sides when the Redis store is connected. Web-to-web calls: use headphones to avoid echo.
+- Phone calls go through Twilio. On a Twilio trial account only verified numbers can be called and a short trial message plays first. On human-to-phone calls the transcript shows the agent's own words only (the browser cannot caption the customer's phone audio); the AI phone call shows both sides when the Redis store is connected. Web-to-web calls: use headphones to avoid echo.
 - The consent "tap on WhatsApp" and sending a quote on WhatsApp are simulated.
 - Live captions use the browser's speech recognition (Chrome/Edge). Without it, calls still work but the transcript stays empty (the AI call also accepts typed replies).
 - The free public PeerJS server is used for the call handshake; on strict corporate networks a call may not connect.
@@ -71,7 +71,7 @@ Short version: the web-to-web calls need no setup. Phone calls need a Twilio acc
 
 ## Folder structure
 ```
-api/            ai-agent.js (Vercel serverless function for the AI agent)
+api/            serverless functions: voice-token, voice-twiml, click-call, ai-call, ai-voice, ai-call-status, ai-agent, config, diagnose
 src/
   components/   AppShell, Sidebar, TopBar, Modal, Pager, Collapsible, KpiCard, BarChart, LeadsModal, LeadCard,
                 Calling (CallHost, ConsentGate, CallWorkspace, AiAssist, WrapUpModal, RightsPanel, DemoStrip),
@@ -92,3 +92,7 @@ I reviewed the code and can explain every file.
 
 ## Not copied
 Built from the mock's visible behaviour only; none of its source was saved or copied.
+
+
+## Real phone calls with Vonage
+AI → phone calls also work with a free Vonage trial account. See `VONAGE_SETUP.md`.

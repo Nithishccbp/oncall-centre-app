@@ -4,12 +4,35 @@
 import { allowed, baseUrl, env, phoneMode } from './_lib/twilio.js';
 import { avaniReply } from './_lib/ai.js';
 import { storeReady } from './_lib/store.js';
+import { vonageReady, venv, vonageRest } from './_lib/vonage.js';
 
 const hide = (n) => (n ? `${String(n).slice(0, 3)}******${String(n).slice(-2)}` : '');
+
+// Vonage version of the checklist (used when the Vonage keys are in Vercel).
+async function vonageDiagnose(req, res) {
+  const checks = [];
+  const add = (name, ok, fix) => checks.push({ name, ok, ...(ok ? {} : { fix }) });
+  add('Vonage variables in Vercel', vonageReady(), 'Add VONAGE_APPLICATION_ID and VONAGE_PRIVATE_KEY (the whole text of private.key) in Vercel, then Redeploy.');
+  let r = { ok: false, status: 0 };
+  try { r = await vonageRest('GET', '/v1/calls?page_size=1'); } catch { /* network */ }
+  add('Vonage accepts our key (Application id + private key match)', r.ok, r.status === 401 ? 'Vonage said no. The Application id and private.key must come from the SAME Vonage Application. Re-paste both in Vercel and Redeploy.' : `Could not reach Vonage (status ${r.status}). Try again in a minute.`);
+  add(`Caller id (${venv().from})`, /^\d{6,15}$/.test(venv().from), 'VONAGE_FROM must be digits only, or leave it empty on a trial account.');
+  if (process.env.GEMINI_API_KEY) {
+    const g = await avaniReply([{ role: 'cust', text: 'Hello?' }], { name: 'Test', product: 'mattress' });
+    add('Gemini writes Avani\'s replies', g.source === 'gemini', 'Gemini did not answer, so Avani falls back to simple rules. Check GEMINI_API_KEY at aistudio.google.com/apikey.');
+  } else add('Gemini writes Avani\'s replies', false, 'Optional. Add GEMINI_API_KEY in Vercel so Avani sounds natural.');
+  add('Live AI-call transcript (Upstash Redis)', storeReady(), 'Optional. Vercel, Storage, add Upstash for Redis, then Redeploy.');
+  const core = checks.filter((c) => !/Gemini|Redis/.test(c.name));
+  return res.status(200).json({
+    summary: core.every((c) => c.ok) ? 'Vonage is ready. Try Plan, Calls to make, AI → phone. (Trial accounts can only ring the number you signed up with.)' : 'Fix the items marked ok:false, redeploy, and run this again.',
+    provider: 'vonage', checks,
+  });
+}
 
 export default async function handler(req, res) {
   const e = env();
   if (e.passcode && !allowed(req) && String(req.query?.p || '') !== e.passcode) return res.status(401).json({ error: 'passcode' });
+  if (vonageReady()) return vonageDiagnose(req, res);
 
   const checks = [];
   const add = (name, ok, fix) => checks.push({ name, ok, ...(ok ? {} : { fix }) });

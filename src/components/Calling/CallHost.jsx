@@ -19,7 +19,7 @@ const initials = (name) => name.split(' ').map((p) => p[0]).join('').slice(0, 2)
 /** "Before you call X": product to champion, pitching language, cross-sell, ideal EMI, SOP checkpoints. */
 const modes = [
   { id: 'phone', label: '📞 Phone number', group: 'phone', hint: 'Real call to a normal mobile or landline number, spoken through this browser (Twilio).' },
-  { id: 'aiphone', label: '🤖 AI → phone', group: 'phone', hint: 'Avani, our AI agent, rings a real phone number and talks to the customer (Twilio + Gemini).' },
+  { id: 'aiphone', label: '🤖 AI → phone', group: 'phone', hint: 'Avani, our AI agent, rings a real phone number and talks to the customer (Vonage or Twilio, plus Gemini).' },
   { id: 'sim', label: 'Practice', hint: 'Simulated customer — no mic needed.' },
   { id: 'human', label: 'Human (web)', hint: 'Real two-way voice with a person on the customer page.' },
   { id: 'ai', label: 'AI (web)', hint: 'Our AI agent (Avani) phones the person on the customer page.' },
@@ -31,7 +31,7 @@ function PreCall({ onPlace }) {
   const [code, setCode] = useState('');
   const [phone, setPhone] = useState('');
   const [cfg, setCfg] = useState(null);
-  useEffect(() => { loadConfig().then(setCfg); }, []);
+  useEffect(() => { loadConfig().then((c) => { setCfg(c); if (!c.phone && !c.aiPhone) setMode('human'); }); }, []);
   const isPhone = mode === 'phone' || mode === 'aiphone';
   const needCode = mode === 'human' || mode === 'ai';
   const phoneOk = !!normalizePhone(phone);
@@ -76,14 +76,14 @@ function PreCall({ onPlace }) {
         <div className="pc__modes" role="radiogroup" aria-label="Call type">
           {modes.map((m) => <button key={m.id} role="radio" aria-checked={mode === m.id} className={mode === m.id ? 'on' : ''} onClick={() => setMode(m.id)}>{m.label}</button>)}
         </div>
-        <p className="pc__hint">{modes.find((m) => m.id === mode).hint}</p>
+        <p className="pc__hint">{modes.find((m) => m.id === mode).hint} <a href="/audiotest" target="_blank" rel="noreferrer">Test mic and speaker</a></p>
         {isPhone && (
           <label className="pc__code">Customer's real phone number
             <input className="pc__tel" value={phone} onChange={(e) => setPhone(e.target.value.replace(/[^\d+ ]/g, '').slice(0, 16))} inputMode="tel" placeholder="e.g. 98765 43210 or +91…" aria-label="Customer phone number" />
             <small className="pc__note">{phone && !phoneOk ? 'This number does not look right.' : 'Demo leads have fake numbers — type a real one you can answer.'}</small>
           </label>
         )}
-        {isPhone && cfg && !ready && <p className="pc__warn">Phone calling is not switched on for this site yet. Add the Twilio keys in Vercel (README → “Real phone calls”).</p>}
+        {isPhone && cfg && !ready && <p className="pc__warn">Phone calling is not switched on for this site yet. Add the Vonage keys (VONAGE_SETUP.md) or the Twilio keys in Vercel, then redeploy.</p>}
         {isPhone && cfg && !cfg.reachable && <p className="pc__warn">The /api server is not reachable here. Phone calls work on the deployed Vercel site (or with “vercel dev”), not plain “npm run dev”.</p>}
         {needCode && (
           <label className="pc__code">Customer line code
