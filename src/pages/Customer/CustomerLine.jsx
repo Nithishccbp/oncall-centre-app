@@ -6,6 +6,7 @@ import { LINE_PREFIX, peerOptions, speechSupported, startCaptions } from '../../
 import { nextAiReply } from '../../services/aiAgent.js';
 import './Customer.css';
 
+const speechMsg = (c) => ({ 'not-allowed': 'Speech input is blocked: allow the microphone for this site and reload.', 'service-not-allowed': 'Speech input is blocked: allow the microphone for this site and reload.', 'audio-capture': 'No microphone found for speech input.', network: 'Speech input needs the internet (Google). Check your connection or VPN.' }[c] || `Speech input problem (${c}).`);
 const randomCode = () => String(Math.floor(10000 + Math.random() * 90000));
 const fmt = (s) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 
@@ -21,6 +22,7 @@ export default function CustomerLine() {
   const [sharing, setSharing] = useState(false);
   const [typed, setTyped] = useState('');
   const [source, setSource] = useState('');
+  const [speechErr, setSpeechErr] = useState('');
   const r = useRef({ peer: null, conn: null, call: null, stream: null, audio: null, caps: null, share: false, lead: null, history: [], speaking: false, kind: 'human' });
   const endRef = useRef(null);
 
@@ -65,7 +67,7 @@ export default function CustomerLine() {
     if (s.audio) s.audio.srcObject = null;
     window.speechSynthesis?.cancel();
     s.call = null; s.share = false; s.busy = false; s.history = [];
-    setSharing(false); setSeconds(0); setMuted(false); setLines([]); setSource('');
+    setSharing(false); setSeconds(0); setMuted(false); setLines([]); setSource(''); setSpeechErr('');
     setStatus('ready');
   }, []);
 
@@ -109,7 +111,7 @@ export default function CustomerLine() {
           if (msg.type === 'start' && s.kind === 'ai') {
             const first = (s.lead?.name || 'there').split(' ')[0];
             aiSay(`Hi ${first}, this is Avani from The Sleep Company. Is this a good time to talk about the ${s.lead?.product || 'product'} you were interested in?`);
-            if (speechSupported()) s.caps = startCaptions((t) => { if (!s.speaking) aiHear(t); });
+            if (speechSupported()) s.caps = startCaptions((t) => { if (!s.speaking) aiHear(t); }, 'en-IN', (c) => setSpeechErr(speechMsg(c)));
           }
           if (msg.type === 'end') cleanup(false);
         });
@@ -148,7 +150,7 @@ export default function CustomerLine() {
       <header className="cu__head"><span className="cu__logo">OG</span><div><b>Customer line</b><small>Demo phone for the Call Centre app</small></div></header>
 
       {status === 'connecting' && <div className="cu__card"><i className="ti ti-loader-2 spin" /> Getting your line…</div>}
-      {status === 'error' && <div className="cu__card cu__err">{error}</div>}
+      {status === 'error' && <div className="cu__card cu__err">{error} <a href="/audiotest" target="_blank" rel="noreferrer">Run the audio check</a></div>}
 
       {(status === 'ready' || status === 'ringing') && (
         <div className="cu__card cu__code">
@@ -156,6 +158,7 @@ export default function CustomerLine() {
           <div className="cu__num" aria-label="Line code">{code}</div>
           <p>Type this code in the Call Centre app when you place a <b>Human call</b> or an <b>AI call</b>. Keep this page open and allow the microphone.</p>
           <div className="cu__wait">{status === 'ready' ? <><span className="cu__dot" /> Waiting for a call…</> : null}</div>
+          <p style={{ fontSize: 12.5, marginTop: 10 }}>Can't hear or talk? <a href="/audiotest" target="_blank" rel="noreferrer">Test your microphone and speaker</a></p>
         </div>
       )}
 
@@ -173,6 +176,7 @@ export default function CustomerLine() {
         <div className="cu__card cu__live">
           <div className="cu__livehead"><span className="cu__dot red" /> {kind === 'ai' ? 'Talking to Avani (AI)' : `On call with ${caller || 'Call Centre'}`} · {fmt(seconds)}</div>
           <div className="cu__priv">{sharing ? '🔴 You agreed to recording — the call centre sees this transcript.' : '⚪ Not recording — nothing is shared.'}{kind === 'ai' && source ? ` · AI: ${source}` : ''}</div>
+          {speechErr && <div className="cu__priv" style={{ background: '#fdecec', color: '#b42318' }}>{speechErr} You can still type your reply below.</div>}
           <div className="cu__lines">
             {lines.length === 0 && <div className="cu__empty">{kind === 'ai' ? 'Avani will start talking once the agent finishes the consent step…' : 'Speak — you are live.'}</div>}
             {lines.map((l, i) => <div key={i} className={`cu__line ${l.who}`}><small>{l.ai ? 'Avani (AI)' : l.who === 'cust' ? 'You' : 'Agent'}</small><p>{l.text}</p></div>)}
