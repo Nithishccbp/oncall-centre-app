@@ -8,7 +8,7 @@ import crypto from 'node:crypto';
 export const venv = () => ({
   appId: (process.env.VONAGE_APPLICATION_ID || '').trim(),
   key: process.env.VONAGE_PRIVATE_KEY || '',
-  from: String(process.env.VONAGE_FROM || process.env.VONAGE_NUMBER || '123456789').replace(/\D/g, ''),
+  from: String(process.env.VONAGE_FROM || process.env.VONAGE_NUMBER || '12345678901').replace(/\D/g, ''),
 });
 
 /** Accepts the key however it got pasted: real line breaks, literal "\n", spaces instead of line breaks,

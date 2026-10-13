@@ -17,6 +17,7 @@ Why Vonage: Twilio's free "Limited trial" blocked our call settings. Vonage's tr
 5. In Vercel → Project → Settings → Environment Variables, add:
    - `VONAGE_APPLICATION_ID` = the Application ID
    - `VONAGE_PRIVATE_KEY` = open `private.key` in Notepad, copy **everything** (including the BEGIN/END lines), paste
+   - `VONAGE_FROM` = `12345678901` (Vonage's trial test caller id, as shown on its "Make a Voice Call" page; a wrong caller id makes Vonage reject the call as "restricted")
    - (optional) `GEMINI_API_KEY`
 6. Redeploy. Open `/api/diagnose` — every line should say `ok: true`.
 
@@ -28,3 +29,6 @@ Plan → Calls to make → pick a lead → **AI → phone** → type the number 
 2. Vonage rings the phone. After the greeting it listens (speech recognition, `en-IN`).
 3. What the customer said is posted to `/api/vonage-ai`. Gemini writes the reply, we send it back as the next instruction, and Vonage speaks it.
 4. The conversation so far travels inside the webhook URL, so no database is needed. The live transcript on the agent screen needs the optional Upstash Redis and is only stored if the customer said yes to recording.
+
+## If a call fails
+The agent screen shows Vonage's own reason in brackets. More detail: Vercel project, Logs, search `vonage-event`. `rejected` + `restricted` on a trial usually means a wrong caller id or a number that is not your registered/test number (dashboard.nexmo.com/test-numbers).
