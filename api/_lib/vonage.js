@@ -11,15 +11,32 @@ export const venv = () => ({
   from: String(process.env.VONAGE_FROM || process.env.VONAGE_NUMBER || '123456789').replace(/\D/g, ''),
 });
 
-/** Accepts the PEM as pasted (real line breaks), with literal "\n", or base64-encoded. */
+/** Accepts the key however it got pasted: real line breaks, literal "\n", spaces instead of line breaks,
+ *  wrapped in quotes, or base64-encoded. Always returns a clean PEM (or '' if nothing usable). */
 export function privateKey() {
-  let k = (venv().key || '').trim().replace(/^"|"$/g, '');
+  let k = (venv().key || '').trim().replace(/^["']|["']$/g, '');
   if (!k) return '';
-  if (!k.includes('BEGIN')) { try { k = Buffer.from(k, 'base64').toString('utf8'); } catch { /* ignore */ } }
-  return k.replace(/\\n/g, '\n').trim();
+  if (!k.includes('BEGIN')) { try { const d = Buffer.from(k, 'base64').toString('utf8'); if (d.includes('BEGIN')) k = d; } catch { /* ignore */ } }
+  k = k.replace(/\\n/g, '\n').replace(/\r/g, '');
+  const m = k.match(/-----BEGIN ([A-Z ]+)-----([\s\S]*?)-----END \1-----/);
+  if (!m) return k.trim();
+  const body = m[2].replace(/\s+/g, '');
+  return `-----BEGIN ${m[1]}-----\n${body.match(/.{1,64}/g)?.join('\n') || ''}\n-----END ${m[1]}-----\n`;
 }
 
-export const vonageReady = () => !!(venv().appId && privateKey().includes('BEGIN'));
+/** Says what is wrong with the Vonage variables WITHOUT revealing them (only yes/no and lengths). */
+export function vonageStatus() {
+  const { appId, key } = venv();
+  const pem = privateKey();
+  let parses = false;
+  try { if (pem.includes('BEGIN')) { crypto.createPrivateKey(pem); parses = true; } } catch { /* not a valid key */ }
+  return {
+    appIdSet: !!appId, appIdLooksRight: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(appId),
+    keySet: !!key.trim(), keyLength: key.trim().length, keyHasBeginLine: pem.includes('BEGIN'), keyParses: parses,
+  };
+}
+
+export const vonageReady = () => { const t = vonageStatus(); return t.appIdSet && t.keyParses; };
 
 const b64u = (b) => Buffer.from(b).toString('base64url');
 

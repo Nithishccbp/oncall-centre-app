@@ -8,6 +8,7 @@ export default function handler(req, res) {
   res.status(200).json({
     phone: phoneReady(), phoneMode: phoneMode(), aiPhone: vonage || aiPhoneReady(),
     provider: vonage ? 'vonage' : (aiPhoneReady() ? 'twilio' : 'none'),
+    vonageVariablesFound: !!(process.env.VONAGE_APPLICATION_ID || process.env.VONAGE_PRIVATE_KEY),
     transcripts: storeReady(),
     gemini: !!process.env.GEMINI_API_KEY, passcode: !!env().passcode,
   });

@@ -4,7 +4,7 @@
 import { allowed, baseUrl, env, phoneMode } from './_lib/twilio.js';
 import { avaniReply } from './_lib/ai.js';
 import { storeReady } from './_lib/store.js';
-import { vonageReady, venv, vonageRest } from './_lib/vonage.js';
+import { vonageReady, venv, vonageRest, vonageStatus } from './_lib/vonage.js';
 
 const hide = (n) => (n ? `${String(n).slice(0, 3)}******${String(n).slice(-2)}` : '');
 
@@ -12,9 +12,13 @@ const hide = (n) => (n ? `${String(n).slice(0, 3)}******${String(n).slice(-2)}` 
 async function vonageDiagnose(req, res) {
   const checks = [];
   const add = (name, ok, fix) => checks.push({ name, ok, ...(ok ? {} : { fix }) });
-  add('Vonage variables in Vercel', vonageReady(), 'Add VONAGE_APPLICATION_ID and VONAGE_PRIVATE_KEY (the whole text of private.key) in Vercel, then Redeploy.');
+  const t = vonageStatus();
+  add('VONAGE_APPLICATION_ID is set', t.appIdSet, 'Add VONAGE_APPLICATION_ID in Vercel (copy the Application ID from the Vonage Application page), then Redeploy.');
+  if (t.appIdSet) add('VONAGE_APPLICATION_ID looks like an Application ID (long id with dashes)', t.appIdLooksRight, 'It should look like 246ca0eb-7a17-4606-93e2-7517b60cb16a. Re-copy it from the Vonage Application page. Not the API key, not the account id.');
+  add('VONAGE_PRIVATE_KEY is set', t.keySet, 'Add VONAGE_PRIVATE_KEY in Vercel: open private.key in Notepad, Ctrl+A, Ctrl+C, paste as the value, then Redeploy.');
+  if (t.keySet) add(`VONAGE_PRIVATE_KEY is a real private key (${t.keyLength} characters seen; a real one is about 1700, or about 2300 if base64)`, t.keyHasBeginLine && t.keyParses, 'The value is not the full private.key text. Delete the variable and add it again: Notepad, open private.key, Ctrl+A, Ctrl+C, paste. It must start with -----BEGIN PRIVATE KEY----- and end with -----END PRIVATE KEY-----.');
   let r = { ok: false, status: 0 };
-  try { r = await vonageRest('GET', '/v1/calls?page_size=1'); } catch { /* network */ }
+  if (vonageReady()) { try { r = await vonageRest('GET', '/v1/calls?page_size=1'); } catch { /* network */ } }
   add('Vonage accepts our key (Application id + private key match)', r.ok, r.status === 401 ? 'Vonage said no. The Application id and private.key must come from the SAME Vonage Application. Re-paste both in Vercel and Redeploy.' : `Could not reach Vonage (status ${r.status}). Try again in a minute.`);
   add(`Caller id (${venv().from})`, /^\d{6,15}$/.test(venv().from), 'VONAGE_FROM must be digits only, or leave it empty on a trial account.');
   if (process.env.GEMINI_API_KEY) {
@@ -32,7 +36,7 @@ async function vonageDiagnose(req, res) {
 export default async function handler(req, res) {
   const e = env();
   if (e.passcode && !allowed(req) && String(req.query?.p || '') !== e.passcode) return res.status(401).json({ error: 'passcode' });
-  if (vonageReady()) return vonageDiagnose(req, res);
+  if (process.env.VONAGE_APPLICATION_ID || process.env.VONAGE_PRIVATE_KEY) return vonageDiagnose(req, res);
 
   const checks = [];
   const add = (name, ok, fix) => checks.push({ name, ok, ...(ok ? {} : { fix }) });
