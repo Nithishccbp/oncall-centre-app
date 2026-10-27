@@ -18,11 +18,11 @@ export function localReply(history, lead = {}) {
   const product = lead.product || 'the product';
   const t = last.toLowerCase();
   if (/not interested|no thanks|don't call|stop calling|busy/.test(t)) return 'No problem at all, thank you for your time. Have a lovely day!';
-  if (/emi|instal|monthly|per month/.test(t)) return `Yes, we have a no-cost EMI for ${product}, six or twelve months, so there is no extra interest. Shall I send the monthly amounts on WhatsApp?`;
-  if (/warranty|guarantee|trial|return/.test(t)) return 'Every mattress comes with a ten year warranty and a hundred night trial, so you can return it if you are not happy.';
-  if (/price|cost|how much|expensive/.test(t)) return `${product} is ${lead.price ? `₹${Number(lead.price).toLocaleString('en-IN')}` : 'very reasonably priced'} including free delivery and setup, and a no-cost EMI is available.`;
-  if (/deliver|when|how soon|ship/.test(t)) return 'Delivery inside the city takes two to three days, and setup is free.';
-  if (/yes|sure|ok|okay|go ahead|send|interested|sounds good|perfect/.test(t)) return 'Wonderful! I will send the quote on WhatsApp right now, and a colleague will call you tomorrow at six to confirm. Does that work?';
-  if (turn <= 1) return `Great. Can you tell me what matters most to you in ${product}, comfort, firmness or budget?`;
+  if (/emi|instal|monthly|per month/.test(t)) return `Yes, HDFC, SBI and ICICI pre-approve home loans for ${product}, up to twenty years. Shall I send the monthly EMI on WhatsApp?`;
+  if (/possession|rera|handover|move in/.test(t)) return 'Possession is December 2028 and the project is RERA registered, so your booking is protected.';
+  if (/price|cost|how much|expensive/.test(t)) return `${product} is ${lead.price ? `₹${Number(lead.price).toLocaleString('en-IN')}` : 'very reasonably priced'} all-in with a home loan available.`;
+  if (/visit|site|see the|sample/.test(t)) return 'Possession is December 2028, and I can book a site visit for you this weekend.';
+  if (/yes|sure|ok|okay|go ahead|send|interested|sounds good|perfect/.test(t)) return 'Wonderful! I will send the cost sheet on WhatsApp right now, and a colleague will call you tomorrow at six to confirm. Does that work?';
+  if (turn <= 1) return `Great. Can you tell me what matters most to you in ${product}, location, budget or timeline?`;
   return 'Understood. I can send the details on WhatsApp, or arrange a callback from a colleague. Which would you prefer?';
 }

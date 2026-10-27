@@ -110,7 +110,7 @@ export default function CustomerLine() {
           }
           if (msg.type === 'start' && s.kind === 'ai') {
             const first = (s.lead?.name || 'there').split(' ')[0];
-            aiSay(`Hi ${first}, this is Avani from The Sleep Company. Is this a good time to talk about the ${s.lead?.product || 'product'} you were interested in?`);
+            aiSay(`Hi ${first}, this is Avani from Godrej Properties. Is this a good time to talk about the ${s.lead?.product || 'product'} you were interested in?`);
             if (speechSupported()) s.caps = startCaptions((t) => { if (!s.speaking) aiHear(t); }, 'en-IN', (c) => setSpeechErr(speechMsg(c)));
           }
           if (msg.type === 'end') cleanup(false);

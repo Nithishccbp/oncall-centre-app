@@ -36,3 +36,4 @@
 .lead__actions .wa { background: #25d366; color: #fff; border-color: #25d366; }
 .lead__actions .outline { border-color: var(--green-500); color: var(--green-600); }
 @media (max-width: 480px) { .lead__actions { grid-template-columns: 1fr 1fr; } }
+.lead__own { background: #e1f5ee; color: #0f6e56; border-radius: 10px; padding: 8px 12px; font-size: 13px; margin-bottom: 8px; }

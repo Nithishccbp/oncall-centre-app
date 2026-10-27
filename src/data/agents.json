@@ -1,0 +1,957 @@
+{
+"asm-agent": {
+"type": "role",
+"name": "ASM Agent",
+"icon": "ti-building-store",
+"color": "#0f6e56",
+"scope": "Presales staff · Whitefield, Lakeside Towers, Whitefield",
+"metric": "Conversion",
+"target": 30,
+"itemsLabel": "Leads to follow up",
+"members": [
+{
+"n": "Meghna Rao",
+"r": "Presales · Lakeside Towers",
+"val": 31,
+"d": 4,
+"well": "Offered EMI in 9 of 12 price talks",
+"imp": "Ask for the phone number before the walkthrough ends",
+"items": [
+[
+"Meera S.",
+"Tower A 2 BHK · call before 1pm"
+],
+[
+"Karan P.",
+"Sky Villa · send cost sheet"
+]
+],
+"good": [
+"EMI pitch",
+"Project walkthrough"
+],
+"work": [
+"Closing the ask"
+],
+"ack": true,
+"notes": false
+},
+{
+"n": "Sameena S.",
+"r": "Presales · Whitefield",
+"val": 38,
+"d": 6,
+"well": "Captured name and number in 20 of 22 talks",
+"imp": "Mention the 100-night trial earlier",
+"items": [
+[
+"Divya R.",
+"Pillows · revisit Sat"
+]
+],
+"good": [
+"Lead capture",
+"Rapport"
+],
+"work": [
+"Trial pitch"
+],
+"ack": true,
+"notes": true
+},
+{
+"n": "Raju K.",
+"r": "Presales · Lakeside Towers",
+"val": 18,
+"d": -5,
+"well": "Strong product knowledge",
+"imp": "Greeting came after 40s in 9 talks",
+"items": [
+[
+"Rohit B.",
+"Tower B · price objection"
+]
+],
+"good": [
+"Product knowledge"
+],
+"work": [
+"Greeting in first 10s",
+"EMI pitch"
+],
+"ack": false,
+"notes": false
+},
+{
+"n": "Priya K.",
+"r": "Presales · Whitefield",
+"val": 25,
+"d": 1,
+"well": "Good cross-sell of parkings",
+"imp": "Follow up within 24h",
+"items": [
+[
+"Anil M.",
+"Tower A 2 BHK · callback 4pm"
+]
+],
+"good": [
+"Cross-sell"
+],
+"work": [
+"Follow-up speed"
+],
+"ack": false,
+"notes": true
+}
+]
+},
+"callcentre-agent": {
+"type": "role",
+"name": "Presales Agent",
+"icon": "ti-headset",
+"color": "#1d4ed8",
+"scope": "All call-centre staff",
+"metric": "Conversion",
+"target": 28,
+"itemsLabel": "Leads to follow up",
+"members": [
+{
+"n": "Meghna Rao",
+"r": "Call centre",
+"val": 29,
+"d": 3,
+"well": "Booked 6 site visits from callbacks",
+"imp": "Greeting in the first 10 seconds on 71% of calls",
+"items": [
+[
+"Priya Iyer",
+"Payment schedule query · call 4:30pm"
+],
+[
+"Suresh Nair",
+"Unit upgrade · log outcome"
+]
+],
+"good": [
+"Booking visits",
+"Objection handling"
+],
+"work": [
+"Opening greeting"
+],
+"ack": true,
+"notes": false
+},
+{
+"n": "Neha P.",
+"r": "Call centre",
+"val": 33,
+"d": 2,
+"well": "Offered EMI on 11 more calls",
+"imp": "Shorter hold times",
+"items": [
+[
+"Ravi T.",
+"Home · send link"
+]
+],
+"good": [
+"EMI offer"
+],
+"work": [
+"Hold time"
+],
+"ack": true,
+"notes": true
+},
+{
+"n": "Faiz A.",
+"r": "Call centre",
+"val": 21,
+"d": -4,
+"well": "Polite and clear",
+"imp": "Ask for the visit, not just the callback",
+"items": [
+[
+"Lata V.",
+"Callback 6pm"
+]
+],
+"good": [
+"Tone"
+],
+"work": [
+"Asking for the visit"
+],
+"ack": false,
+"notes": false
+}
+]
+},
+"field-agent": {
+"type": "role",
+"name": "Field Staff Agent",
+"icon": "ti-map-pin",
+"color": "#b45309",
+"scope": "All field staff",
+"metric": "Conversion",
+"target": 35,
+"itemsLabel": "Leads to follow up",
+"members": [
+{
+"n": "Kiran T.",
+"r": "Field · North",
+"val": 44,
+"d": 5,
+"well": "Closed 4 of 9 site visits",
+"imp": "Log notes right after each visit",
+"items": [
+[
+"Mehta family",
+"Tower B 3 BHK · second visit Sat"
+]
+],
+"good": [
+"Show-flat walkthrough",
+"Closing"
+],
+"work": [
+"Visit notes"
+],
+"ack": true,
+"notes": false
+},
+{
+"n": "Rohit B.",
+"r": "Field · South",
+"val": 29,
+"d": -2,
+"well": "Good at bundle offers",
+"imp": "3 visits have no notes",
+"items": [
+[
+"Iyer residence",
+"Measure for bed frame"
+]
+],
+"good": [
+"Bundles"
+],
+"work": [
+"Visit notes",
+"On-time arrival"
+],
+"ack": false,
+"notes": false
+},
+{
+"n": "Meena J.",
+"r": "Field · East",
+"val": 38,
+"d": 3,
+"well": "Every visit confirmed a day ahead",
+"imp": "Ask for referrals at the end",
+"items": [
+[
+"Kapoor family",
+"Quote follow-up"
+]
+],
+"good": [
+"Visit prep"
+],
+"work": [
+"Referrals"
+],
+"ack": true,
+"notes": true
+}
+]
+},
+"cross-sell-agent": {
+"type": "task",
+"name": "Cross-sell & Upsell Agent",
+"icon": "ti-shopping-cart-plus",
+"color": "#7c3aed",
+"scope": "Stores, calls and field",
+"metric": "Attach rate",
+"target": 25,
+"itemsLabel": "Customers to upsell",
+"members": [
+{
+"n": "Meghna Rao",
+"r": "Presales · Lakeside Towers",
+"val": 24,
+"d": 2,
+"well": "Added covered parking in 4 of 12 sales",
+"imp": "Offer the modular kitchen before the cost sheet",
+"items": [
+[
+"Meera S.",
+"Booked 2 BHK, no parking · call today"
+],
+[
+"Karan P.",
+"2 BHK to 3 BHK upgrade · send cost sheet"
+]
+],
+"good": [
+"Parking pitch"
+],
+"work": [
+"Modular kitchen offer"
+],
+"ack": true,
+"notes": false
+},
+{
+"n": "Sameena S.",
+"r": "Presales · Whitefield",
+"val": 31,
+"d": 3,
+"well": "Bundled parking in 7 sales",
+"imp": "Try the king upgrade on couples",
+"items": [
+[
+"Divya R.",
+"Upgrade to Tower A 2 BHK · revisit Sat"
+]
+],
+"good": [
+"Bundles"
+],
+"work": [
+"Upgrade ask"
+],
+"ack": true,
+"notes": true
+},
+{
+"n": "Raju K.",
+"r": "Presales · Lakeside Towers",
+"val": 14,
+"d": -2,
+"well": "Explains features well",
+"imp": "Ask \"anything for the parking?\" at billing",
+"items": [
+[
+"Rohit B.",
+"No add-ons yet"
+]
+],
+"good": [
+"Product knowledge"
+],
+"work": [
+"Add-on ask"
+],
+"ack": false,
+"notes": false
+},
+{
+"n": "Neha P.",
+"r": "Call centre",
+"val": 19,
+"d": 1,
+"well": "Mentioned parkings on 9 calls",
+"imp": "Offer the bundle price, not just the item",
+"items": [
+[
+"Ravi T.",
+"Send bundle link"
+]
+],
+"good": [
+"Phone pitch"
+],
+"work": [
+"Bundle price"
+],
+"ack": true,
+"notes": true
+},
+{
+"n": "Kiran T.",
+"r": "Field · North",
+"val": 33,
+"d": 4,
+"well": "Sold 3 bed frames on site visits",
+"imp": "Leave the brochure for the base",
+"items": [
+[
+"Mehta family",
+"Bed frame cost sheet"
+]
+],
+"good": [
+"Show-flat walkthrough"
+],
+"work": [
+"Brochure handover"
+],
+"ack": true,
+"notes": false
+}
+]
+},
+"sop-agent": {
+"type": "task",
+"name": "SOP Agent",
+"icon": "ti-list-check",
+"color": "#0e7490",
+"scope": "Stores, calls and field",
+"metric": "SOP adherence",
+"target": 85,
+"itemsLabel": "Conversations to review",
+"members": [
+{
+"n": "Meghna Rao",
+"r": "Presales · Lakeside Towers",
+"val": 81,
+"d": 2,
+"well": "Asked for feedback on every closed sale",
+"imp": "Greet within 10 seconds",
+"items": [
+[
+"Talk at 11:40am",
+"Greeting after 35s"
+],
+[
+"Talk at 3:05pm",
+"No feedback ask"
+]
+],
+"good": [
+"Feedback ask"
+],
+"work": [
+"Fast greeting"
+],
+"ack": true,
+"notes": false
+},
+{
+"n": "Sameena S.",
+"r": "Presales · Whitefield",
+"val": 92,
+"d": 1,
+"well": "Every SOP step in 19 of 22 talks",
+"imp": "Keep it up on busy weekends",
+"items": [
+[
+"Talk at 6:10pm",
+"Skipped trial pitch"
+]
+],
+"good": [
+"Greeting",
+"Feedback ask"
+],
+"work": [
+"Trial pitch"
+],
+"ack": true,
+"notes": true
+},
+{
+"n": "Raju K.",
+"r": "Presales · Lakeside Towers",
+"val": 64,
+"d": -4,
+"well": "Good product walk-through",
+"imp": "Greeting late in 9 talks",
+"items": [
+[
+"Talk at 12:15pm",
+"No greeting"
+],
+[
+"Talk at 4:40pm",
+"No feedback ask"
+]
+],
+"good": [
+"Walk-through"
+],
+"work": [
+"Greeting",
+"Feedback ask"
+],
+"ack": false,
+"notes": false
+},
+{
+"n": "Neha P.",
+"r": "Call centre",
+"val": 71,
+"d": 2,
+"well": "Script followed on 30 calls",
+"imp": "Open with name and store in first 10s",
+"items": [
+[
+"Call at 10:20am",
+"Late greeting"
+]
+],
+"good": [
+"Script"
+],
+"work": [
+"Opening greeting"
+],
+"ack": true,
+"notes": true
+},
+{
+"n": "Kiran T.",
+"r": "Field · North",
+"val": 86,
+"d": 3,
+"well": "Confirmed every visit a day ahead",
+"imp": "Ask for referrals at the end",
+"items": [
+[
+"Visit · Mehta",
+"No referral ask"
+]
+],
+"good": [
+"Visit prep"
+],
+"work": [
+"Referral ask"
+],
+"ack": true,
+"notes": false
+}
+]
+},
+"lead-conversion-agent": {
+"type": "task",
+"name": "Lead Conversion Agent",
+"icon": "ti-target-arrow",
+"color": "#be123c",
+"scope": "Stores, calls and field",
+"metric": "Lead to sale",
+"target": 30,
+"itemsLabel": "Leads to follow up",
+"members": [
+{
+"n": "Meghna Rao",
+"r": "Presales · Lakeside Towers",
+"val": 31,
+"d": 3,
+"well": "Called every lead within 24h",
+"imp": "Book the revisit on the first call",
+"items": [
+[
+"Meera S.",
+"Tower A 2 BHK · call before 1pm"
+],
+[
+"Karan P.",
+"Sky Villa · send cost sheet"
+]
+],
+"good": [
+"Fast follow-up"
+],
+"work": [
+"Booking the revisit"
+],
+"ack": true,
+"notes": false
+},
+{
+"n": "Sameena S.",
+"r": "Presales · Whitefield",
+"val": 38,
+"d": 4,
+"well": "Closed 5 of 13 leads",
+"imp": "Use WhatsApp for leads who miss calls",
+"items": [
+[
+"Divya R.",
+"Pillows · revisit Sat"
+]
+],
+"good": [
+"Closing"
+],
+"work": [
+"WhatsApp follow-up"
+],
+"ack": true,
+"notes": true
+},
+{
+"n": "Raju K.",
+"r": "Presales · Lakeside Towers",
+"val": 18,
+"d": -3,
+"well": "Good first conversations",
+"imp": "2 leads untouched for 24h",
+"items": [
+[
+"Mukunda R.",
+"Hot lead · untouched 24h"
+],
+[
+"Ritu S.",
+"Hot lead · untouched 24h"
+]
+],
+"good": [
+"First meeting"
+],
+"work": [
+"Follow-up speed"
+],
+"ack": false,
+"notes": false
+},
+{
+"n": "Neha P.",
+"r": "Call centre",
+"val": 33,
+"d": 2,
+"well": "Booked 4 visits",
+"imp": "Confirm the visit a day ahead",
+"items": [
+[
+"Ravi T.",
+"Visit Sat 11am"
+]
+],
+"good": [
+"Booking visits"
+],
+"work": [
+"Visit confirmation"
+],
+"ack": true,
+"notes": true
+},
+{
+"n": "Kiran T.",
+"r": "Field · North",
+"val": 44,
+"d": 5,
+"well": "Closed 4 of 9 visits",
+"imp": "Log notes right after each visit",
+"items": [
+[
+"Mehta family",
+"Second visit Sat"
+]
+],
+"good": [
+"Closing"
+],
+"work": [
+"Visit notes"
+],
+"ack": true,
+"notes": false
+}
+]
+},
+"capture-agent": {
+"type": "task",
+"name": "Conversation Capture Agent",
+"icon": "ti-microphone",
+"color": "#0f766e",
+"scope": "Stores, calls and field",
+"metric": "Capture coverage",
+"target": 90,
+"itemsLabel": "Shifts to capture",
+"members": [
+{
+"n": "Meghna Rao",
+"r": "Presales · Lakeside Towers",
+"val": 78,
+"d": 1,
+"well": "Recorded every afternoon talk",
+"imp": "Start recording at the greeting",
+"items": [
+[
+"Mon 11am to 1pm",
+"App not recording"
+],
+[
+"Tue 6pm to 8pm",
+"Phone on silent mode"
+]
+],
+"good": [
+"Afternoon coverage"
+],
+"work": [
+"Starting at the greeting"
+],
+"ack": true,
+"notes": false
+},
+{
+"n": "Sameena S.",
+"r": "Presales · Whitefield",
+"val": 94,
+"d": 2,
+"well": "Recorded 21 of 22 talks",
+"imp": "Keep the phone charged on long shifts",
+"items": [
+[
+"Sat 7pm to 9pm",
+"Battery died"
+]
+],
+"good": [
+"Consistency"
+],
+"work": [
+"Battery"
+],
+"ack": true,
+"notes": true
+},
+{
+"n": "Raju K.",
+"r": "Presales · Lakeside Towers",
+"val": 61,
+"d": -6,
+"well": "Always asks consent",
+"imp": "3 shifts with no recording",
+"items": [
+[
+"Mon full shift",
+"No recording"
+],
+[
+"Wed 12pm to 3pm",
+"No recording"
+]
+],
+"good": [
+"Consent ask"
+],
+"work": [
+"Starting the recording"
+],
+"ack": false,
+"notes": false
+},
+{
+"n": "Neha P.",
+"r": "Call centre",
+"val": 88,
+"d": 1,
+"well": "Every call auto-recorded",
+"imp": "Tag outcomes after each call",
+"items": [
+[
+"Thu 4pm to 6pm",
+"Calls untagged"
+]
+],
+"good": [
+"Tagging"
+],
+"work": [
+"Outcome tags"
+],
+"ack": true,
+"notes": true
+},
+{
+"n": "Kiran T.",
+"r": "Field · North",
+"val": 70,
+"d": 3,
+"well": "Recorded 7 of 9 visits",
+"imp": "Start before you step in",
+"items": [
+[
+"Visit · Iyer",
+"Not recorded"
+]
+],
+"good": [
+"Field recording"
+],
+"work": [
+"Starting before entry"
+],
+"ack": true,
+"notes": false
+}
+]
+},
+"post-visit-agent": {
+"type": "role",
+"name": "Post-Visit Follow-up Agent",
+"icon": "ti-home-check",
+"color": "#9a3412",
+"scope": "Real estate · Godrej Properties · RMs, channel partners and call centre",
+"metric": "Follow-ups on time",
+"target": 85,
+"itemsLabel": "Leads to chase today",
+"members": [
+{
+"n": "Kiran T.",
+"r": "RM · East · Whitefield",
+"val": 92,
+"d": 3,
+"well": "Checked in on site at every partner visit this week",
+"imp": "Book the buyer's site visit before leaving the partner's office",
+"items": [
+[
+"Rahul Iyer",
+"via Anand Realty · Opened the price sheet 3 times since Saturday"
+],
+[
+"Sneha & Arjun Rao",
+"via Keystone Realtors · Confirm Saturday's site visit with Shalini at Keystone on Friday"
+],
+[
+"Mohammed Faisal",
+"via Anand Realty · Bringing his parents on Sunday"
+]
+],
+"good": [
+"Partner rapport",
+"Price sheet follow-up"
+],
+"work": [
+"Booking the site visit at the partner office",
+"Asking which buyers opened the brochure"
+],
+"ack": true,
+"notes": true
+},
+{
+"n": "Ananya R.",
+"r": "RM · North · Hebbal",
+"val": 84,
+"d": 1,
+"well": "Sent the price sheet within an hour of every visit",
+"imp": "Ask the partner which buyers opened the brochure",
+"items": [
+[
+"Priya Menon",
+"via UrbanNest Partners · Asked for the possession timeline in writing"
+]
+],
+"good": [
+"Fast collateral"
+],
+"work": [
+"Asking which buyers opened the brochure"
+],
+"ack": true,
+"notes": true
+},
+{
+"n": "Vikram S.",
+"r": "RM · South · Sarjapur",
+"val": 71,
+"d": -4,
+"well": "Good relationships with older partners",
+"imp": "2 of 4 check-ins were outside the radius. Meet partners at their office, not by phone from the road",
+"items": [
+[
+"Deepak Kulkarni",
+"via Sai Krishna Estates · No touch in 9 days. Partner visit was not verified"
+],
+[
+"Karthik Reddy",
+"via Lotus Property Hub · Not met yet. Ask Pooja at Lotus for a meeting slot"
+]
+],
+"good": [
+"Partner relationships"
+],
+"work": [
+"Visiting the partner office",
+"Sharing floor plans, not only the brochure"
+],
+"ack": false,
+"notes": false
+},
+{
+"n": "Farhan Q.",
+"r": "RM · North · Yelahanka",
+"val": 88,
+"d": 2,
+"well": "Called every new partner lead within 24 hours",
+"imp": "Share floor plans along with the brochure",
+"items": [
+[
+"Lata & Suresh Nair",
+"via Prime Homes Presalesy · Opened the brochure twice; no call yet"
+]
+],
+"good": [
+"Speed to lead"
+],
+"work": [
+"Sharing floor plans, not only the brochure"
+],
+"ack": true,
+"notes": true
+},
+{
+"n": "Meghna Rao",
+"r": "Call centre · follow-up desk",
+"val": 95,
+"d": 2,
+"well": "Booked 3 site visits from handed-over leads",
+"imp": "Name the channel partner in the first sentence of the call",
+"items": [
+[
+"Lata & Suresh Nair",
+"Call the buyer · Brochure opened twice; RM has not called in 24 hours"
+],
+[
+"Rahul Iyer",
+"Call the buyer · Answer home loan questions"
+],
+[
+"Deepak Kulkarni",
+"Call the buyer · No touch in 9 days"
+]
+],
+"good": [
+"Booking visits"
+],
+"work": [
+"Naming the partner early"
+],
+"ack": true,
+"notes": true
+},
+{
+"n": "Neha P.",
+"r": "Call centre · follow-up desk",
+"val": 89,
+"d": 1,
+"well": "Every handed-over call made inside 2 hours",
+"imp": "Offer two site visit slots, not an open question",
+"items": [
+[
+"No open items",
+"Nothing handed over yet"
+]
+],
+"good": [
+"SLA"
+],
+"work": [
+"Offering two slots"
+],
+"ack": true,
+"notes": true
+}
+]
+}
+}

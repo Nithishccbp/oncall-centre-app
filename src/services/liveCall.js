@@ -73,7 +73,7 @@ export function startLiveCall({ mode, code, phone, lead, handlers }) {
         try {
           s.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         } catch { fail('Microphone permission is needed for a voice call.'); return; }
-        conn.send({ type: 'human-call', agent: 'Arvind (Call Centre)', lead: { name: lead?.name } });
+        conn.send({ type: 'human-call', agent: 'Meghna (Presales)', lead: { name: lead?.name } });
         const call = peer.call(target, s.stream);
         s.call = call;
         call.on('stream', (remote) => {

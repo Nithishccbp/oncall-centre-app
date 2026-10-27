@@ -27,7 +27,7 @@ export default async function handler(req, res) {
   const log = (ev) => (st.c ? pushEvent(sid, ev) : Promise.resolve());
 
   if (st.p === 'intro') {
-    const t = `Hello ${name}, this is Avani, calling from The Sleep Company. This call may be recorded and transcribed to improve our service. Is that okay with you? Please say yes or no.`;
+    const t = `Hello ${name}, this is Avani, calling from Godrej Properties. This call may be recorded and transcribed to improve our service. Is that okay with you? Please say yes or no.`;
     return out(listen(t, { ...st, p: 'consent' }));
   }
 

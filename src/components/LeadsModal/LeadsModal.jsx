@@ -13,6 +13,7 @@ export default function LeadsModal() {
   const [idx, setIdx] = useState(0);
   const total = ordered.length;
   const lead = ordered[idx];
+  const winBack = ordered.filter((l) => l.status !== 'Open').length;
 
   useEffect(() => { if (open) setIdx(startIndex); }, [open, startIndex]);
 
@@ -32,7 +33,7 @@ export default function LeadsModal() {
         <i className="ti ti-users lm-head__icon" />
         <div>
           <div className="lm-head__title">Leads</div>
-          <div className="lm-head__sub">Lead {idx + 1} of {total} · SLA to close</div>
+          <div className="lm-head__sub">Lead {idx + 1} of {total} · time left to close</div>
         </div>
       </div>
       <div className="lm-pager">
@@ -43,10 +44,10 @@ export default function LeadsModal() {
         <button className="lm-nav" style={{ visibility: idx === total - 1 ? 'hidden' : 'visible' }} onClick={() => setIdx(idx + 1)} aria-label="Next lead"><i className="ti ti-chevron-right" /></button>
       </div>
       <div className="lm-scroll"><LeadCard lead={lead} key={lead.id} /></div>
-      {lead.cumulativeMissed > 0 && (
+      {winBack > 0 && (
         <div className="lm-footer">
           <span className="lm-footer__dot" />
-          <b>CUMULATIVE MISSED: {lead.cumulativeMissed}</b> · expired without close, visible to manager
+          <b>{winBack} TO WIN BACK</b> · still worth a call, we'll help
         </div>
       )}
     </Modal>

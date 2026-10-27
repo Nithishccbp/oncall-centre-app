@@ -22,7 +22,7 @@ async function vonageDiagnose(req, res) {
   add('Vonage accepts our key (Application id + private key match)', r.ok, r.status === 401 ? 'Vonage said no. The Application id and private.key must come from the SAME Vonage Application. Re-paste both in Vercel and Redeploy.' : `Could not reach Vonage (status ${r.status}). Try again in a minute.`);
   add(`Caller id (${venv().from})`, /^\d{6,15}$/.test(venv().from), 'VONAGE_FROM must be digits only, or leave it empty on a trial account.');
   if (process.env.GEMINI_API_KEY) {
-    const g = await avaniReply([{ role: 'cust', text: 'Hello?' }], { name: 'Test', product: 'mattress' });
+    const g = await avaniReply([{ role: 'cust', text: 'Hello?' }], { name: 'Test', product: 'home' });
     add('Gemini writes Avani\'s replies', g.source === 'gemini', 'Gemini did not answer, so Avani falls back to simple rules. Check GEMINI_API_KEY at aistudio.google.com/apikey.');
   } else add('Gemini writes Avani\'s replies', false, 'Optional. Add GEMINI_API_KEY in Vercel so Avani sounds natural.');
   add('Live AI-call transcript (Upstash Redis)', storeReady(), 'Optional. Vercel, Storage, add Upstash for Redis, then Redeploy.');
@@ -93,7 +93,7 @@ export default async function handler(req, res) {
 
   // 8. Gemini
   if (process.env.GEMINI_API_KEY) {
-    const g = await avaniReply([{ role: 'cust', text: 'Hello?' }], { name: 'Test', product: 'mattress' });
+    const g = await avaniReply([{ role: 'cust', text: 'Hello?' }], { name: 'Test', product: 'home' });
     add('Gemini writes Avani\'s replies', g.source === 'gemini', 'Gemini did not answer, so Avani falls back to simple rules. Check GEMINI_API_KEY at aistudio.google.com/apikey.');
   } else add('Gemini writes Avani\'s replies', false, 'Optional. Add GEMINI_API_KEY in Vercel so Avani sounds natural.');
 

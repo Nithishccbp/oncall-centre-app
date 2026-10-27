@@ -37,3 +37,7 @@
   .cal__day { font-size: 15px; min-height: 44px; aspect-ratio: auto; height: 46px; }
   .cal__card { padding: 10px; }
 }
+.cal__add, .cal__share { background: none; border: 1px solid #0f6e56; color: #0f6e56; border-radius: 999px; padding: 3px 10px; font: inherit; font-size: 12px; cursor: pointer; margin-left: auto; }
+.cal__up { display: flex; align-items: center; } .cal__event { align-items: center; }
+.cal__opt { display: flex; gap: 12px; align-items: center; width: 100%; padding: 10px; margin-top: 8px; border: 1px solid #e5e7eb; border-radius: 10px; background: #fff; font: inherit; text-align: left; cursor: pointer; } .cal__opt small { display: block; color: #6b7280; }
+.cal__f { display: block; margin: 10px 0; font-size: 12px; color: #6b7280; } .cal__f input { display: block; width: 100%; margin-top: 4px; padding: 8px; border: 1px solid #d5ddd9; border-radius: 8px; font: inherit; }

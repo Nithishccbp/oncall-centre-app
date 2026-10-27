@@ -7,7 +7,7 @@ import { usePulse } from '../../context/PulseContext.jsx';
 import { leadMeta } from '../../data/calling.js';
 import './Sheets.css';
 
-const waItems = ['📄 Product Quote', '📋 Brochure PDF', '💳 EMI Options', '🛡️ Warranty Info'];
+const waItems = ['📄 Cost sheet', '📋 Brochure PDF', '💳 home-loan EMI Options', '🛡️ Possession Info'];
 
 function WhatsAppSheet({ lead, close }) {
   const { showToast } = useUi();
@@ -24,7 +24,7 @@ function WhatsAppSheet({ lead, close }) {
   return (
     <>
       <div className="sh__wa"><span className="sh__waic"><i className="ti ti-brand-whatsapp" /></span>
-        <div><b>Send via WhatsApp</b><small>Quote, brochure, or product info</small></div></div>
+        <div><b>Send via WhatsApp</b><small>Cost sheet, brochure, or product info</small></div></div>
       <div className="sh__cap">What to send</div>
       <div className="sh__chips">
         {waItems.map((i) => <button key={i} className={picked.includes(i) ? 'on' : ''} aria-pressed={picked.includes(i)} onClick={() => toggle(i)}>{i}</button>)}
@@ -63,7 +63,7 @@ function NoInterest({ lead, close }) {
   );
 }
 
-const whens = ['Today (already in store)', 'This week', 'Specific date'];
+const whens = ['Today (already at the experience centre)', 'This week', 'Specific date'];
 function CameBack({ lead, close }) {
   const { showToast } = useUi();
   const { closeLeads } = useLeadsModal();

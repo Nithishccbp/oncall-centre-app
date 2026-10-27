@@ -113,7 +113,7 @@ export default function AudioTest() {
   const testSpeech = () => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) { setSrRes({ ok: false, msg: 'This browser cannot turn speech into text. Use Chrome or Edge on a laptop.' }); return; }
-    setHeard(''); setSrRes({ msg: 'Listening… say "I want to buy a mattress".' }); setListening(true);
+    setHeard(''); setSrRes({ msg: 'Listening… say "I want to buy a home".' }); setListening(true);
     const rec = new SR(); rec.lang = 'en-IN'; rec.interimResults = true; rec.continuous = false;
     let got = false;
     rec.onresult = (e) => { got = true; setHeard(Array.from(e.results).map((r) => r[0].transcript).join(' ')); };

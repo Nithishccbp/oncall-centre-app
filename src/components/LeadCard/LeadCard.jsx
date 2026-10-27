@@ -8,7 +8,7 @@ import './LeadCard.css';
 const statusColor = { Open: '#1d9e75', Ageing: '#c8860a', Cold: '#e24b4a' };
 const barColor = (v) => (v >= 80 ? '#1d9e75' : v >= 55 ? '#c8860a' : '#e24b4a');
 const signalIcon = {
-  'Financing Related': 'ti-currency-rupee', 'Quotation Demanded': 'ti-file-invoice', 'Product Related': 'ti-package',
+  'Financing Related': 'ti-currency-rupee', 'Quotation Demanded': 'ti-file-invoice', 'Project Related': 'ti-building',
   'Warranty Related': 'ti-shield-check', 'In-Store Experience Needed': 'ti-building-store',
 };
 
@@ -21,6 +21,7 @@ export default function LeadCard({ lead }) {
 
   return (
     <article className="lead">
+      <div className="lead__own">🛡️ This lead is yours. If it closes by phone, WhatsApp or online, it still counts for you.</div>
       <div className="lead__status" style={{ color: statusColor[lead.status] }}>
         <span className="lead__dot" style={{ background: statusColor[lead.status] }} /> {lead.status.toUpperCase()}
       </div>
@@ -31,13 +32,13 @@ export default function LeadCard({ lead }) {
       </div>
       {lead.actionNote && <div className="lead__note"><i className="ti ti-file-invoice" /> {lead.actionNote}</div>}
       <div className="lead__icp">
-        <span>🎯 ICP</span>
+        <span>🎯 Fit</span>
         <div className="lead__bar"><div style={{ width: `${lead.icp}%`, background: barColor(lead.icp) }} /></div>
         <b style={{ color: barColor(lead.icp) }}>{lead.icp}%</b>
       </div>
       <div className="lead__intent"><span>🎯 Lead Intent Score</span><b>{lead.intent}</b></div>
 
-      <Collapsible title="ICP fit breakdown">
+      <Collapsible title="Why this lead fits">
         {lead.icpBreakdown.map((b) => (
           <div key={b.label} className="lead__sub">
             <div className="lead__subrow"><span>{b.label}</span><b style={{ color: barColor(b.pct) }}>{b.pct}%</b></div>

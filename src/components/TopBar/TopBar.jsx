@@ -38,7 +38,7 @@ export default function TopBar() {
       </div>
       <div className="topbar__right" ref={ref}>
         <button className="bell" aria-label="Notifications" onClick={() => openOverlay('notifications')}><i className="ti ti-bell" /><span className="bell__dot" /></button>
-        <div className="scorepill" title="OG score and store rank">
+        <div className="scorepill" title="OG score and rank">
           <button className="scorepill__btn" aria-label="OG score details" onClick={() => openOverlay('ogscore')}><ScoreRing score={user.ogScore} /></button>
           <button className="scorepill__rank" aria-label="Rank details" onClick={() => openOverlay('rank')}>⭐#{user.rank}</button>
         </div>

@@ -31,7 +31,7 @@ export default async function handler(req, res) {
 
   if (useVonage) {
     const name = state.l.name.split(' ')[0] || 'there';
-    const hello = `Hello ${name}, this is Avani, calling from The Sleep Company. This call may be recorded and transcribed to improve our service. Is that okay with you? Please say yes or no.`;
+    const hello = `Hello ${name}, this is Avani, calling from Godrej Properties. This call may be recorded and transcribed to improve our service. Is that okay with you? Please say yes or no.`;
     const next = b64u({ ...state, p: 'consent' });
     const r = await vonageRest('POST', '/v1/calls', {
       to: [{ type: 'phone', number: toVonageNumber(number) }],

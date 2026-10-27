@@ -9,7 +9,7 @@
 .pill-range { display: inline-flex; align-items: center; gap: 6px; background: rgba(255, 255, 255, 0.12); color: #c9d0ff; border-radius: 10px; padding: 5px 10px; font-size: 13.5px; font-weight: 600; }
 .pill-range select { appearance: none; background: transparent; border: none; color: inherit; font: inherit; cursor: pointer; }
 .pill-range select option { color: #1a1a1a; }
-.hero__kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 14px; }
+.hero__kpis { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-top: 14px; }
 
 .dash__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
 .dash__col { display: flex; flex-direction: column; gap: 12px; }
@@ -68,3 +68,19 @@
 }
 
 button.pill-range { cursor: pointer; }
+
+.dcard { padding: 12px 14px; margin-top: 12px; }
+.dcard__head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.dcall, .dlead { display: flex; align-items: center; gap: 12px; width: 100%; padding: 9px 0; border: 0; border-top: 1px solid var(--line, #eee); background: none; text-align: left; font: inherit; cursor: pointer; }
+.dcall { cursor: default; }
+.dcall__t { color: #6b7280; font-size: 13px; width: 42px; }
+.dcall__n { flex: 1; display: flex; flex-direction: column; } .dcall__n small { color: #6b7280; }
+.stars { color: #e0a30b; letter-spacing: 1px; } .stars i { color: #d9d9d9; font-style: normal; }
+.dlead__s { width: 32px; height: 32px; border-radius: 8px; background: #fff3d6; color: #c8860a; display: grid; place-items: center; font-weight: 700; }
+.dlead__s.hi { background: #e1f5ee; color: #0f6e56; } .dlead__v { color: #0f6e56; }
+.tv { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+.tv > div { border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; } .tv small { color: #6b7280; }
+.tv__a { background: #fdf0f0; border: 1px solid #f5d5d5; } .tv__b { background: #e9f7f0; border: 1px solid #cdebdc; }
+.dash__sub { font-size: 13px; margin: 10px 0 4px; color: #374151; }
+.pill-queue--n { background: transparent; }
+.hero__pills { display: flex; flex-flow: row wrap; justify-content: flex-end; gap: 8px; max-width: 60%; }

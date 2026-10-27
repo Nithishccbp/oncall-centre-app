@@ -32,3 +32,4 @@
 .sb-subitem.is-active { color: var(--green-300); background: rgba(29, 158, 117, 0.2); }
 
 @media (max-width: 768px) { .sidebar { display: none; } }
+.sb-tile--green { background: rgba(34, 197, 94, 0.22); color: #6ee7a0; } .is-active .sb-tile--green { background: #16a34a; color: #fff; }

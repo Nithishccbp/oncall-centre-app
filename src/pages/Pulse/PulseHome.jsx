@@ -41,7 +41,7 @@ export default function PulseHome() {
     <div className="pulse">
       <header className="pulse__head">
         <span className="pulse__logo" />
-        <b>Pulse</b><span>The Sleep Company · Koramangala</span>
+        <b>Pulse</b><span>Godrej Properties · Lakeside Towers</span>
         <div className="pulse__plus">
           <button aria-label="New message" onClick={() => setMenuOpen((o) => !o)}><i className="ti ti-plus" /></button>
           {menuOpen && (

@@ -21,7 +21,7 @@ export default function AiAssist() {
   const price = lead ? lead.price : 0;
   const product = lead ? lead.product : 'Product enquiry';
   const drift = call.sopDone.includes(2) && !call.sopDone.includes(3) && call.status === 'inCall';
-  const tip = call.shown.some((l) => l.tip === 'delivery');
+  const tip = call.shown.some((l) => l.tip === 'possession');
   const recording = consent.status === 'recording';
 
   const ask = (e) => {
@@ -56,7 +56,7 @@ export default function AiAssist() {
           <div><b>{product}{price ? ` · ${formatINR(price)}` : ''}</b><small>{lead ? lead.interest : 'Unknown caller — qualify first'}</small></div></div>
         <div className="ai__two">
           <div><small>🔁 CROSS-SELL THIS</small><b>{lead ? lead.crossSell : 'Ask what they need first'}</b></div>
-          <div><small>💳 EMI TO OFFER</small><b>{emiLine(lead, call.sopDone)}</b></div>
+          <div><small>💳 home-loan EMI TO OFFER</small><b>{emiLine(lead, call.sopDone)}</b></div>
         </div>
         {lead?.signals[1] && <span className="ai__sig">{lead.signals[1].category}</span>}
 
@@ -72,7 +72,7 @@ export default function AiAssist() {
         {drift && (
           <div className="ai__drift" role="status">
             <b><i className="ti ti-alert-triangle" /> DRIFTING OFF SOP</b>
-            <p>EMI hasn't come up yet and the pitch is done — this customer responds well to financing options. Mention the no-cost EMI plan before moving to close.</p>
+            <p>EMI hasn't come up yet and the pitch is done — this customer responds well to financing options. Mention the no-cost home-loan EMI plan before moving to close.</p>
           </div>
         )}
 

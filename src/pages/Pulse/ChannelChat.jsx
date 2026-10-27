@@ -6,6 +6,7 @@ import { customerThreads } from '../../data/calling.js';
 import { useCall } from '../../context/CallContext.jsx';
 import { usePulse } from '../../context/PulseContext.jsx';
 import { useLeadsModal } from '../../context/LeadsModalContext.jsx';
+import AgentScreen, { agentList } from './AgentScreen.jsx';
 import NeedsInputBar from './NeedsInputBar.jsx';
 import renderFormatted from './renderFormatted.jsx';
 import './Pulse.css';
@@ -106,6 +107,7 @@ export default function ChannelChat() {
     </header>
   );
 
+  if (agentList[channelId]) return <AgentScreen id={channelId} header={header} />;
   if (channelId === 'kudos') return <KudosScreen header={header} />;
   if (channelId === 'customer-discussions') return <CustomerDiscussions header={header} />;
   if (!thread) {

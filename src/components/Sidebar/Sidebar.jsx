@@ -41,6 +41,7 @@ export default function Sidebar() {
           </button>
         </div>
         <MainItem to="/calendar" icon="ti-calendar" tone="amber" label="Calendar" active={is('/calendar')} />
+        <MainItem to="/avani" icon="ti-sparkles" tone="green" label="Avani AI" active={is('/avani')} />
         <MainItem to="/pulse" icon="ti-messages" tone="purple" label="Pulse" active={is('/pulse')} />
       </nav>
     </aside>

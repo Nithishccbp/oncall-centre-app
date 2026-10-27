@@ -96,3 +96,12 @@ Built from the mock's visible behaviour only; none of its source was saved or co
 
 ## Real phone calls with Vonage
 AI → phone calls also work with a free Vonage trial account. See `VONAGE_SETUP.md`.
+
+## Real-estate presales update (Godrej Properties · Lakeside Towers)
+Updated to the "3.5 Real estate · Presales call centre · Web" mock. Existing calling features (WebRTC, AI to phone, consent, wrap-up) are unchanged.
+- Dashboard: 5 KPI tiles, queue chip, Today's calls with stars, Leads to call next, thanks / visits tiles, This week charts.
+- Avani AI (new, `/avani`): persona picker; Assess chat with chips and chat history; Learn path with module detail and mark-done; Practise (record by speech or type, scored feedback against the SOP step).
+- Pulse: Post-Visit Follow-up role agent, Presales agent and task agents with member cards, detail overlay, coaching notes and acknowledge.
+- Calendar: share an invite (manager / team / L&D) and add new invites.
+- Leads modal: ownership banner, Fit score, "Why this lead fits", win-back footer. Settings: Real estate industry.
+- Data: leads, SOP checklist (Opening, Needs, Project Walkthrough, Loan / Payment Plan, Possession & RERA, Site Visit Booking), call scripts, knowledge base, AI voice prompts converted to real estate. Amounts show as ₹98 L / ₹1.42 Cr.

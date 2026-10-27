@@ -1,6 +1,6 @@
 // Indigo hero: greeting, status pills and the 4 KPI cards.
 import KpiCard from '../../components/KpiCard/KpiCard.jsx';
-import { kpis, user } from '../../data/dashboard.js';
+import { kpis, user, queueCount } from '../../data/dashboard.js';
 import { useUi } from '../../context/UiContext.jsx';
 
 const greeting = () => {
@@ -20,6 +20,7 @@ export default function HeroHeader() {
         </div>
         <div className="hero__pills">
           <span className="pill-queue"><span className="pill-queue__dot" />On Queue</span>
+          <span className="pill-queue pill-queue--n">{queueCount} in queue</span>
           <button className="pill-range" aria-label="Date range" onClick={() => openOverlay('daterange')}>
             <i className="ti ti-calendar" /> {range} <i className="ti ti-chevron-down" />
           </button>

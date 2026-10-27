@@ -16,7 +16,7 @@ import './Calling.css';
 
 const initials = (name) => name.split(' ').map((p) => p[0]).join('').slice(0, 2).toUpperCase();
 
-/** "Before you call X": product to champion, pitching language, cross-sell, ideal EMI, SOP checkpoints. */
+/** "Before you call X": product to champion, pitching language, cross-sell, ideal home-loan EMI, SOP checkpoints. */
 const modes = [
   { id: 'phone', label: '📞 Phone number', group: 'phone', hint: 'Real call to a normal mobile or landline number, spoken through this browser (Twilio).' },
   { id: 'aiphone', label: '🤖 AI → phone', group: 'phone', hint: 'Avani, our AI agent, rings a real phone number and talks to the customer (Vonage or Twilio, plus Gemini).' },
@@ -58,7 +58,7 @@ function PreCall({ onPlace }) {
             <blockquote className="pc__quote">{pitchFor(lead)}</blockquote>
             <div className="pc__two">
               <div><small>💊 Cross-sell</small><b>{lead.crossSell}</b></div>
-              <div><small>Ideal EMI</small><b className="green">{formatINR(meta.idealEmi)}/mo</b><span>12-month zero-interest EMI</span></div>
+              <div><small>Ideal home-loan EMI</small><b className="green">{formatINR(meta.idealEmi)}/mo</b><span>12-month zero-interest home-loan EMI</span></div>
             </div>
             <div className="pc__cap center">LEAD SOP CHECKPOINTS</div>
             {checkpointsFor(lead).map((c) => (

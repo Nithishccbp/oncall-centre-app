@@ -11,44 +11,36 @@ export const recentCalls = [
 ];
 
 export const sopChecklist = [
-  'Opening & Intent Confirm', 'Needs Discovery', 'Product Pitch',
-  'EMI / Financing Mention', 'Warranty Mention', 'Closing / Callback Booking',
+  'Opening & Intent Confirm', 'Needs Discovery', 'Project Walkthrough',
+  'Loan / Payment Plan', 'Possession & RERA', 'Site Visit Booking',
 ];
 
 const q = (label, passed, quote) => ({ label, passed, quote });
+const rv = (score, rows) => ({ score, items: rows.map((r, i) => q(sopChecklist[i], r[0], r[1])) });
 
 export const sopReviews = {
-  c1: {
-    score: 83,
-    items: [
-      q(sopChecklist[0], true, '"This is Aditi calling from The Sleep Company, is now an okay time?"'),
-      q(sopChecklist[1], true, '"Can I ask what matters most to you — firmness or price?"'),
-      q(sopChecklist[2], true, '"The GRID layer gives pressure relief exactly where you need it."'),
-      q(sopChecklist[3], true, '"We do have a 6-month no-cost EMI plan if that helps."'),
-      q(sopChecklist[4], false, 'No mention of the warranty period anywhere in the call.'),
-      q(sopChecklist[5], true, '"I\'ll send the quote over and follow up Thursday, does that work?"'),
-    ],
-  },
-  c2: {
-    score: 67,
-    items: [
-      q(sopChecklist[0], true, '"Hi Kavitha, I\'m calling about your SmartGRID enquiry."'),
-      q(sopChecklist[1], true, '"Is the mattress for you or for guests?"'),
-      q(sopChecklist[2], true, '"The hybrid layer keeps it cool through the night."'),
-      q(sopChecklist[3], false, 'EMI was not mentioned even though she raised budget.'),
-      q(sopChecklist[4], false, 'No mention of the warranty period anywhere in the call.'),
-      q(sopChecklist[5], true, '"I\'ll message you the quote this evening."'),
-    ],
-  },
-  c8: {
-    score: 83,
-    items: [
-      q(sopChecklist[0], true, '"Good morning Faizan, is this a good time to talk?"'),
-      q(sopChecklist[1], true, '"What size room will the chair go into?"'),
-      q(sopChecklist[2], true, '"Tranquo has five massage modes and a zero-gravity recline."'),
-      q(sopChecklist[3], true, '"The 6-month no-cost EMI is about ₹4,165 a month."'),
-      q(sopChecklist[4], false, 'No mention of the warranty period anywhere in the call.'),
-      q(sopChecklist[5], true, '"I\'ll book your store trial for Saturday."'),
-    ],
-  },
+  c1: rv(83, [
+    [true, '"This is Aditi from Godrej Properties, is now an okay time?"'],
+    [true, '"What matters most in the comparison, location or price?"'],
+    [true, '"Lakeside is a five-minute walk from Greenwood High."'],
+    [true, '"The HDFC home-loan EMI on this 2 BHK works out to about ₹62,000 a month."'],
+    [false, 'No mention of the possession date or RERA number anywhere in the call.'],
+    [true, '"Can I book you a site visit this Saturday at 11?"'],
+  ]),
+  c2: rv(67, [
+    [true, '"Hi Kavitha, I\'m calling about your Tower A enquiry."'],
+    [true, '"Is the 2 BHK for you or for your parents?"'],
+    [true, '"A1003 faces the park and gets morning light."'],
+    [false, 'Payment plan was not mentioned even though she raised budget.'],
+    [false, 'No mention of possession (December 2028) or RERA.'],
+    [true, '"I\'ll message you the cost sheet this evening."'],
+  ]),
+  c8: rv(83, [
+    [true, '"Good morning Faizan, is this a good time to talk?"'],
+    [true, '"Are you buying with your parents in mind?"'],
+    [true, '"Unit 1204 in Tower B has a clear park view."'],
+    [true, '"With HDFC pre-approval, the 20-year EMI is about ₹1.05 L a month."'],
+    [false, 'No mention of RERA registration anywhere in the call.'],
+    [true, '"I\'ll book your revisit with your parents for Saturday."'],
+  ]),
 };
