@@ -48,6 +48,11 @@ const LINE_MS = 2600;
 export function CallProvider({ children }) {
   const [call, dispatch] = useReducer(reducer, initial);
   const [recent, setRecent] = useState(seedCalls);
+  const mergeRecent = useCallback((list) => setRecent((cur) => {
+    const have = new Set(cur.map((c) => c.id));
+    const add = list.filter((c) => !have.has(c.id));
+    return add.length ? [...add, ...cur] : cur;
+  }), []);
   const { consent, begin, reset: resetConsent, withdraw, addLog, grant, refuse } = useConsent();
   const secsRef = useRef(0);
   const { showToast } = useUi();
@@ -169,10 +174,10 @@ export function CallProvider({ children }) {
   const sentiment = useMemo(() => ({ value: call.sentiment, label: sentimentLabel(call.sentiment) }), [call.sentiment]);
 
   const value = useMemo(() => ({
-    call, lead, recent, sentiment, dispatch, startCall, placeCall, simulateIncoming, acceptIncoming, goLive, toggleSop,
+    call, lead, recent, mergeRecent, sentiment, dispatch, startCall, placeCall, simulateIncoming, acceptIncoming, goLive, toggleSop,
     addAgentLine, triggerNudge, withdrawConsent, end, finishWrapup,
     leadFor: (name) => leadByFirstName(name),
-  }), [call, lead, recent, sentiment, startCall, placeCall, simulateIncoming, acceptIncoming, goLive, toggleSop, addAgentLine, triggerNudge, withdrawConsent, end, finishWrapup]);
+  }), [call, lead, recent, mergeRecent, sentiment, startCall, placeCall, simulateIncoming, acceptIncoming, goLive, toggleSop, addAgentLine, triggerNudge, withdrawConsent, end, finishWrapup]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

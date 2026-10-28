@@ -13,7 +13,7 @@ export default function CallReviewModal({ call, onClose }) {
       quote: call.sopDone.includes(i) ? 'Covered during this call.' : 'Not covered during this call.',
     })),
   } : null;
-  const review = liveReview || (call ? sopReviews[call.id] : null);
+  const review = liveReview || call?.review || (call ? sopReviews[call.id] : null);
 
   return (
     <Modal open={!!call} onClose={onClose} width={480} label="Call review">
@@ -26,7 +26,7 @@ export default function CallReviewModal({ call, onClose }) {
           {review ? (
             <>
               {call.live && !call.recorded && <div className="review__note"><i className="ti ti-microphone-off" /> Recording was off for this call — scored from the SOP chips ticked manually.</div>}
-              {call.live && call.summary && <div className="review__note sum"><b>Summary:</b> {call.summary}</div>}
+              {call.summary && <div className="review__note sum"><b>Summary:</b> {call.summary}</div>}
               <div className="review__score">
                 <div className="review__bar"><small>SOP adherence on this call</small><div><div style={{ width: `${review.score}%` }} /></div></div>
                 <span className="review__pct">{review.score}%</span>

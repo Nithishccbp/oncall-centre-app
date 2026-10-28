@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { TODAY, events as seedEvents, shareOptions } from '../../data/calendar.js';
 import Modal from '../../components/Modal/Modal.jsx';
 import { useUi } from '../../context/UiContext.jsx';
+import { useIngest } from '../../context/IngestContext.jsx';
 import { buildMonthCells, isSameDay, monthLabel, toKey } from '../../utils/calendar.js';
 import './Calendar.css';
 
@@ -10,7 +11,9 @@ const WEEK = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
 export default function CalendarPage() {
   const { showToast } = useUi();
-  const [events, setEvents] = useState(seedEvents);
+  const { followUps } = useIngest();
+  const [mine, setEvents] = useState(seedEvents);
+  const events = useMemo(() => [...mine, ...followUps.filter((f) => !mine.some((m) => m.id === f.id))], [mine, followUps]);
   const [shareFor, setShareFor] = useState(null);
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState({ title: '', date: '', time: '10:00 AM' });

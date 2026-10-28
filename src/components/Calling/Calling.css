@@ -203,3 +203,17 @@
 .pc__tel { letter-spacing: 1px !important; font-size: 17px !important; }
 .pc__note { display: block; margin-top: 4px; font-weight: 600; color: var(--muted); }
 .pc__warn { background: #fff4e0; border: 1px solid #f0c987; color: #7a4b00; border-radius: 10px; padding: 8px 10px; font-size: 12.5px; font-weight: 600; margin: 0 0 8px; }
+
+.pb__head { display: flex; gap: 10px; align-items: center; } .pb__head small { display: block; color: #8a5a12; }
+.pb__ic { width: 40px; height: 40px; border-radius: 10px; background: #fdf1dc; display: grid; place-items: center; font-size: 20px; }
+.pb__chip { display: inline-block; margin-top: 12px; background: #fdf1dc; color: #8a5a12; font-weight: 600; font-size: 13px; padding: 5px 10px; border-radius: 999px; }
+.pb__sum { font-size: 14.5px; line-height: 1.45; margin: 10px 0 4px; } .pb__cap { font-weight: 700; margin: 10px 0 4px; }
+.pb__note { padding: 7px 0; border-top: 1px solid #eee; } .pb__money { margin-top: 12px; background: #e9f7f0; color: #0f6e56; padding: 9px 12px; border-radius: 10px; font-weight: 500; }
+.pb__last { color: #6b7280; font-size: 13px; margin-top: 8px; } .pb__last.center { text-align: center; }
+.pb__go { width: 100%; margin-top: 14px; background: #0f6e56; color: #fff; border: 0; border-radius: 999px; padding: 13px; font: inherit; font-weight: 700; cursor: pointer; }
+.aib { padding: 12px 14px; border-bottom: 1px solid #eee; } .aib__who { display: flex; gap: 10px; align-items: center; } .aib__who small { color: #6b7280; display: block; }
+.aib__sla { margin-left: auto; background: #e1f5ee; color: #0f6e56; font-weight: 700; font-size: 12px; padding: 4px 8px; border-radius: 999px; }
+.aib__stage { margin: 10px 0; background: #fff3d6; color: #8a5a00; padding: 8px 10px; border-radius: 8px; font-weight: 600; }
+.aib__sc { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; } .aib__sc > div { background: #f4f5f4; border-radius: 10px; padding: 8px 10px; }
+.aib__sc small { color: #6b7280; text-transform: uppercase; font-size: 11px; display: block; } .aib__sc b { font-size: 24px; } .aib__sc em { font-style: normal; color: #c8860a; font-size: 12px; margin-left: 4px; }
+.aib li { margin-bottom: 4px; } .aib p { margin: 0; }

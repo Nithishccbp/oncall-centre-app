@@ -5,6 +5,7 @@ import { LeadsModalProvider } from './context/LeadsModalContext.jsx';
 import { PulseProvider } from './context/PulseContext.jsx';
 import { CallProvider } from './context/CallContext.jsx';
 import { ConsentProvider } from './context/ConsentContext.jsx';
+import { IngestProvider } from './context/IngestContext.jsx';
 import { UiProvider } from './context/UiContext.jsx';
 import PlanLayout from './pages/Plan/PlanLayout.jsx';
 import CustomerLine from './pages/Customer/CustomerLine.jsx';
@@ -25,6 +26,7 @@ export default function App() {
       <ConsentProvider>
       <CallProvider>
         <LeadsModalProvider>
+         <IngestProvider>
           <Routes>
             <Route path="customer" element={<CustomerLine />} />
             <Route path="audiotest" element={<AudioTest />} />
@@ -43,6 +45,7 @@ export default function App() {
               <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
           </Routes>
+         </IngestProvider>
         </LeadsModalProvider>
       </CallProvider>
       </ConsentProvider>

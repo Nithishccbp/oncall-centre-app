@@ -4,11 +4,13 @@ import Modal from '../Modal/Modal.jsx';
 import LeadCard from '../LeadCard/LeadCard.jsx';
 import { useLeadsModal } from '../../context/LeadsModalContext.jsx';
 import { leads } from '../../data/leads.js';
+import { useIngest } from '../../context/IngestContext.jsx';
 import './LeadsModal.css';
 
 const ordered = leads; // same order as the mock: Mukunda first
 
 export default function LeadsModal() {
+  useIngest();
   const { open, startIndex, closeLeads } = useLeadsModal();
   const [idx, setIdx] = useState(0);
   const total = ordered.length;

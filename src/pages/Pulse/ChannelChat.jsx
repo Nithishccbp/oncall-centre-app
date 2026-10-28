@@ -7,6 +7,7 @@ import { useCall } from '../../context/CallContext.jsx';
 import { usePulse } from '../../context/PulseContext.jsx';
 import { useLeadsModal } from '../../context/LeadsModalContext.jsx';
 import AgentScreen, { agentList } from './AgentScreen.jsx';
+import { useIngest } from '../../context/IngestContext.jsx';
 import NeedsInputBar from './NeedsInputBar.jsx';
 import renderFormatted from './renderFormatted.jsx';
 import './Pulse.css';
@@ -62,6 +63,7 @@ function KudosScreen({ header }) {
 }
 
 function CustomerDiscussions({ header }) {
+  useIngest();
   const navigate = useNavigate();
   const { startCall } = useCall();
   return (

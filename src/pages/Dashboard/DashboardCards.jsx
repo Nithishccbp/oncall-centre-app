@@ -1,9 +1,10 @@
 // Progress, who's waiting, earnings and tasks cards for the dashboard.
 import { Link } from 'react-router-dom';
-import { earnings, tasks, waiting, todaysCalls, todaysSummary, thanks, visits } from '../../data/dashboard.js';
+import { earnings, tasks, waiting, todaysCalls, thanks, visits } from '../../data/dashboard.js';
 import { getOutgoingPlan } from '../../data/selectors.js';
 import { formatINR } from '../../data/selectors.js';
 import { usePulse } from '../../context/PulseContext.jsx';
+import { useIngest } from '../../context/IngestContext.jsx';
 
 export function WhosWaiting() {
   return (
@@ -61,11 +62,13 @@ export function TasksCard({ onTaskClick }) {
 const Stars = ({ n }) => <span className="stars" aria-label={`${n} of 5`}>{'★'.repeat(n)}<i>{'★'.repeat(5 - n)}</i></span>;
 
 export function TodaysCalls() {
+  const { todays, handledToday, csatToday } = useIngest();
+  const rows = [...todays, ...todaysCalls].slice(0, 6);
   return (
     <section className="card dcard">
-      <div className="dcard__head"><b className="label-caps">Today's calls</b><span className="muted">{todaysSummary}</span></div>
-      {todaysCalls.map((c) => (
-        <div key={c.time} className="dcall">
+      <div className="dcard__head"><b className="label-caps">Today's calls</b><span className="muted">{14 + handledToday} handled · {csatToday ?? 94}% CSAT</span></div>
+      {rows.map((c, i) => (
+        <div key={`${c.time}-${c.name}-${i}`} className="dcall">
           <span className="dcall__t">{c.time}</span>
           <span className="dcall__n"><b>{c.name}</b><small>{c.topic}</small></span>
           <Stars n={c.stars} />
@@ -76,6 +79,7 @@ export function TodaysCalls() {
 }
 
 export function LeadsNext({ onOpen }) {
+  useIngest();
   const list = getOutgoingPlan().slice(0, 3);
   const total = getOutgoingPlan().reduce((n, l) => n + l.expectedValue, 0);
   return (

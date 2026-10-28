@@ -22,8 +22,9 @@ export const assessKb = [
   { m: ['site visit', 'visit'], a: 'Always close with a specific slot: "Can I book you for Saturday at 11 at the Lakeside experience centre?" Customers who visit convert about 3x more.' },
   { m: ['cost sheet', 'quote', 'quotation'], a: 'Send the cost sheet on WhatsApp straight after the call, with base price, parking, floor-rise and taxes shown separately. Follow up within 24 hours.' },
 ];
-export const assessAnswer = (text) => {
+export const assessAnswer = (text, weak = []) => {
   const q = text.toLowerCase();
+  if (weak.length && /weak|improve|score/.test(q)) return `From your recorded conversations: ${weak.map((w) => `${w.label} was missed in ${w.n} call${w.n > 1 ? 's' : ''}`).join('; ')}. Practise ${weak[0].label} in the Practise tab today.`;
   const hit = assessKb.find((e) => e.m.some((w) => q.includes(w)));
   return hit ? hit.a : 'Good question. Stay on the SOP: confirm intent, discover needs, walk through the project, cover loan and possession, and close with a site visit. Tell me the exact customer line and I will coach you on it.';
 };

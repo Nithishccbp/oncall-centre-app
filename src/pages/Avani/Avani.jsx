@@ -1,12 +1,14 @@
 // Avani AI coach: choose a persona, then Assess (chat), Learn (path) or Practise (record + feedback).
 import { useEffect, useRef, useState } from 'react';
 import { personas, assessChips, assessAnswer, seedSessions, modules, steps, scoreStep } from '../../data/avani.js';
+import { useIngest } from '../../context/IngestContext.jsx';
 import { useUi } from '../../context/UiContext.jsx';
 import './Avani.css';
 
 const sr = typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition);
 
 function Assess() {
+  const { weak } = useIngest();
   const [sessions, setSessions] = useState(seedSessions);
   const [cur, setCur] = useState(null); // session id or null = new
   const [hist, setHist] = useState([]);
@@ -18,7 +20,7 @@ function Assess() {
   const send = (q) => {
     const m = (q ?? text).trim();
     if (!m) return;
-    const next = [...hist, { role: 'user', content: m }, { role: 'assistant', content: assessAnswer(m) }];
+    const next = [...hist, { role: 'user', content: m }, { role: 'assistant', content: assessAnswer(m, weak) }];
     setHist(next); setText('');
     if (cur) setSessions((s) => s.map((x) => (x.id === cur ? { ...x, history: next } : x)));
     else { const id = 's' + Date.now(); setCur(id); setSessions((s) => [{ id, title: m.slice(0, 48), history: next }, ...s]); }

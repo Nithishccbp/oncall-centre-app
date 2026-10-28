@@ -22,6 +22,8 @@ export function PulseProvider({ children }) {
     });
   }, []);
 
+  const upsertThread = useCallback((id, thread) => setThreads((all) => ({ ...all, [id]: { ...(all[id] || {}), ...thread } })), []);
+
   const pendingFor = useCallback(
     (channelId) => (needsInput[channelId] || []).filter((t) => !(t.id in answered)),
     [answered],
@@ -33,9 +35,9 @@ export function PulseProvider({ children }) {
   }, [addMessage]);
 
   const value = useMemo(() => ({
-    threads, addMessage, pendingFor, answer, answered,
+    threads, addMessage, upsertThread, pendingFor, answer, answered,
     totalPending: () => Object.keys(needsInput).reduce((n, k) => n + pendingFor(k).length, 0),
-  }), [threads, addMessage, pendingFor, answer, answered]);
+  }), [threads, addMessage, upsertThread, pendingFor, answer, answered]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

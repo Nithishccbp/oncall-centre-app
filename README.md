@@ -105,3 +105,8 @@ Updated to the "3.5 Real estate · Presales call centre · Web" mock. Existing c
 - Calendar: share an invite (manager / team / L&D) and add new invites.
 - Leads modal: ownership banner, Fit score, "Why this lead fits", win-back footer. Settings: Real estate industry.
 - Data: leads, SOP checklist (Opening, Needs, Project Walkthrough, Loan / Payment Plan, Possession & RERA, Site Visit Booking), call scripts, knowledge base, AI voice prompts converted to real estate. Amounts show as ₹98 L / ₹1.42 Cr.
+
+## Conversation ingest (recorder app to web app)
+`POST /api/ingest/conversation` (and `/api/ingest/batch`) receive finished conversations; the web app polls `GET /api/conversations` every 30 s and lands them in Leads, Plan (Recent / Incoming), Dashboard, Calendar, Pulse and Avani.
+Set `INGEST_API_KEY` in Vercel and connect Upstash Redis so data survives restarts. Sample: `docs/sample-conversation.json`; the full contract is in the backend PDF.
+Test: `curl -X POST https://oncall-centre-app.vercel.app/api/ingest/conversation -H "Authorization: Bearer $INGEST_API_KEY" -H "Content-Type: application/json" -d @docs/sample-conversation.json`

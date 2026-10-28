@@ -2,6 +2,8 @@
 import KpiCard from '../../components/KpiCard/KpiCard.jsx';
 import { kpis, user, queueCount } from '../../data/dashboard.js';
 import { useUi } from '../../context/UiContext.jsx';
+import { useIngest } from '../../context/IngestContext.jsx';
+import { leads } from '../../data/leads.js';
 
 const greeting = () => {
   const h = new Date().getHours();
@@ -10,6 +12,9 @@ const greeting = () => {
 
 export default function HeroHeader() {
   const { range, openOverlay } = useUi();
+  const { handledToday, csatToday } = useIngest();
+  const created = 3 + leads.filter((l) => l.ingested).length;
+  const shown = kpis.map((k) => (k.label === 'CSAT TODAY' && csatToday ? { ...k, value: `${csatToday}%` } : k.label === 'LEADS CREATED' ? { ...k, value: String(created) } : k.label === 'LEADS CALLED' ? { ...k, value: String(2 + handledToday) } : k));
   return (
     <section className="hero">
       <div className="hero__top">
@@ -26,7 +31,7 @@ export default function HeroHeader() {
           </button>
         </div>
       </div>
-      <div className="hero__kpis">{kpis.map((k) => <KpiCard key={k.label} {...k} />)}</div>
+      <div className="hero__kpis">{shown.map((k) => <KpiCard key={k.label} {...k} />)}</div>
     </section>
   );
 }

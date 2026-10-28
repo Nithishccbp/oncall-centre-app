@@ -11,6 +11,7 @@ import DemoStrip from './DemoStrip.jsx';
 import { useCall, fmtClock } from '../../context/CallContext.jsx';
 import { loadConfig, normalizePhone } from '../../services/phoneCall.js';
 import { checkpointsFor, leadMeta, pitchFor } from '../../data/calling.js';
+import { prepFor } from '../../data/prep.js';
 import { formatINR } from '../../data/selectors.js';
 import './Calling.css';
 
@@ -25,8 +26,30 @@ const modes = [
   { id: 'ai', label: 'AI (web)', hint: 'Our AI agent (Avani) phones the person on the customer page.' },
 ];
 
+function PrepBrief({ onReady }) {
+  const { call, lead, end } = useCall();
+  const p = prepFor(lead);
+  return (
+    <Modal open onClose={end} width={440} label="Before you talk">
+      <div className="pb__head">
+        <span className="pb__ic">📝</span>
+        <div><b>Before you talk to {call.name.split(' ')[0]}</b><small>Avani’s brief · 20 seconds</small></div>
+      </div>
+      <div className="pb__chip">{p.stage}</div>
+      <p className="pb__sum">{p.summary}</p>
+      <div className="pb__cap">Remember</div>
+      {p.notes.map((n) => <div key={n} className="pb__note">✓ {n}</div>)}
+      <div className="pb__money">💳 {p.money}</div>
+      <div className="pb__last">Last touch: {p.last}</div>
+      <button className="pb__go" onClick={onReady}><i className="ti ti-phone" /> I’m ready · call</button>
+      <div className="pb__last center">Recording starts when they pick up, so their consent is on the call.</div>
+    </Modal>
+  );
+}
+
 function PreCall({ onPlace }) {
   const { call, lead, end } = useCall();
+  const [brief, setBrief] = useState(!!lead);
   const [mode, setMode] = useState('phone');
   const [code, setCode] = useState('');
   const [phone, setPhone] = useState('');
@@ -39,6 +62,7 @@ function PreCall({ onPlace }) {
   const canPlace = (!needCode || code.length >= 5) && (!isPhone || (phoneOk && ready));
   const first = call.name.split(' ')[0];
   const meta = leadMeta(lead);
+  if (brief) return <PrepBrief onReady={() => setBrief(false)} />;
   return (
     <Modal open onClose={end} width={460} flush label="Before you call">
       <div className="pc__head">

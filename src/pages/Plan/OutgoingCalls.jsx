@@ -7,8 +7,11 @@ import { useCall } from '../../context/CallContext.jsx';
 const PAGE_SIZE = 2;
 const scoreColor = (s) => (s >= 80 ? '#0f6e56' : s >= 55 ? '#c8860a' : '#e24b4a');
 
+import { useIngest } from '../../context/IngestContext.jsx';
+
 export default function OutgoingCalls() {
-  const plan = useMemo(getOutgoingPlan, []);
+  const { version } = useIngest();
+  const plan = useMemo(getOutgoingPlan, [version]);
   const { startCall } = useCall();
   const [page, setPage] = useState(0);
   const [openId, setOpenId] = useState(null);
