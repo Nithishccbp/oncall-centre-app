@@ -1,1 +1,8 @@
-{ "rewrites": [{ "source": "/((?!api/).*)", "destination": "/" }] }
+{
+  "rewrites": [
+    { "source": "/api/ingest/conversation", "destination": "/api/ingest" },
+    { "source": "/api/ingest/batch", "destination": "/api/ingest" },
+    { "source": "/api/conversations", "destination": "/api/ingest" },
+    { "source": "/((?!api/).*)", "destination": "/" }
+  ]
+}

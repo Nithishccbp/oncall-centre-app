@@ -106,3 +106,13 @@ export function route(c, given = []) {
   if (c.interest?.cross_sell || c.signals.some((s) => /Quotation/.test(s.category))) landed.push({ surface: 'cross_sell_agent', where: 'Pulse > #cross-sell-agent' });
   return { tags: [...tags], landed };
 }
+
+import { timingSafeEqual } from 'node:crypto';
+export const authOk = (req) => {
+  const key = process.env.INGEST_API_KEY;
+  if (!key) return false;
+  const got = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '') || String(req.headers['x-api-key'] || '');
+  const a = Buffer.from(got), b = Buffer.from(key);
+  return a.length === b.length && timingSafeEqual(a, b);
+};
+
