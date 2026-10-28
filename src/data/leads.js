@@ -10,3 +10,21 @@ const leads_seed = [
 export const leads = DEMO ? leads_seed : [];
 
 export const leadByFirstName = (name) => leads.find((l) => name && name.startsWith(l.name));
+
+// Leads typed in by the agent (Plan > Calls to make > Add a lead). Kept in this browser until the backend supplies real leads.
+const KEY = 'og_manual_leads';
+const loadManual = () => { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch { return []; } };
+loadManual().forEach((l) => { if (!leads.some((x) => x.id === l.id)) leads.push(l); });
+export function addManualLead({ name, phone, product }) {
+  const n = String(name || '').trim() || 'New lead';
+  const prod = String(product || '').trim() || 'Project enquiry';
+  const lead = {
+    id: `man-${Date.now()}`, name: n, initials: n.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase(), avatarBg: '#e1f5ee', avatarColor: '#0f6e56',
+    product: prod, price: 0, interest: `Interested: ${prod}`, crossSell: 'Covered parking', emiNote: 'Not discussed yet, share the payment plan early', story: 'Added by you.',
+    status: 'Open', score: 70, icp: 70, intent: 70, expectedValue: 0, slaLeft: 'New lead', actionNote: 'Added manually', phone: String(phone || '').trim(),
+    icpBreakdown: [{ label: 'Budget Fit', pct: 60 }, { label: 'Need Match', pct: 60 }, { label: 'Decision Stage', pct: 50 }], journey: [], signals: [], notes: [], cumulativeMissed: 0, manual: true,
+  };
+  leads.unshift(lead);
+  try { localStorage.setItem(KEY, JSON.stringify([lead, ...loadManual()])); } catch { /* ignore */ }
+  return lead;
+}

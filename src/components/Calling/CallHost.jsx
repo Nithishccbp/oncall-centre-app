@@ -54,7 +54,7 @@ function PreCall({ onPlace }) {
   const [mode, setMode] = useState('phone');
   const [myPhone, setMyPhone] = useState(getAgentPhone());
   const [code, setCode] = useState('');
-  const [phone, setPhone] = useState('');
+  const [phone, setPhone] = useState(lead?.phone || (/^[\d+ ]{8,}$/.test(call.name || '') ? call.name : ''));
   const [cfg, setCfg] = useState(null);
   useEffect(() => { loadConfig().then((c) => { setCfg(c); if (c.staffPhone) setMode('staffphone'); else if (!c.phone && !c.aiPhone) setMode('human'); }); }, []);
   const isPhone = mode === 'phone' || mode === 'aiphone' || mode === 'staffphone';

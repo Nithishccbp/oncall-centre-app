@@ -2,6 +2,7 @@
 import { useMemo, useState } from 'react';
 import Pager from '../../components/Pager/Pager.jsx';
 import { getOutgoingPlan } from '../../data/selectors.js';
+import { addManualLead } from '../../data/leads.js';
 import { useCall } from '../../context/CallContext.jsx';
 
 const PAGE_SIZE = 2;
@@ -11,7 +12,10 @@ import { useIngest } from '../../context/IngestContext.jsx';
 
 export default function OutgoingCalls() {
   const { version } = useIngest();
-  const plan = useMemo(getOutgoingPlan, [version]);
+  const [bump, setBump] = useState(0);
+  const [adding, setAdding] = useState(false);
+  const [form, setForm] = useState({ name: '', phone: '', product: '' });
+  const plan = useMemo(getOutgoingPlan, [version, bump]);
   const { startCall } = useCall();
   const [page, setPage] = useState(0);
   const [openId, setOpenId] = useState(null);
@@ -25,6 +29,16 @@ export default function OutgoingCalls() {
       <div className="plan">
         <h1 className="plan__title">Planned outgoing calls</h1>
         <p className="plan__sub">Ranked by lead attractiveness score — tap a lead for the full picture</p>
+        <button className="btn-small" onClick={() => setAdding(!adding)}><i className="ti ti-plus" /> Add a lead</button>
+        {adding && (
+          <div className="row" style={{ padding: 12, display: 'grid', gap: 8 }}>
+            <input placeholder="Name" aria-label="Lead name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+            <input placeholder="Phone e.g. +917995807656" aria-label="Lead phone" inputMode="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/[^\d+ ]/g, '') })} />
+            <input placeholder="Interested in e.g. Tower B · 3 BHK" aria-label="Interested in" value={form.product} onChange={(e) => setForm({ ...form, product: e.target.value })} />
+            <button className="btn-primary" disabled={!form.phone.trim()} onClick={() => { addManualLead(form); setForm({ name: '', phone: '', product: '' }); setAdding(false); setBump((b) => b + 1); }}>Save lead</button>
+          </div>
+        )}
+        {!rows.length && !adding && <p className="plan__sub">No leads yet. Add one to try a call, or wait for the backend to send them.</p>}
         {rows.map((l) => {
           const open = openId === l.id;
           return (
