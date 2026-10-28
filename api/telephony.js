@@ -56,6 +56,8 @@ export default async function handler(req, res) {
   if (op === 'call') {
     const to = toE164(b.to); const agentPhone = toE164(b.agentPhone);
     if (!to) return res.status(400).json({ error: 'The customer phone number does not look right.' });
+    if (agentPhone && agentPhone === to) return res.status(400).json({ error: 'The customer number is the same as YOUR number. The provider rings you first, so the second call finds your phone busy and the call ends. Use a different phone for the customer.' });
+    if (agentPhone && agentPhone === toE164(cfg.callerId)) return res.status(400).json({ error: 'Your phone number is the same as the brand caller ID number. Enter your own mobile number.' });
     if (!agentPhone && cfg.provider !== 'ozonetel') return res.status(400).json({ error: 'Enter YOUR phone number first (the provider rings you, then connects the customer).' });
     const answerUrl = `${baseUrl(req)}/api/telephony/answer?to=${encodeURIComponent(to)}&cid=${encodeURIComponent(cidOf(cfg) || '')}`;
     const r = await a.start(cfg, { agentPhone, to, answerUrl, agentId: clean(b.agentId, 40) }).catch((e) => ({ ok: false, error: e.message }));
