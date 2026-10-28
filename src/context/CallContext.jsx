@@ -110,7 +110,7 @@ export function CallProvider({ children }) {
   useEffect(() => {
     if (call.mode === 'sim' || !['consent', 'inCall'].includes(call.status)) { aiStarted.current = false; return; }
     if (call.mode === 'phone') { setAgentCaptions(consent.status === 'recording', onLiveLine); return; }
-    if (call.mode === 'aiphone') return; // Avani and the server handle consent and transcript on that call
+    if (call.mode === 'aiphone' || call.mode === 'staffphone') return; // Avani and the server handle consent and transcript on that call
     const on = consent.status === 'recording';
     signal({ type: 'transcribe', on });
     if (call.mode === 'human') setAgentCaptions(on, onLiveLine);

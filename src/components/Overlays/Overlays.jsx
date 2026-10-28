@@ -1,6 +1,7 @@
 // Top-bar overlays: Notifications, OG Score, Rank, Avatar, Settings and the Date-range sheet.
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import TelephonyCard from './TelephonyCard.jsx';
 import Modal from '../Modal/Modal.jsx';
 import { useUi } from '../../context/UiContext.jsx';
 import { avatars, languages, notifications, rankBreakdown } from '../../data/calling.js';
@@ -132,6 +133,8 @@ function SettingsPanel({ close }) {
       <div className="label-caps">Experience centre</div>
       <div className="card set__row"><i className="ti ti-building-store" /><span><b>Base Experience centre</b><small>Whitefield · Godrej Properties</small></span></div>
       <div className="set__alloc">Allocated: Lakeside Towers · HSR Layout · Indiranagar</div>
+      <div className="label-caps">Telephony</div>
+      <TelephonyCard toast={showToast} />
       <div className="label-caps">Role &amp; designation</div>
       <div className="card set__row"><span className="set__badge">M0</span><span><b>M0 · Presales Staff</b><small>Staff tier — sits below Manager designations (M1 Experience centre Manager, M2 Ops Manager) shown in Settings on the Manager app.</small></span></div>
       <div className="label-caps">Your customer channel</div>

@@ -9,7 +9,7 @@ import RightsPanel from './RightsPanel.jsx';
 import WrapUpModal from './WrapUpModal.jsx';
 import DemoStrip from './DemoStrip.jsx';
 import { useCall, fmtClock } from '../../context/CallContext.jsx';
-import { loadConfig, normalizePhone } from '../../services/phoneCall.js';
+import { loadConfig, normalizePhone, getAgentPhone, setAgentPhone } from '../../services/phoneCall.js';
 import { checkpointsFor, leadMeta, pitchFor } from '../../data/calling.js';
 import { prepFor } from '../../data/prep.js';
 import { formatINR } from '../../data/selectors.js';
@@ -19,6 +19,7 @@ const initials = (name) => name.split(' ').map((p) => p[0]).join('').slice(0, 2)
 
 /** "Before you call X": product to champion, pitching language, cross-sell, ideal home-loan EMI, SOP checkpoints. */
 const modes = [
+  { id: 'staffphone', label: '☎️ My phone → customer', group: 'phone', hint: 'Your telephony provider (Vobiz, Exotel or Ozonetel) rings YOUR phone, then connects the customer. The customer sees the brand number.' },
   { id: 'phone', label: '📞 Phone number', group: 'phone', hint: 'Real call to a normal mobile or landline number, spoken through this browser (Twilio).' },
   { id: 'aiphone', label: '🤖 AI → phone', group: 'phone', hint: 'Avani, our AI agent, rings a real phone number and talks to the customer (Vonage or Twilio, plus Gemini).' },
   { id: 'sim', label: 'Practice', hint: 'Simulated customer — no mic needed.' },
@@ -51,15 +52,17 @@ function PreCall({ onPlace }) {
   const { call, lead, end } = useCall();
   const [brief, setBrief] = useState(!!lead);
   const [mode, setMode] = useState('phone');
+  const [myPhone, setMyPhone] = useState(getAgentPhone());
   const [code, setCode] = useState('');
   const [phone, setPhone] = useState('');
   const [cfg, setCfg] = useState(null);
-  useEffect(() => { loadConfig().then((c) => { setCfg(c); if (!c.phone && !c.aiPhone) setMode('human'); }); }, []);
-  const isPhone = mode === 'phone' || mode === 'aiphone';
+  useEffect(() => { loadConfig().then((c) => { setCfg(c); if (c.staffPhone) setMode('staffphone'); else if (!c.phone && !c.aiPhone) setMode('human'); }); }, []);
+  const isPhone = mode === 'phone' || mode === 'aiphone' || mode === 'staffphone';
+  const myOk = mode !== 'staffphone' || !!normalizePhone(myPhone);
   const needCode = mode === 'human' || mode === 'ai';
   const phoneOk = !!normalizePhone(phone);
-  const ready = !isPhone || !cfg || (mode === 'phone' ? cfg.phone : cfg.aiPhone);
-  const canPlace = (!needCode || code.length >= 5) && (!isPhone || (phoneOk && ready));
+  const ready = !isPhone || !cfg || (mode === 'staffphone' ? cfg.staffPhone : mode === 'phone' ? cfg.phone : cfg.aiPhone);
+  const canPlace = (!needCode || code.length >= 5) && (!isPhone || (phoneOk && ready && myOk));
   const first = call.name.split(' ')[0];
   const meta = leadMeta(lead);
   if (brief) return <PrepBrief onReady={() => setBrief(false)} />;
@@ -107,7 +110,13 @@ function PreCall({ onPlace }) {
             <small className="pc__note">{phone && !phoneOk ? 'This number does not look right.' : 'Demo leads have fake numbers — type a real one you can answer.'}</small>
           </label>
         )}
-        {isPhone && cfg && !ready && <p className="pc__warn">Phone calling is not switched on for this site yet. Add the Vonage keys (VONAGE_SETUP.md) or the Twilio keys in Vercel, then redeploy.</p>}
+        {mode === 'staffphone' && (
+          <label className="pc__code">Your phone number (the provider rings you first)
+            <input className="pc__tel" value={myPhone} onChange={(e) => { const v = e.target.value.replace(/[^\d+ ]/g, '').slice(0, 16); setMyPhone(v); setAgentPhone(v); }} inputMode="tel" placeholder="e.g. 98765 43210" aria-label="Your phone number" />
+            <small className="pc__note">{cfg?.telephony?.callerId ? `Customer sees ${cfg.telephony.callerId} (${cfg.telephony.provider}).` : 'Caller ID comes from the provider setup.'}</small>
+          </label>
+        )}
+        {isPhone && cfg && !ready && <p className="pc__warn">{mode === 'staffphone' ? `Provider calling is not set up yet. Missing in Vercel: ${(cfg.telephony?.missing || ['TEL_PROVIDER']).join(', ')}. See TELEPHONY_SETUP.md.` : 'Phone calling is not switched on for this site yet. Add the Vonage keys (VONAGE_SETUP.md) or the Twilio keys in Vercel, then redeploy.'}</p>}
         {isPhone && cfg && !cfg.reachable && <p className="pc__warn">The /api server is not reachable here. Phone calls work on the deployed Vercel site (or with “vercel dev”), not plain “npm run dev”.</p>}
         {needCode && (
           <label className="pc__code">Customer line code

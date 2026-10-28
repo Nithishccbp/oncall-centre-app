@@ -1,8 +1,28 @@
 {
   "rewrites": [
-    { "source": "/api/ingest/conversation", "destination": "/api/ingest" },
-    { "source": "/api/ingest/batch", "destination": "/api/ingest" },
-    { "source": "/api/conversations", "destination": "/api/ingest" },
-    { "source": "/((?!api/).*)", "destination": "/" }
+    {
+      "source": "/api/config",
+      "destination": "/api/telephony?op=config"
+    },
+    {
+      "source": "/api/telephony/:op",
+      "destination": "/api/telephony?op=:op"
+    },
+    {
+      "source": "/api/ingest/conversation",
+      "destination": "/api/ingest"
+    },
+    {
+      "source": "/api/ingest/batch",
+      "destination": "/api/ingest"
+    },
+    {
+      "source": "/api/conversations",
+      "destination": "/api/ingest"
+    },
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/"
+    }
   ]
 }

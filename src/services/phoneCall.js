@@ -10,7 +10,7 @@ const getPass = () => { try { return sessionStorage.getItem(PASS_KEY) || ''; } c
 const setPass = (v) => { try { sessionStorage.setItem(PASS_KEY, v); } catch { /* ignore */ } };
 
 /** fetch our own /api with the optional passcode; asks for it once if the server wants one. */
-async function api(path, opts = {}, retried = false) {
+export async function api(path, opts = {}, retried = false) {
   const r = await fetch(path, { ...opts, headers: { 'Content-Type': 'application/json', 'x-app-passcode': getPass(), ...(opts.headers || {}) } });
   if (r.status === 401 && !retried) {
     const p = window.prompt('Enter the call-centre passcode');
@@ -99,6 +99,36 @@ export async function startPhoneCall({ phone, handlers }) {
   });
 }
 
+export const getAgentPhone = () => { try { return localStorage.getItem('og_agent_phone') || ''; } catch { return ''; } };
+export const setAgentPhone = (v) => { try { localStorage.setItem('og_agent_phone', v); } catch { /* ignore */ } };
+
+/** Staff phone → customer through the telephony provider (Vobiz / Exotel / Ozonetel).
+ *  The provider rings the AGENT's phone first, then bridges to the customer showing the brand's DID. */
+export async function startStaffPhoneCall({ phone, handlers }) {
+  const to = normalizePhone(phone);
+  if (!to) throw new Error('That phone number does not look right.');
+  const agentPhone = normalizePhone(getAgentPhone());
+  const { id } = await api('/api/telephony/call', { method: 'POST', body: JSON.stringify({ to, agentPhone }) });
+  const s = { kind: 'staffphone', sid: id, ended: false, timer: null };
+  cur = s;
+  return new Promise((resolve, reject) => {
+    let answered = false; const started = Date.now();
+    const finish = (reason) => { if (s.ended) return; if (answered) { handlers.onEnd(reason); teardown(); } else { teardown(); reject(new Error(reason)); } };
+    const poll = async () => {
+      if (s.ended) return;
+      try {
+        const d = await api(`/api/telephony/status?id=${encodeURIComponent(id)}`);
+        if (d.status === 'in-progress' && !answered) { answered = true; resolve(); }
+        if (['completed', 'failed'].includes(d.status)) return finish(answered ? 'The call finished.' : `The call could not be completed.${d.detail ? ` (${d.detail})` : ''}`);
+        if (['busy', 'no-answer', 'canceled'].includes(d.status)) return finish(d.status === 'busy' ? 'The number was busy.' : d.status === 'no-answer' ? 'No answer.' : 'The call was cancelled.');
+        if (!answered && Date.now() - started > 75000) return finish('Nobody picked up after 75 seconds (your phone first, then the customer).');
+      } catch (e) { if (!answered && Date.now() - started > 15000) return finish(e.message); }
+      s.timer = setTimeout(poll, 2000);
+    };
+    s.timer = setTimeout(poll, 2500);
+  });
+}
+
 /** AI → phone. Resolves when the customer picks up. handlers: { onLine, onConsent(yes|no), onEnd } */
 export async function startAiPhoneCall({ phone, lead, handlers }) {
   const to = normalizePhone(phone);
@@ -153,6 +183,7 @@ function teardown() {
     if (s.sid && !s.call) api('/api/click-call', { method: 'POST', body: JSON.stringify({ end: true, sid: s.sid }) }).catch(() => {});
     setTimeout(() => { try { s.device.destroy(); } catch { /* ignore */ } }, 300);
   }
+  if (s.kind === 'staffphone') api('/api/telephony/hangup', { method: 'POST', body: JSON.stringify({ id: s.sid }) }).catch(() => {});
   if (s.kind === 'aiphone') api('/api/ai-call', { method: 'POST', body: JSON.stringify({ end: true, sid: s.sid }) }).catch(() => {});
 }
 
