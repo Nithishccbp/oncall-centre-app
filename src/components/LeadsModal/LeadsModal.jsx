@@ -29,6 +29,9 @@ export default function LeadsModal() {
     return () => window.removeEventListener('keydown', onKey);
   }, [open, total]);
 
+  if (!lead) {
+    return <Modal open={open} onClose={closeLeads} width={430} label="Leads"><div className="empty">No leads yet. They appear here once conversations arrive from the backend.</div></Modal>;
+  }
   return (
     <Modal open={open} onClose={closeLeads} width={430} flush label="Leads">
       <div className="lm-head">

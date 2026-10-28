@@ -3,19 +3,20 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import agents from '../../data/agents.json';
 import Modal from '../../components/Modal/Modal.jsx';
+import { DEMO } from '../../data/demo.js';
 import { useUi } from '../../context/UiContext.jsx';
 
 export const agentList = agents;
 
 export default function AgentScreen({ id, header }) {
-  const a = agents[id];
+  const a = { ...agents[id], members: DEMO ? agents[id].members : [] };
   const { showToast } = useUi();
   const navigate = useNavigate();
   const [sel, setSel] = useState(null);
   const [acks, setAcks] = useState(() => Object.fromEntries(a.members.map((m) => [m.n, !!m.ack])));
   const [notes, setNotes] = useState({});
   const [draft, setDraft] = useState('');
-  const avg = Math.round(a.members.reduce((n, m) => n + m.val, 0) / a.members.length);
+  const avg = a.members.length ? Math.round(a.members.reduce((n, m) => n + m.val, 0) / a.members.length) : 0;
   const m = sel != null ? a.members[sel] : null;
   const unit = a.metric === 'Conversion' || a.target <= 100 ? '%' : '';
 
@@ -29,6 +30,7 @@ export default function AgentScreen({ id, header }) {
           <div className="agent-top__m"><b className={avg >= a.target ? 'up' : 'down'}>{avg}{unit}</b><small>{a.metric} · target {a.target}{unit}</small></div>
         </div>
         <div className="label-caps ksect">Team · {a.members.length} members</div>
+        {a.members.length === 0 && <div className="empty">No team data yet. It appears here once the backend sends it.</div>}
         {a.members.map((mm, i) => (
           <button key={mm.n} className="agent-mem card" onClick={() => setSel(i)}>
             <span className="agent-mem__av">{mm.n.split(' ').map((w) => w[0]).join('').slice(0, 2)}</span>

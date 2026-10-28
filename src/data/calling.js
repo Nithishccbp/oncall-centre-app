@@ -1,3 +1,4 @@
+import { DEMO } from './demo.js';
 // Sample data + small helpers for the calling experience (consent, transcript, AI Assist, wrap-up).
 import { formatINR } from './selectors.js';
 import { sopChecklist } from './calls.js';
@@ -131,7 +132,7 @@ export const draftSummary = (lead, lines, sopDone) => {
 };
 
 /* ---------- Notifications / overlays ---------- */
-export const notifications = [
+const notifications_seed = [
   { id: 'n1', icon: '☎️', kind: 'action', time: '2:05pm', text: 'Sunita Rao is checking greeting-QA scores Friday — reply in #callcentre-team', link: { label: 'Open #callcentre-team →', to: '/pulse/callcentre-team' } },
   { id: 'n2', icon: '🎯', kind: 'action', time: 'Today', text: 'Skill Improvement Coach is waiting on you to pick a skill to practice', link: { label: 'Open Skill Improvement Coach →', to: '/pulse/avani-coaching' } },
   { id: 'n3', icon: '🌟', kind: 'alert', time: '1:05pm', text: 'Your EMI-pitch rate hit 55% this shift — target met, nice work' },
@@ -141,14 +142,16 @@ export const notifications = [
   { id: 'n7', icon: '📦', kind: 'alert', time: 'Sun', text: 'Tower A shipment for RT Nagar is ready for possession', link: { label: 'Open #manage-shipment →', to: '/pulse/manage-shipment' } },
   { id: 'n8', icon: '🎫', kind: 'action', time: 'Sat', text: 'Cost sheet approval for Mukunda R. is still awaiting approval', link: { label: 'Open #quotation-tickets →', to: '/pulse/quotation-tickets' } },
 ];
+export const notifications = DEMO ? notifications_seed : [];
 
-export const rankBreakdown = [
+const rankBreakdown_seed = [
   { icon: '🏆', label: 'OG Score™', value: '76', weight: 40, pct: 76 },
   { icon: '📞', label: 'Leads Called', value: '2', weight: 20, pct: 40 },
   { icon: '🎯', label: 'Leads Created', value: '3', weight: 15, pct: 60 },
   { icon: '⏱️', label: 'Conversation Time', value: '62m', weight: 15, pct: 78 },
   { icon: '🚚', label: 'On-time Possession', value: '92%', weight: 10, pct: 92 },
 ];
+export const rankBreakdown = DEMO ? rankBreakdown_seed : [{ icon: '🏆', label: 'OG Score™', value: '0', weight: 40, pct: 0 }, { icon: '📞', label: 'Leads Called', value: '0', weight: 20, pct: 0 }, { icon: '🎯', label: 'Leads Created', value: '0', weight: 15, pct: 0 }, { icon: '⏱️', label: 'Conversation Time', value: '0m', weight: 15, pct: 0 }, { icon: '🚚', label: 'On-time Follow-up', value: '0%', weight: 10, pct: 0 }];
 
 export const avatars = [
   { id: 'captain', emoji: '🦸‍♂️', name: 'Captain' },
@@ -163,11 +166,12 @@ export const languages = [
   ['தமிழ்', 'Tamil'], ['ગુજરાતી', 'Gujarati'], ['اردو', 'Urdu'], ['ಕನ್ನಡ', 'Kannada'],
 ];
 
-export const customerThreads = [
+const customerThreads_seed = [
   { id: 'cd-mukunda', name: 'Mukunda', initials: 'MK', wa: true, preview: 'Cost sheet for Tower A 2 BHK sent · awaiting reply', time: '2:40pm', unread: 1, bg: '#e1f5ee', color: '#0f6e56' },
   { id: 'cd-kavitha', name: 'Kavitha R.', initials: 'KR', wa: true, preview: 'When can I come see the hybrid home?', time: '11:15am', unread: 2, bg: '#fff8e1', color: '#c8860a' },
   { id: 'cd-ali', name: 'Ali', initials: 'AL', missed: true, preview: 'Called 9:40am · not returned yet', bg: '#fdecec', color: '#e24b4a' },
 ];
+export const customerThreads = DEMO ? customerThreads_seed : [];
 
 /* ---------- Real calls: turn live speech into SOP ticks + sentiment ---------- */
 const sopPatterns = [

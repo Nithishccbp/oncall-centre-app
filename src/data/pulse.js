@@ -1,5 +1,6 @@
+import { DEMO } from './demo.js';
 // Sample data for Pulse: agents, channels, DMs, threads and "Needs your input" tasks.
-export const agents = {
+const agents_seed = {
   role: [
     { id: 'post-visit-agent', sub: 'Your Follow-ups on time · 6 members', metric: '95%', trend: '▲2', icon: 'ti-home-check', color: 'orange', pins: 2 },
     { id: 'callcentre-agent', sub: 'Presales Agent', icon: 'ti-headset', color: 'blue', pins: 2 },
@@ -11,12 +12,14 @@ export const agents = {
     { id: 'capture-agent', sub: 'Your Capture coverage · 5 members', metric: '78%', trend: '▲1', icon: 'ti-microphone', color: 'teal', pins: 2 },
   ],
 };
+export const agents = DEMO ? agents_seed : { role: agents_seed.role.map(({ metric, trend, pins, ...a }) => ({ ...a, pins: 0 })), task: agents_seed.task.map(({ metric, trend, pins, ...a }) => ({ ...a, pins: 0 })) };
 
-export const general = [
+const general_seed = [
   { id: 'customer-discussions', name: 'customer-discussions', sub: 'Relayed via WhatsApp Business', unread: 2 },
 ];
+export const general = DEMO ? general_seed : general_seed.map((g) => ({ ...g, unread: 0 }));
 
-export const kudos = {
+const kudos_seed = {
   newCount: 3, total: 12,
   latest: '"Great work with Mukunda — closed that objection beautifully!" — Sunita Rao',
   feed: [
@@ -25,8 +28,9 @@ export const kudos = {
     { id: 'k3', from: 'Sunita Rao (Manager)', initials: 'SR', icon: '💪', tone: 'mint', time: '2 days ago', text: '"Top SOP score this week — 72/100 on Mukunda\'s conversation. Experience centre leader!"' },
   ],
 };
+export const kudos = DEMO ? kudos_seed : { newCount: 0, total: 0, latest: 'No kudos yet', feed: [] };
 
-export const channels = [
+const channels_seed = [
   { id: 'callcentre-team', name: 'callcentre-team', preview: 'Manager: Review call QA scores this week!', unread: 1, mention: true },
   { id: 'all-stores', name: 'all-stores', preview: 'New Tower A campaign from 1 June!', time: '10:22am', unread: 4 },
   { id: 'avani-coaching', name: 'avani-coaching', preview: 'Your RERA possession score dropped 12% this week', time: '9:01am', unread: 1 },
@@ -34,12 +38,14 @@ export const channels = [
   { id: 'quotation-tickets', name: 'quotation-tickets', preview: '🎫 Cost sheet approval — awaiting approval', time: '9:12am', unread: 1 },
   { id: 'new-hire-onboarding', name: 'new-hire-onboarding', preview: '🎉 Welcome to the team!', time: '8:30am' },
 ];
+export const channels = DEMO ? channels_seed : channels_seed.map(({ preview, time, unread, mention, ...c }) => ({ ...c, preview: 'No messages yet', unread: 0 }));
 
-export const dms = [
+const dms_seed = [
   { id: 'sunita-rao', name: 'Sunita Rao', initials: 'SR', badge: 'MGR', preview: '🌟 Great work with Mukunda — keep it up', time: '12:40pm' },
   { id: 'priya-krishnan', name: 'Priya Krishnan', initials: 'PK', preview: 'Can you cover my 3pm slot today?', time: '9:55am' },
   { id: 'raju-kumar', name: 'Raju Kumar', initials: 'RK', preview: 'Nice cross-sell on the Sky Villa! 🔥', time: 'Yesterday' },
 ];
+export const dms = DEMO ? dms_seed : [];
 
 const SR = { who: 'Sunita Rao', initials: 'SR', bg: '#faeeda', color: '#854f0b' };
 const BOT = (who, initials, bg, color) => ({ who, initials, bg, color, bot: true });
@@ -132,13 +138,14 @@ export const threads = {
   };
 });
 
-export const needsInput = {
+const needsInput_seed = {
   'callcentre-team': [{ id: 't1', question: 'Confirm the 4:30pm callback', context: 'Priya Iyer · likely billing dispute', options: ['Confirmed', 'Reschedule'] }],
   avanibot: [
     { id: 't2', question: 'Call now or reassign the 2 hot leads', context: 'Untouched for 24h', options: ['Calling now', 'Reassign'] },
     { id: 't3', question: "Log this morning's call outcome", context: 'Suresh Nair · plan upgrade enquiry', options: ['Converted', 'Callback', 'Not interested'] },
   ],
 };
+export const needsInput = DEMO ? needsInput_seed : {};
 
 /** AvaniBot answers a few known questions by keyword (no backend); anything else gets a polite fallback. */
 export function avaniReply(text) {
@@ -150,3 +157,6 @@ export function avaniReply(text) {
   if (/kudos|score|rank/.test(t)) return { ...bot, text: 'You have **12 kudos** all-time, 3 new. OG Score **76**, rank **#3** in RT Nagar.' };
   return { ...bot, text: 'I can help with daily briefs, action items, hot leads and kudos. Try: "what are my action items from Sunita".' };
 }
+
+// Empty by default: keep only the AvaniBot welcome message; every other thread starts blank and fills from the backend.
+if (!DEMO) Object.values(threads).forEach((t) => { if (t.title !== 'AvaniBot') t.messages = []; });

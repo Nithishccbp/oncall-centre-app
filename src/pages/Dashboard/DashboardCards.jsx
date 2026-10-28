@@ -1,6 +1,7 @@
 // Progress, who's waiting, earnings and tasks cards for the dashboard.
 import { Link } from 'react-router-dom';
 import { earnings, tasks, waiting, todaysCalls, thanks, visits } from '../../data/dashboard.js';
+import { DEMO } from '../../data/demo.js';
 import { getOutgoingPlan } from '../../data/selectors.js';
 import { formatINR } from '../../data/selectors.js';
 import { usePulse } from '../../context/PulseContext.jsx';
@@ -13,6 +14,7 @@ export function WhosWaiting() {
         <h2 className="label-caps">Who's waiting</h2>
         <Link to="/plan/outgoing" className="waiting__link">Open planner →</Link>
       </div>
+      {waiting.length === 0 && <div className="empty">Nobody is waiting</div>}
       {waiting.map((w) => (
         <div key={w.id} className="waiting__row card">
           <span className="waiting__icon"><i className="ti ti-headset" /></span>
@@ -66,7 +68,8 @@ export function TodaysCalls() {
   const rows = [...todays, ...todaysCalls].slice(0, 6);
   return (
     <section className="card dcard">
-      <div className="dcard__head"><b className="label-caps">Today's calls</b><span className="muted">{14 + handledToday} handled · {csatToday ?? 94}% CSAT</span></div>
+      <div className="dcard__head"><b className="label-caps">Today's calls</b><span className="muted">{(DEMO ? 14 : 0) + handledToday} handled · {csatToday ?? (DEMO ? 94 : 0)}% CSAT</span></div>
+      {rows.length === 0 && <div className="empty">No calls yet today</div>}
       {rows.map((c, i) => (
         <div key={`${c.time}-${c.name}-${i}`} className="dcall">
           <span className="dcall__t">{c.time}</span>
@@ -85,6 +88,7 @@ export function LeadsNext({ onOpen }) {
   return (
     <section className="card dcard">
       <div className="dcard__head"><b className="label-caps">Leads to call next</b><span className="muted">{getOutgoingPlan().length} open · {formatINR(total)}</span></div>
+      {list.length === 0 && <div className="empty">No leads yet</div>}
       {list.map((l, i) => (
         <button key={l.id} className="dlead" onClick={() => onOpen(i)}>
           <span className={`dlead__s ${l.score >= 80 ? 'hi' : ''}`}>{l.score}</span>

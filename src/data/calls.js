@@ -1,5 +1,6 @@
+import { DEMO } from './demo.js';
 // Call history and SOP review sample data.
-export const recentCalls = [
+const recentCalls_seed = [
   { id: 'c1', dir: 'in', name: 'Mukunda R.', time: '10:42 AM', duration: '4m 12s' },
   { id: 'c2', dir: 'out', name: 'Kavitha R.', time: 'Yesterday', duration: '2m 05s' },
   { id: 'c3', dir: 'missed', name: 'Unknown', time: 'Yesterday', duration: '—' },
@@ -9,6 +10,7 @@ export const recentCalls = [
   { id: 'c7', dir: 'missed', name: 'Divya P.', time: 'Yesterday 2:15 PM', duration: '—' },
   { id: 'c8', dir: 'out', name: 'Faizan A.', time: 'Mon', duration: '6m 40s' },
 ];
+export const recentCalls = DEMO ? recentCalls_seed : [];
 
 export const sopChecklist = [
   'Opening & Intent Confirm', 'Needs Discovery', 'Project Walkthrough',
@@ -18,7 +20,7 @@ export const sopChecklist = [
 const q = (label, passed, quote) => ({ label, passed, quote });
 const rv = (score, rows) => ({ score, items: rows.map((r, i) => q(sopChecklist[i], r[0], r[1])) });
 
-export const sopReviews = {
+const sopReviews_seed = {
   c1: rv(83, [
     [true, '"This is Aditi from Godrej Properties, is now an okay time?"'],
     [true, '"What matters most in the comparison, location or price?"'],
@@ -44,3 +46,4 @@ export const sopReviews = {
     [true, '"I\'ll book your revisit with your parents for Saturday."'],
   ]),
 };
+export const sopReviews = DEMO ? sopReviews_seed : {};

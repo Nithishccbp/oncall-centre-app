@@ -25,8 +25,8 @@ export default function Dashboard() {
           <div className="dash__col"><WhosWaiting /><TodaysCalls /><LeadsNext onOpen={openLeads} /></div>
           <div className="dash__col"><EarningsCard /><ThanksVisits /><TasksCard onTaskClick={onTaskClick} />
             <section className="card dcard"><div className="dcard__head"><b className="label-caps">This week</b><span className="muted">Mon to today</span></div>
-              <h3 className="dash__sub">Calls handled · 127</h3><BarChart data={callsLast7} color="green" unit=" calls" />
-              <h3 className="dash__sub">CSAT · 94% ▲6 since Mon</h3><BarChart data={csatLast7} color="blue" suffix="%" /></section></div>
+              <h3 className="dash__sub">Calls handled · {callsLast7.reduce((n, d) => n + d.v, 0)}</h3><BarChart data={callsLast7} color="green" unit=" calls" />
+              <h3 className="dash__sub">CSAT · {csatLast7[csatLast7.length - 1].v}% today</h3><BarChart data={csatLast7} color="blue" suffix="%" /></section></div>
         </div>
       </div>
     </>

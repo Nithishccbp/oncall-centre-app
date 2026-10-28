@@ -120,7 +120,7 @@ export function CallProvider({ children }) {
   const startCall = useCallback((name) => dispatch({ type: 'START', name }), []);
   const placeCall = useCallback((opts) => dispatch({ type: 'RING', ...(opts || {}) }), []);
   const simulateIncoming = useCallback((name) => {
-    const pick = name || leads[Math.floor(Math.random() * leads.length)].name;
+    const pick = name || (leads.length ? leads[Math.floor(Math.random() * leads.length)].name : 'Unknown caller');
     dispatch({ type: 'INCOMING', name: pick });
   }, []);
   const acceptIncoming = useCallback(() => {
