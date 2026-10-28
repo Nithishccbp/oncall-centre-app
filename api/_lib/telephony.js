@@ -37,7 +37,7 @@ export function telConfig(c) {
 }
 
 const ended = ['completed', 'failed', 'busy', 'no-answer', 'canceled'];
-const norm = (s) => { s = String(s || '').toLowerCase().replace(/_/g, '-'); return s === 'answered' ? 'in-progress' : s === 'noanswer' ? 'no-answer' : s === 'cancelled' ? 'canceled' : s || 'unknown'; };
+const norm = (s) => { s = String(s || '').toLowerCase().replace(/_/g, '-'); return s === 'answered' ? 'in-progress' : s === 'noanswer' || s === 'timeout' || s === 'no-response' ? 'no-answer' : s === 'cancelled' ? 'canceled' : s || 'unknown'; };
 async function j(r) { const t = await r.text(); try { return JSON.parse(t); } catch { return { raw: t.slice(0, 300) }; } }
 const fail = (r, d) => ({ ok: false, error: d?.error || d?.message || d?.Message || d?.raw || `${r.status} from provider`, status: r.status });
 const cidOf = (c) => toE164(c.callerId || c.dids?.[0]);
@@ -56,8 +56,12 @@ const vobiz = {
     const v = vb(c);
     const r = await fetch(`${v.base}/api/v1/Account/${v.id}/Call/${encodeURIComponent(id)}`, { headers: v.h });
     if (r.status === 404) return { status: 'completed' };
-    const d = await j(r);
-    return { status: norm(d.call_status || d.status || d.call_state || 'in-progress'), detail: d.hangup_cause };
+    const d = await j(r); const x = d.data || d.call || d;
+    const raw = x.call_status || x.CallStatus || x.status || x.call_state || x.state || x.Status || '';
+    const st = norm(raw);
+    // only call it connected when the provider says so (never guess): an answer time or an explicit in-progress state
+    const answered = st === 'in-progress' || !!(x.answer_time || x.AnswerTime || x.answered_at);
+    return { status: answered ? 'in-progress' : (['ringing', 'queued', 'initiated', 'early-media'].includes(st) ? 'ringing' : st === 'unknown' || !st ? 'ringing' : st), detail: x.hangup_cause || x.HangupCause || (raw ? '' : JSON.stringify(d).slice(0, 160)) };
   },
   async hangup(c, id) { const v = vb(c); await fetch(`${v.base}/api/v1/Account/${v.id}/Call/${encodeURIComponent(id)}`, { method: 'DELETE', headers: v.h }); },
   answerXml: (to, cid) => `<?xml version="1.0" encoding="UTF-8"?><Response><Dial callerId="${cid}" timeout="30"><Number>${to}</Number></Dial></Response>`,
