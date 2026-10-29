@@ -6,13 +6,13 @@ import { leadMeta } from './calling.js';
 export function prepFor(lead) {
   if (!lead) return null;
   const p = prepData[lead.name] || prepData[`${lead.name} R.`] || {};
-  const last = lead.journey[lead.journey.length - 1];
+  const last = (lead.journey || [])[(lead.journey || []).length - 1];
   return {
     stage: p.stage || `${lead.slaLeft} · ${lead.product}`,
-    summary: p.summary || lead.story.split(' → ').slice(-2).join('. '),
-    notes: p.notes || lead.notes,
+    summary: p.summary || (lead.story || '').split(' → ').slice(-2).join('. '),
+    notes: p.notes || lead.notes || [],
     money: `${formatINR(lead.price)} all-in${lead.emiNote ? ` · ${lead.emiNote}` : ''}`,
-    last: p.last || `${last.date} · ${last.channel}, ${last.text}`,
+    last: p.last || (last ? `${last.date} · ${last.channel}, ${last.text}` : 'No earlier contact'),
   };
 }
 

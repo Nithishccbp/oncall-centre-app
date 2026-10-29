@@ -58,7 +58,9 @@ function PreCall({ onPlace }) {
   const [cfg, setCfg] = useState(null);
   useEffect(() => { loadConfig().then((c) => { setCfg(c); if (c.staffPhone) setMode('staffphone'); else if (!c.phone && !c.aiPhone) setMode('human'); }); }, []);
   const isPhone = mode === 'phone' || mode === 'aiphone' || mode === 'staffphone';
-  const myOk = mode !== 'staffphone' || !!normalizePhone(myPhone);
+  const brandNo = cfg?.telephony?.callerId; const myN = normalizePhone(myPhone); const custN = normalizePhone(phone);
+  const clash = mode !== 'staffphone' ? '' : myN && myN === brandNo ? 'That is the brand number. Type YOUR OWN mobile number here (the phone the provider should ring first).' : myN && custN && myN === custN ? 'Your number and the customer number are the same. Use a different phone for the customer.' : custN && custN === brandNo ? 'The customer number is the brand number. Type the customer\'s own number.' : '';
+  const myOk = mode !== 'staffphone' || (!!myN && !clash);
   const needCode = mode === 'human' || mode === 'ai';
   const phoneOk = !!normalizePhone(phone);
   const ready = !isPhone || !cfg || (mode === 'staffphone' ? cfg.staffPhone : mode === 'phone' ? cfg.phone : cfg.aiPhone);
@@ -80,7 +82,7 @@ function PreCall({ onPlace }) {
               <div><small>PRODUCT TO CHAMPION</small><b>{lead.product}</b>
                 <span>{formatINR(lead.price)} <s>{formatINR(meta.mrp)}</s></span></div>
             </div>
-            <p className="pc__why">{lead.actionNote} — {lead.signals[0].quote.split(' — ')[0]}.</p>
+            <p className="pc__why">{lead.actionNote}{lead.signals?.[0]?.quote ? ` — ${lead.signals[0].quote.split(' — ')[0]}` : ''}.</p>
             <div className="pc__cap">PITCHING LANGUAGE</div>
             <blockquote className="pc__quote">{pitchFor(lead)}</blockquote>
             <div className="pc__two">
@@ -111,9 +113,9 @@ function PreCall({ onPlace }) {
           </label>
         )}
         {mode === 'staffphone' && (
-          <label className="pc__code">Your phone number (the provider rings you first)
+          <label className="pc__code">YOUR OWN mobile number (rings first)
             <input className="pc__tel" value={myPhone} onChange={(e) => { const v = e.target.value.replace(/[^\d+ ]/g, '').slice(0, 16); setMyPhone(v); setAgentPhone(v); }} inputMode="tel" placeholder="e.g. 98765 43210" aria-label="Your phone number" />
-            <small className="pc__note">{cfg?.telephony?.callerId ? `Customer sees ${cfg.telephony.callerId} (${cfg.telephony.provider}).` : 'Caller ID comes from the provider setup.'}</small>
+            <small className="pc__note" style={clash ? { color: '#c0392b', fontWeight: 600 } : undefined}>{clash || (brandNo ? `Customer will see ${brandNo} as the caller. Do not enter that number here.` : 'Caller ID comes from the provider setup.')}</small>
           </label>
         )}
         {isPhone && cfg && !ready && <p className="pc__warn">{mode === 'staffphone' ? `Provider calling is not set up yet. Missing in Vercel: ${(cfg.telephony?.missing || ['TEL_PROVIDER']).join(', ')}. See TELEPHONY_SETUP.md.` : 'Phone calling is not switched on for this site yet. Add the Vonage keys (VONAGE_SETUP.md) or the Twilio keys in Vercel, then redeploy.'}</p>}
