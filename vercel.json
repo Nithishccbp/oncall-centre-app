@@ -5,6 +5,14 @@
       "destination": "/api/telephony?op=config"
     },
     {
+      "source": "/api/telephony/answer/:ref",
+      "destination": "/api/telephony?op=answer&ref=:ref"
+    },
+    {
+      "source": "/api/telephony/hook/:ref/:ev",
+      "destination": "/api/telephony?op=hook&ref=:ref&ev=:ev"
+    },
+    {
       "source": "/api/telephony/:op",
       "destination": "/api/telephony?op=:op"
     },

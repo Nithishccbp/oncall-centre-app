@@ -113,7 +113,7 @@ function PreCall({ onPlace }) {
           </label>
         )}
         {mode === 'staffphone' && (
-          <label className="pc__code">YOUR OWN mobile number (rings first)
+          <label className="pc__code">YOUR mobile number — saved once. The app rings you first, then connects the customer
             <input className="pc__tel" value={myPhone} onChange={(e) => { const v = e.target.value.replace(/[^\d+ ]/g, '').slice(0, 16); setMyPhone(v); setAgentPhone(v); }} inputMode="tel" placeholder="e.g. 98765 43210" aria-label="Your phone number" />
             <small className="pc__note" style={clash ? { color: '#c0392b', fontWeight: 600 } : undefined}>{clash || (brandNo ? `Customer will see ${brandNo} as the caller. Do not enter that number here.` : 'Caller ID comes from the provider setup.')}</small>
           </label>

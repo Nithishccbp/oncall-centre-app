@@ -121,7 +121,7 @@ export async function startStaffPhoneCall({ phone, handlers }) {
         if (d.status === 'in-progress' && !answered) { answered = true; resolve(); }
         if (d.detail) s.last = d.detail;
         const early = !answered && Date.now() - started < 8000; // the provider may not list a brand-new call yet
-        if (['completed', 'failed'].includes(d.status) && !early) return finish(answered ? 'The call finished.' : `Your phone was not answered, or the provider could not connect the call.${s.last ? ` (${s.last})` : ''}`);
+        if (['completed', 'failed'].includes(d.status) && !early) return finish(answered ? `The call ended.${s.last ? ` (${s.last})` : ''}` : `Your phone was not answered, or the provider could not connect the call.${s.last ? ` (${s.last})` : ''}`);
         if (['busy', 'no-answer', 'canceled'].includes(d.status)) return finish(d.status === 'busy' ? 'The number was busy.' : d.status === 'no-answer' ? 'No answer.' : 'The call was cancelled.');
         if (!answered && Date.now() - started > 75000) return finish(`Nobody picked up after 75 seconds (your phone first, then the customer).${s.last ? ` (${s.last})` : ''}`);
       } catch (e) { if (!answered && Date.now() - started > 15000) return finish(e.message); }

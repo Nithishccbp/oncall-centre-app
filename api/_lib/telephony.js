@@ -2,7 +2,7 @@
 // showing the brand's DID as caller ID. Settings are entered in the app (Settings > Telephony) and saved server-side (Upstash);
 // Vercel environment variables are only a fallback. Secrets are never sent back to the browser.
 import { toE164 } from './twilio.js';
-import { cmd, storeReady } from './store.js';
+import { cmd, storeReady, pushEvent, readEvents } from './store.js';
 
 const e = (k) => (process.env[k] || '').trim();
 const envCfg = () => {
@@ -46,25 +46,27 @@ const cidOf = (c) => toE164(c.callerId || c.dids?.[0]);
 const vb = (c) => ({ base: (c.vobiz.base || 'https://api.vobiz.ai').replace(/\/$/, ''), id: c.vobiz.id, h: { 'X-Auth-ID': c.vobiz.id, 'X-Auth-Token': c.vobiz.token, 'Content-Type': 'application/json' } });
 const vobiz = {
   async verify(c) { const v = vb(c); const r = await fetch(`${v.base}/api/v1/Account/${v.id}/`, { headers: v.h }); return r.status === 401 || r.status === 403 ? 'Vobiz rejected the Auth ID / Secret.' : ''; },
-  async start(c, { agentPhone, answerUrl }) {
+  async start(c, { agentPhone, urls, ref }) {
     const v = vb(c);
-    const r = await fetch(`${v.base}/api/v1/Account/${v.id}/Call/`, { method: 'POST', headers: v.h, body: JSON.stringify({ from: cidOf(c), to: agentPhone, answer_url: answerUrl, answer_method: 'POST' }) });
-    const d = await j(r); const id = d.call_uuid || d.request_uuid;
-    return r.ok && id ? { ok: true, id } : fail(r, d);
+    const r = await fetch(`${v.base}/api/v1/Account/${v.id}/Call/`, { method: 'POST', headers: v.h, body: JSON.stringify({ from: cidOf(c), to: agentPhone, answer_url: urls.answer, answer_method: 'POST', ring_url: urls.ring, ring_method: 'POST', hangup_url: urls.hangup, hangup_method: 'POST', time_limit: 3600 }) });
+    const d = await j(r); const id = d.request_uuid || d.call_uuid;
+    if (!(r.ok && id)) return fail(r, d);
+    await cmd(['SET', `tel:uuid:${ref}`, id, 'EX', '7200']).catch(() => {});
+    return { ok: true, id: ref };
   },
-  async status(c, id) {
-    const v = vb(c);
-    const r = await fetch(`${v.base}/api/v1/Account/${v.id}/Call/${encodeURIComponent(id)}`, { headers: v.h });
-    if (r.status === 404) return { status: 'completed' };
-    const d = await j(r); const x = d.data || d.call || d;
-    const raw = x.call_status || x.CallStatus || x.status || x.call_state || x.state || x.Status || '';
-    const st = norm(raw);
-    // only call it connected when the provider says so (never guess): an answer time or an explicit in-progress state
-    const answered = st === 'in-progress' || !!(x.answer_time || x.AnswerTime || x.answered_at);
-    return { status: answered ? 'in-progress' : (['ringing', 'queued', 'initiated', 'early-media'].includes(st) ? 'ringing' : st === 'unknown' || !st ? 'ringing' : st), detail: x.hangup_cause || x.HangupCause || (raw ? '' : JSON.stringify(d).slice(0, 160)) };
+  // State comes from Vobiz's own callbacks (ring / answer / hangup / dial result) that we store per call.
+  async status(c, ref) {
+    const ev = await readEvents(`tel-${ref}`);
+    const last = (n) => [...ev].reverse().find((x) => x.ev === n);
+    const text = (x) => (x ? String(x.d || '').slice(0, 200) : '');
+    const dial = last('dialresult'); const hang = last('hangup');
+    if (hang) return { status: last('answer') ? 'completed' : 'failed', detail: [text(dial), text(hang)].filter(Boolean).join(' | ') };
+    if (dial && /busy|no-?answer|fail|cancel|reject|timeout/i.test(text(dial))) return { status: 'ringing', detail: `Customer leg: ${text(dial)}` };
+    if (last('answer')) return { status: 'in-progress', detail: text(last('dial')) };
+    return { status: 'ringing' };
   },
-  async hangup(c, id) { const v = vb(c); await fetch(`${v.base}/api/v1/Account/${v.id}/Call/${encodeURIComponent(id)}`, { method: 'DELETE', headers: v.h }); },
-  answerXml: (to, cid) => `<?xml version="1.0" encoding="UTF-8"?><Response><Dial callerId="${cid}" timeout="30"><Number>${to}</Number></Dial></Response>`,
+  async hangup(c, ref) { const v = vb(c); const id = await cmd(['GET', `tel:uuid:${ref}`]).catch(() => ''); if (id) await fetch(`${v.base}/api/v1/Account/${v.id}/Call/${encodeURIComponent(id)}`, { method: 'DELETE', headers: v.h }); },
+  answerXml: (to, cid, base, ref) => `<?xml version="1.0" encoding="UTF-8"?><Response><Dial callerId="${cid}" timeout="40" timeLimit="3600" action="${base}/api/telephony/hook/${ref}/dialresult" method="POST" redirect="false" callbackUrl="${base}/api/telephony/hook/${ref}/dial" callbackMethod="POST"><Number>${to}</Number></Dial></Response>`,
 };
 
 // ---------- Exotel (connect two numbers) ----------
@@ -97,5 +99,8 @@ const ozonetel = {
 
 const P = { vobiz, exotel, ozonetel };
 export const adapterFor = (c) => P[c.provider];
-export const answerXml = (to, cid) => vobiz.answerXml(to, cid);
+export const answerXml = (to, cid, base, ref) => vobiz.answerXml(to, cid, base, ref);
+export const logEvent = (ref, ev, d) => pushEvent(`tel-${ref}`, { ev, t: Date.now(), d });
+export const getCtx = async (ref) => { try { return JSON.parse((await cmd(['GET', `tel:ctx:${ref}`])) || 'null'); } catch { return null; } };
+export const setCtx = (ref, o) => cmd(['SET', `tel:ctx:${ref}`, JSON.stringify(o), 'EX', '7200']);
 export { toE164, cidOf, ended };
