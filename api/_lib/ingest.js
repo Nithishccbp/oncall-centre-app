@@ -68,6 +68,7 @@ export function normalise(b, now = new Date()) {
     vertical: clean(b.vertical, 40) || 'real-estate', tenant: clean(b.tenant, 60), project_code: clean(b.project_code, 60),
     started_at: new Date(b.started_at).toISOString(), ended_at: b.ended_at ? new Date(b.ended_at).toISOString() : undefined, duration_sec: durationSec,
     language: clean(b.language, 12),
+    handled_by: b.handled_by === 'ai' ? 'ai' : 'human', ai_agent: clean(b.ai_agent, 80), handover: !!b.handover,
     agent: { employee_id: clean(b.agent.employee_id, 40), name: clean(b.agent.name, 80), email: clean(b.agent.email, 120) },
     customer: { phone: clean(b.customer.phone, 20), name: clean(b.customer.name, 80), crm_id: clean(b.customer.crm_id, 40), lead_id: clean(b.customer.lead_id, 40) },
     consent: { status: consent, captured_at: clean(b.consent?.captured_at, 40), proof_ref: clean(b.consent?.proof_ref, 200) },
@@ -95,6 +96,7 @@ export function route(c, given = []) {
   c.signals.forEach((s) => tags.add(`og.signal.${s.category.toLowerCase().replace(/ related| demanded| needed/g, '').replace(/[^a-z]+/g, '-').replace(/^-|-$/g, '')}`));
   c.sop.filter((s) => !s.passed).forEach((s) => tags.add(`og.sop-missed.${s.step}`));
   if (c.follow_up) tags.add(`og.followup.${c.follow_up.type}`);
+  tags.add(`og.handled.${c.handled_by || 'human'}`); if (c.ai_agent) tags.add(`og.ai-agent.${c.ai_agent.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`); if (c.handover) tags.add('og.handover.to-human');
   const landed = [];
   const hasPerson = c.customer.phone || c.customer.crm_id || c.customer.name;
   if (hasPerson) { tags.add(`og.lead.${v}`); landed.push({ surface: 'leads', where: 'Leads modal and Plan > Calls to make', action: c.customer.lead_id ? 'update' : 'create-or-update' }); }

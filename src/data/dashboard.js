@@ -4,7 +4,7 @@ const user_seed = {
   name: 'Meghna Rao', initials: 'AR', store: 'Godrej Properties', team: 'Presales',
   location: 'Lakeside Towers', ogScore: 76, rank: 3, avatarEmoji: '🦸‍♂️',
 };
-export const user = DEMO ? user_seed : { ...user_seed, ogScore: 0, rank: '–' };
+export const user = DEMO ? { ...user_seed, phone: '+91 98450 11223' } : { ...user_seed, ogScore: 0, rank: '–', phone: '' }; // phone = the employee's own mobile from the login profile
 
 const kpis_seed = [
   { label: 'OG SCORE™', value: '76', delta: '▲13', tone: 'good' },

@@ -12,6 +12,7 @@ import { useCall, fmtClock } from '../../context/CallContext.jsx';
 import { loadConfig, normalizePhone, getAgentPhone, setAgentPhone } from '../../services/phoneCall.js';
 import { checkpointsFor, leadMeta, pitchFor } from '../../data/calling.js';
 import { prepFor } from '../../data/prep.js';
+import { user } from '../../data/dashboard.js';
 import { formatINR } from '../../data/selectors.js';
 import './Calling.css';
 
@@ -52,7 +53,7 @@ function PreCall({ onPlace }) {
   const { call, lead, end } = useCall();
   const [brief, setBrief] = useState(!!lead);
   const [mode, setMode] = useState('phone');
-  const [myPhone, setMyPhone] = useState(getAgentPhone());
+  const [myPhone, setMyPhone] = useState(getAgentPhone() || user.phone || '');
   const [code, setCode] = useState('');
   const [phone, setPhone] = useState(lead?.phone || (/^[\d+ ]{8,}$/.test(call.name || '') ? call.name : ''));
   const [cfg, setCfg] = useState(null);
