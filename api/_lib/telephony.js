@@ -98,6 +98,25 @@ const ozonetel = {
 };
 
 const P = { vobiz, exotel, ozonetel };
+// One-click web-calling setup on the Vobiz account: find or create the application (answer URL = this app), then create a browser endpoint.
+export async function vobizWebSetup(c, base, crypto) {
+  const v = vb(c); const steps = []; const q = (m, path, body) => fetch(`${v.base}/api/v1/Account/${v.id}/${path}`, { method: m, headers: v.h, body: body ? JSON.stringify(body) : undefined }).then(async (r) => { const d = await j(r); steps.push({ step: `${m} ${path}`, status: r.status, body: JSON.stringify(d).slice(0, 220) }); return { ok: r.ok, d }; });
+  const answer = `${base}/api/telephony/webrtc`; const hangup = `${base}/api/telephony/hook/web/hangup`; const NAME = 'Call Centre Web';
+  const idOf = (d) => d.app_id || d.application_id || d.id || d.data?.app_id || d.data?.id || d.object?.app_id;
+  let appId = '';
+  const list = await q('GET', 'Application/');
+  const found = (list.d.objects || list.d.applications || list.d.data || []).find?.((a) => (a.app_name || a.name) === NAME);
+  if (found) appId = idOf(found) || found.app_id;
+  if (!appId) {
+    const made = await q('POST', 'Application/', { app_name: NAME, answer_url: answer, answer_method: 'POST', hangup_url: hangup, hangup_method: 'POST' });
+    if (made.ok) appId = idOf(made.d);
+  }
+  if (!appId) return { ok: false, error: 'Vobiz did not accept the application request.', steps };
+  const username = `ccweb${crypto.randomInt(100000, 999999)}`; const password = crypto.randomBytes(9).toString('base64').replace(/[^A-Za-z0-9]/g, 'x').slice(0, 14) + 'A1';
+  const ep = await q('POST', 'Endpoint/', { username, password, alias: 'Call Centre Web', app_id: appId, application_id: appId });
+  if (!ep.ok) return { ok: false, error: 'Vobiz did not accept the endpoint request.', steps };
+  return { ok: true, username, password, appId, steps };
+}
 export const adapterFor = (c) => P[c.provider];
 export const answerXml = (to, cid, base, ref) => vobiz.answerXml(to, cid, base, ref);
 export const logEvent = (ref, ev, d) => pushEvent(`tel-${ref}`, { ev, t: Date.now(), d });

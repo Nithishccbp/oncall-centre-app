@@ -1,7 +1,7 @@
 // Settings > Telephony: connect the brand's calling provider (Vobiz / Exotel / Ozonetel), activate numbers, pick the staff caller ID.
 // Secrets are sent to our server once and never come back to the browser.
 import { useEffect, useState } from 'react';
-import { api } from '../../services/phoneCall.js';
+import { api, getWebCreds, setWebCreds } from '../../services/phoneCall.js';
 
 const FIELDS = {
   vobiz: [['id', 'Auth ID', 'MA_XXXXXXXX'], ['token', 'Auth Secret', 'Auth token from the Vobiz console', true]],
@@ -21,6 +21,13 @@ export default function TelephonyCard({ toast }) {
   const [num, setNum] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
+  const [web, setWeb] = useState(getWebCreds());
+  const [dbg, setDbg] = useState('');
+  const setupWeb = async () => {
+    setBusy(true); setErr(''); setDbg('');
+    try { const r = await api('/api/telephony/websetup', { method: 'POST', body: '{}' }); if (r.ok) { const c = { u: r.username, p: r.password }; setWebCreds(c); setWeb(c); toast('Web calling is set up'); } else { setErr(r.error); setDbg(JSON.stringify(r.steps)); } }
+    catch (e) { setErr(e.message); } finally { setBusy(false); }
+  };
   const load = () => fetch('/api/telephony/config').then((r) => r.json()).then((d) => { setT(d.telephony); if (d.telephony?.provider && d.telephony.provider !== 'none') setProv(d.telephony.provider); }).catch(() => setT(false));
   useEffect(() => { load(); }, []);
 
@@ -57,6 +64,10 @@ export default function TelephonyCard({ toast }) {
           </div>
           {t.dids.length > 1 && (<><div className="label-caps" style={{ marginTop: 10 }}>Staff caller ID</div>
             <select style={inp} value={t.callerId || ''} onChange={(e) => post('/api/telephony/save', { callerId: e.target.value }, 'Caller ID updated')} aria-label="Staff caller ID">{t.dids.map((d) => <option key={d}>{d}</option>)}</select></>)}
+          <div className="label-caps" style={{ marginTop: 10 }}>Web calling (browser → customer)</div>
+          {web.u ? <small className="muted">Set up on this device · login {web.u}</small> : <small className="muted">Not set up on this device yet.</small>}
+          <div><button style={{ ...ghost, marginTop: 6 }} disabled={busy} onClick={setupWeb}>{web.u ? 'Set up again' : 'Set up web calling'}</button></div>
+          {dbg && <textarea readOnly style={{ ...inp, marginTop: 6, fontSize: 11, height: 90 }} value={dbg} aria-label="Details to send to support" />}
           <button style={{ ...ghost, marginTop: 10 }} disabled={busy} onClick={() => window.confirm('Disconnect the calling provider?') && post('/api/telephony/disconnect', {}, 'Disconnected')}>Disconnect</button>
         </>
       )}

@@ -3,7 +3,7 @@
 import { phoneReady, phoneMode, aiPhoneReady, env, allowed, baseUrl } from './_lib/twilio.js';
 import { vonageReady } from './_lib/vonage.js';
 import { storeReady } from './_lib/store.js';
-import { loadCfg, saveCfg, clearCfg, telConfig, adapterFor, answerXml, toE164, cidOf, logEvent, getCtx, setCtx } from './_lib/telephony.js';
+import { vobizWebSetup, loadCfg, saveCfg, clearCfg, telConfig, adapterFor, answerXml, toE164, cidOf, logEvent, getCtx, setCtx } from './_lib/telephony.js';
 import crypto from 'node:crypto';
 
 const clean = (v, n = 200) => String(v ?? '').trim().slice(0, n);
@@ -71,6 +71,10 @@ export default async function handler(req, res) {
   }
   const a = adapterFor(cfg);
   if (!a || !tel.ready) return res.status(503).json({ error: `Calling provider is not connected yet (missing: ${tel.missing.join(', ')}). Open Settings > Telephony and connect it.`, telephony: tel });
+  if (op === 'websetup') {
+    if (cfg.provider !== 'vobiz') return res.status(400).json({ error: 'Web calling setup is for Vobiz only.' });
+    try { return res.status(200).json(await vobizWebSetup(cfg, baseUrl(req), crypto)); } catch (e) { return res.status(502).json({ ok: false, error: e.message }); }
+  }
   if (op === 'hangup') { await a.hangup(cfg, String(b.id || '')).catch(() => {}); return res.status(200).json({ ok: true }); }
   if (op === 'call') {
     const to = toE164(b.to); const agentPhone = toE164(b.agentPhone);
