@@ -108,13 +108,14 @@ export const getWebCreds = () => { try { return JSON.parse(localStorage.getItem(
 export const setWebCreds = (c) => { try { localStorage.setItem(WEB_KEY, JSON.stringify(c)); } catch { /* ignore */ } };
 const SDK_URL = 'https://unpkg.com/vobiz-webrtc-sdk@1.0.3/dist/vobiz-webrtc-sdk.min.js';
 let sdkP = null; const web = { vobiz: null, cb: null, user: '', loggedIn: false };
-const loadSdk = () => (sdkP ||= new Promise((res, rej) => {
-  const ready = () => { const V = window.Vobiz?.default || window.Vobiz; return typeof V === 'function' ? res(V) : rej(new Error('The browser calling kit did not start.')); };
-  if (window.Vobiz) return ready();
-  const s = document.createElement('script'); s.src = SDK_URL; s.onload = ready;
-  s.onerror = () => { sdkP = null; rej(new Error('Could not load the browser calling kit. Check the internet connection.')); };
-  document.head.appendChild(s);
-}));
+// The calling kit is bundled into the app (loaded only when a web call starts); the public CDN is only a fallback.
+const loadSdk = () => (sdkP ||= (async () => {
+  try { const m = await import(/* @vite-ignore */ ['vobiz-webrtc-sdk'][0]); const V = m.default?.default || m.default || m.Vobiz; if (typeof V === 'function') return V; } catch { /* fall back to the CDN copy */ }
+  await new Promise((res, rej) => { if (window.Vobiz) return res(); const s = document.createElement('script'); s.src = SDK_URL; s.onload = res; s.onerror = () => rej(new Error('Could not load the browser calling kit. Check the internet connection.')); document.head.appendChild(s); });
+  const V = window.Vobiz?.default || window.Vobiz;
+  if (typeof V !== 'function') throw new Error('The browser calling kit did not start.');
+  return V;
+})().catch((e) => { sdkP = null; throw e; }));
 function webClient(V) {
   if (web.vobiz) return web.vobiz.client;
   if (!document.getElementById('remoteAudio')) { const a = document.createElement('audio'); a.id = 'remoteAudio'; a.autoplay = true; document.body.appendChild(a); }

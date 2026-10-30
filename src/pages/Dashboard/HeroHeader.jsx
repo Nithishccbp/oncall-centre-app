@@ -32,7 +32,7 @@ export default function HeroHeader() {
           </button>
         </div>
       </div>
-      <div className="hero__kpis">{shown.map((k) => <KpiCard key={k.label} {...k} />)}</div>
+      <div className="hero__kpis">{shown.map((k) => <KpiCard key={k.label} {...k} onClick={k.label === 'LEADS CREATED' ? () => openOverlay('kpi-leads') : undefined} />)}</div>
     </section>
   );
 }
