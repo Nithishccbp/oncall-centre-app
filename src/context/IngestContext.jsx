@@ -96,6 +96,7 @@ export function IngestProvider({ children }) {
     return {
       version: state.version, convs: state.convs, refresh: pull,
       todays: today.map((c) => ({ time: hhmm(c.started_at), name: c.customer.name || 'Customer', topic: `${outcomeLabel[c.outcome] || 'Call'} · ${fmtDur(c.duration_sec || 0)}`, stars: c.csat || 4 })).reverse(),
+      ratedToday: rated.map((c) => ({ time: hhmm(c.started_at), name: c.customer.name || 'Customer', stars: c.csat, comment: c.csat_comment || '' })),
       handledToday: today.length, csatToday: rated.length ? Math.round((rated.reduce((n, c) => n + c.csat, 0) / rated.length) * 20) : null,
       followUps: state.convs.filter((c) => c.follow_up).map((c) => ({ id: `ev-${c.conversation_id}`, date: c.follow_up.at.slice(0, 10), time: new Date(c.follow_up.at).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true }).toUpperCase(), title: c.follow_up.title || (c.follow_up.type === 'callback' ? `Callback · ${c.customer.name}` : `Site visit · ${c.customer.name}`), who: `With ${c.customer.name || 'customer'} · from conversation ${c.conversation_id}` })),
       weak: Object.entries(missedSteps).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([label, n]) => ({ label, n })),

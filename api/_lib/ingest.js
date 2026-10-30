@@ -74,7 +74,7 @@ export function normalise(b, now = new Date()) {
     consent: { status: consent, captured_at: clean(b.consent?.captured_at, 40), proof_ref: clean(b.consent?.proof_ref, 200) },
     transcript: usable ? transcript : [], audio_url: usable ? clean(b.audio_url, 500) : undefined,
     summary: clean(b.summary, 1500) || (usable && agentText ? agentText.slice(0, 220) : ''),
-    outcome, csat: num(b.csat) >= 1 && num(b.csat) <= 5 ? Math.round(num(b.csat)) : undefined,
+    outcome, csat_comment: typeof b.csat_comment === 'string' ? b.csat_comment.slice(0, 200) : undefined, csat: num(b.csat) >= 1 && num(b.csat) <= 5 ? Math.round(num(b.csat)) : undefined,
     sop, sop_score: sopScore, signals,
     interest: b.interest ? { product: clean(b.interest.product, 120), price: num(b.interest.price), cross_sell: clean(b.interest.cross_sell, 120) } : undefined,
     scores: b.scores ? { icp: num(b.scores.icp), intent: num(b.scores.intent) } : undefined,

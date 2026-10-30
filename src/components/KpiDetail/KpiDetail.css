@@ -67,3 +67,19 @@
 .kd__neg { color: #b3261e; font-weight: 700; }
 .kd__pos { color: #0f6e56; font-weight: 700; }
 @media (max-width: 640px) { .kd__stats--4 { grid-template-columns: 1fr 1fr; } }
+/* CSAT (blue) variant */
+.kd--blue { padding: 0; }
+.kd--blue .kd__banner { background: linear-gradient(90deg, #14307a, #1a56c4); }
+.kd--blue .kd__banner .kd__eyebrow { color: #c3d3f5; }
+.kd--blue .kd__pad { background: #f6f8fd; }
+.kd__insight--blue { background: #fff; border-color: #1a56c4; }
+.kd__ln--bluel { border-top-color: #9db8ea; }
+.kd__two { display: grid; grid-template-columns: 1.6fr 1fr; gap: 12px; margin-top: 12px; }
+.kd__two .kd__card { margin-top: 0; }
+.kd__rate { display: grid; grid-template-columns: 26px 1fr 22px; gap: 10px; align-items: center; margin: 12px 0; font-size: 12px; }
+.kd__rbar { height: 6px; border-radius: 3px; background: #e6ebf5; overflow: hidden; }
+.kd__rbar i { display: block; height: 100%; background: #1a56c4; }
+.kd__rate b { text-align: right; }
+.kd__stars { color: #c8860a; letter-spacing: 1px; font-size: 12px; white-space: nowrap; }
+.kd__stars i { color: #ddd; font-style: normal; }
+@media (max-width: 640px) { .kd__two { grid-template-columns: 1fr; } }
