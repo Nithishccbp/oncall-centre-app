@@ -115,7 +115,10 @@ export async function vobizWebSetup(c, base, crypto) {
   const username = `ccweb${crypto.randomInt(100000, 999999)}`; const password = crypto.randomBytes(9).toString('base64').replace(/[^A-Za-z0-9]/g, 'x').slice(0, 14) + 'A1';
   const ep = await q('POST', 'Endpoint/', { username, password, alias: 'Call Centre Web', app_id: appId, application_id: appId });
   if (!ep.ok) return { ok: false, error: 'Vobiz did not accept the endpoint request.', steps };
-  return { ok: true, username, password, appId, steps };
+  // Vobiz may add digits to the username we asked for, so read the real one from its answer (username field or the sip address).
+  const txt = JSON.stringify(ep.d || {}); const o = ep.d?.data || ep.d?.object || ep.d?.endpoint || ep.d || {};
+  const real = o.username || ep.d?.username || (txt.match(/sip:([A-Za-z0-9_.-]+)@/) || [])[1] || username;
+  return { ok: true, username: real, asked: username, password, appId, steps };
 }
 export const adapterFor = (c) => P[c.provider];
 export const answerXml = (to, cid, base, ref) => vobiz.answerXml(to, cid, base, ref);
