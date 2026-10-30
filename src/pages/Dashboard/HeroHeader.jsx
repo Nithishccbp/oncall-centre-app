@@ -6,7 +6,7 @@ import { useIngest } from '../../context/IngestContext.jsx';
 import { DEMO } from '../../data/demo.js';
 import { leads } from '../../data/leads.js';
 
-const KPI_MODAL = { 'LEADS CREATED': 'kpi-leads', 'OG SCORE™': 'kpi-og', 'CSAT TODAY': 'kpi-csat', 'AVG HANDLE TIME': 'kpi-aht' };
+const KPI_MODAL = { 'LEADS CREATED': 'kpi-leads', 'OG SCORE™': 'kpi-og', 'CSAT TODAY': 'kpi-csat', 'AVG HANDLE TIME': 'kpi-aht', 'LEADS CALLED': 'kpi-called' };
 
 const greeting = () => {
   const h = new Date().getHours();
@@ -15,9 +15,9 @@ const greeting = () => {
 
 export default function HeroHeader() {
   const { range, openOverlay } = useUi();
-  const { handledToday, csatToday } = useIngest();
+  const { handledToday, csatToday, calledToday } = useIngest();
   const created = (DEMO ? 3 : 0) + leads.filter((l) => l.ingested).length;
-  const shown = kpis.map((k) => (k.label === 'CSAT TODAY' && csatToday ? { ...k, value: `${csatToday}%`, tone: 'good' } : k.label === 'LEADS CREATED' ? { ...k, value: String(created) } : k.label === 'LEADS CALLED' ? { ...k, value: String((DEMO ? 2 : 0) + handledToday) } : k));
+  const shown = kpis.map((k) => (k.label === 'LEADS CALLED' && !DEMO ? { ...k, value: String((calledToday || []).length) } : k.label === 'CSAT TODAY' && csatToday ? { ...k, value: `${csatToday}%`, tone: 'good' } : k.label === 'LEADS CREATED' ? { ...k, value: String(created) } : k.label === 'LEADS CALLED' ? { ...k, value: String((DEMO ? 2 : 0) + handledToday) } : k));
   return (
     <section className="hero">
       <div className="hero__top">

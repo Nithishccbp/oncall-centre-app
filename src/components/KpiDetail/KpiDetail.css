@@ -91,3 +91,13 @@
 .kd__bar--blue i { background: #1a3fa8; }
 .kd__rate--day { margin: 7px 0; grid-template-columns: 38px 1fr 24px; }
 .kd__rate--day .kd__rbar i { background: #1a3fa8; }
+/* Leads Called (green) variant */
+.kd--green { padding: 0; }
+.kd--green .kd__banner { background: linear-gradient(90deg, #0b4d3c, #167a5e); }
+.kd--green .kd__banner .kd__eyebrow { color: #bfe6d8; }
+.kd--green .kd__pad { background: #f6faf8; }
+.kd--green .kd__stats--4 { margin-bottom: 0; }
+.kd--green .kd__pill { max-width: 100%; white-space: normal; }
+.kd__stats--3b { grid-template-columns: 1fr 1.3fr 1.3fr 1.3fr; }
+.kd__ln--green { border-top-color: #0f6e56; }
+.kd__ln--greenl { border-top-color: #5dcaa5; }

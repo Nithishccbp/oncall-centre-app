@@ -97,6 +97,7 @@ export function IngestProvider({ children }) {
       version: state.version, convs: state.convs, refresh: pull,
       todays: today.map((c) => ({ time: hhmm(c.started_at), name: c.customer.name || 'Customer', topic: `${outcomeLabel[c.outcome] || 'Call'} · ${fmtDur(c.duration_sec || 0)}`, stars: c.csat || 4 })).reverse(),
       ratedToday: rated.map((c) => ({ time: hhmm(c.started_at), name: c.customer.name || 'Customer', stars: c.csat, comment: c.csat_comment || '' })),
+      calledToday: today.filter((c) => c.direction === 'out').map((c) => ({ time: hhmm(c.started_at), hour: new Date(c.started_at).getHours() + new Date(c.started_at).getMinutes() / 60, name: c.customer.name || c.customer.phone || 'Lead', dur: c.duration_sec || 0, outcome: c.summary || outcomeLabel[c.outcome] || 'Called', quote: !!c.quote_sent })).reverse(),
       week: Array.from({ length: 7 }, (_, i) => {
         const d = new Date(); d.setDate(d.getDate() - (6 - i));
         const list = state.convs.filter((c) => c.type === 'call' && c.direction !== 'missed' && new Date(c.started_at).toDateString() === d.toDateString());
