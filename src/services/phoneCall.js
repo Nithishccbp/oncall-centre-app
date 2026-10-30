@@ -102,6 +102,60 @@ export async function startPhoneCall({ phone, handlers }) {
 export const getAgentPhone = () => { try { return localStorage.getItem('og_agent_phone') || ''; } catch { return ''; } };
 export const setAgentPhone = (v) => { try { localStorage.setItem('og_agent_phone', v); } catch { /* ignore */ } };
 
+// ---------- Web → customer (browser calls straight out through Vobiz WebRTC) ----------
+const WEB_KEY = 'og_vobiz_ep';
+export const getWebCreds = () => { try { return JSON.parse(localStorage.getItem(WEB_KEY) || '{}'); } catch { return {}; } };
+export const setWebCreds = (c) => { try { localStorage.setItem(WEB_KEY, JSON.stringify(c)); } catch { /* ignore */ } };
+const SDK_URL = 'https://unpkg.com/vobiz-webrtc-sdk@1.0.3/dist/vobiz-webrtc-sdk.min.js';
+let sdkP = null; const web = { vobiz: null, cb: null, user: '', loggedIn: false };
+const loadSdk = () => (sdkP ||= new Promise((res, rej) => {
+  const ready = () => { const V = window.Vobiz?.default || window.Vobiz; return typeof V === 'function' ? res(V) : rej(new Error('The browser calling kit did not start.')); };
+  if (window.Vobiz) return ready();
+  const s = document.createElement('script'); s.src = SDK_URL; s.onload = ready;
+  s.onerror = () => { sdkP = null; rej(new Error('Could not load the browser calling kit. Check the internet connection.')); };
+  document.head.appendChild(s);
+}));
+function webClient(V) {
+  if (web.vobiz) return web.vobiz.client;
+  if (!document.getElementById('remoteAudio')) { const a = document.createElement('audio'); a.id = 'remoteAudio'; a.autoplay = true; document.body.appendChild(a); }
+  web.vobiz = new V({ debug: 'ERROR', permOnClick: true, closeProtection: false, enableTracking: false });
+  const c = web.vobiz.client;
+  ['onLogin', 'onLoginFailed', 'onLogout', 'onCallAnswered', 'onCallTerminated', 'onCallFailed', 'onPermissionDenied'].forEach((ev) => c.on(ev, (...a) => {
+    if (ev === 'onLogin') web.loggedIn = true; if (ev === 'onLoginFailed' || ev === 'onLogout') web.loggedIn = false;
+    web.cb?.[ev]?.(...a);
+  }));
+  return c;
+}
+
+/** Web → customer: the browser's microphone and speaker carry the call; Vobiz dials the customer showing the brand number. */
+export async function startWebPhoneCall({ phone, handlers }) {
+  const to = normalizePhone(phone);
+  if (!to) throw new Error('That phone number does not look right.');
+  const cr = getWebCreds();
+  if (!cr.u || !cr.p) throw new Error('Enter your Vobiz endpoint username and password first (see TELEPHONY_SETUP.md).');
+  const V = await loadSdk(); const c = webClient(V);
+  const s = { kind: 'webphone', client: c, ended: false, captions: null, timer: null };
+  cur = s;
+  return new Promise((resolve, reject) => {
+    let answered = false;
+    const fail = (m) => { if (answered) { handlers.onEnd(m); teardown(); } else { teardown(); reject(new Error(m)); } };
+    const why = (x) => (typeof x === 'string' ? x : x?.reason || x?.cause || x?.description || x?.message || '');
+    web.cb = {
+      onLoginFailed: (x) => { if (!answered) fail(`Could not sign in to Vobiz. Check the endpoint username and password${why(x) ? ` (${why(x)})` : ''}.`); },
+      onPermissionDenied: () => fail('Microphone permission is needed for a web call.'),
+      onCallAnswered: () => { answered = true; clearTimeout(s.timer); resolve(); },
+      onCallFailed: (x) => fail(answered ? 'The call ended.' : `The call could not be connected${why(x) ? ` (${why(x)})` : ''}.`),
+      onCallTerminated: () => { if (!s.ended) fail(answered ? 'The call ended.' : 'The call ended before the customer answered.'); },
+    };
+    const place = () => { try { if (!c.call(to, { 'X-VH-Source': 'call-centre-web' })) fail('Could not start the call.'); } catch (e) { fail(e.message || 'Could not start the call.'); } };
+    s.timer = setTimeout(() => fail('No answer after 75 seconds.'), 75000);
+    if (web.loggedIn && web.user === cr.u) return place();
+    const lt = setTimeout(() => { if (!web.loggedIn) fail('Could not connect to Vobiz in 15 seconds. Check the endpoint username and password, and the internet connection.'); }, 15000);
+    web.cb.onLogin = () => { clearTimeout(lt); web.user = cr.u; place(); };
+    try { c.login(cr.u, cr.p); } catch (e) { fail(e.message || 'Could not sign in to Vobiz.'); }
+  });
+}
+
 /** Staff phone → customer through the telephony provider (Vobiz / Exotel / Ozonetel).
  *  The provider rings the AGENT's phone first, then bridges to the customer showing the brand's DID. */
 export async function startStaffPhoneCall({ phone, handlers }) {
@@ -167,12 +221,12 @@ export async function startAiPhoneCall({ phone, lead, handlers }) {
 
 /** Agent's own live captions on a phone call (only used while recording consent is ON). */
 export function setPhoneCaptions(on, onLine) {
-  if (!cur || cur.kind !== 'phone') return;
+  if (!cur || (cur.kind !== 'phone' && cur.kind !== 'webphone')) return;
   if (!on) { cur.captions?.stop(); cur.captions = null; return; }
   if (!cur.captions) cur.captions = startCaptions((text) => onLine({ who: 'agent', text }));
 }
 
-export const setPhoneMuted = (muted) => { try { cur?.call?.mute(muted); } catch { /* ignore */ } };
+export const setPhoneMuted = (muted) => { try { if (cur?.kind === 'webphone') { if (muted) cur.client.mute(); else cur.client.unmute(); } else cur?.call?.mute(muted); } catch { /* ignore */ } };
 
 function teardown() {
   const s = cur;
@@ -185,6 +239,7 @@ function teardown() {
     if (s.sid && !s.call) api('/api/click-call', { method: 'POST', body: JSON.stringify({ end: true, sid: s.sid }) }).catch(() => {});
     setTimeout(() => { try { s.device.destroy(); } catch { /* ignore */ } }, 300);
   }
+  if (s.kind === 'webphone') { web.cb = null; try { s.client.hangup(); } catch { /* ignore */ } }
   if (s.kind === 'staffphone') api('/api/telephony/hangup', { method: 'POST', body: JSON.stringify({ id: s.sid }) }).catch(() => {});
   if (s.kind === 'aiphone') api('/api/ai-call', { method: 'POST', body: JSON.stringify({ end: true, sid: s.sid }) }).catch(() => {});
 }

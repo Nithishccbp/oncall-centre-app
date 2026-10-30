@@ -9,7 +9,7 @@ import RightsPanel from './RightsPanel.jsx';
 import WrapUpModal from './WrapUpModal.jsx';
 import DemoStrip from './DemoStrip.jsx';
 import { useCall, fmtClock } from '../../context/CallContext.jsx';
-import { loadConfig, normalizePhone, getAgentPhone, setAgentPhone } from '../../services/phoneCall.js';
+import { loadConfig, normalizePhone, getAgentPhone, setAgentPhone, getWebCreds, setWebCreds } from '../../services/phoneCall.js';
 import { checkpointsFor, leadMeta, pitchFor } from '../../data/calling.js';
 import { prepFor } from '../../data/prep.js';
 import { user } from '../../data/dashboard.js';
@@ -20,6 +20,7 @@ const initials = (name) => name.split(' ').map((p) => p[0]).join('').slice(0, 2)
 
 /** "Before you call X": product to champion, pitching language, cross-sell, ideal home-loan EMI, SOP checkpoints. */
 const modes = [
+  { id: 'webphone', label: '🎧 Web → customer', group: 'phone', hint: 'Talk through this browser (microphone and speaker). The call goes straight to the customer, who sees the brand number. No staff phone needed.' },
   { id: 'staffphone', label: '☎️ My phone → customer', group: 'phone', hint: 'Your telephony provider (Vobiz, Exotel or Ozonetel) rings YOUR phone, then connects the customer. The customer sees the brand number.' },
   { id: 'phone', label: '📞 Phone number', group: 'phone', hint: 'Real call to a normal mobile or landline number, spoken through this browser (Twilio).' },
   { id: 'aiphone', label: '🤖 AI → phone', group: 'phone', hint: 'Avani, our AI agent, rings a real phone number and talks to the customer (Vonage or Twilio, plus Gemini).' },
@@ -53,19 +54,21 @@ function PreCall({ onPlace }) {
   const { call, lead, end } = useCall();
   const [brief, setBrief] = useState(!!lead);
   const [mode, setMode] = useState('phone');
+  const [ep, setEp] = useState(getWebCreds());
   const [myPhone, setMyPhone] = useState(getAgentPhone() || user.phone || '');
   const [code, setCode] = useState('');
   const [phone, setPhone] = useState(lead?.phone || (/^[\d+ ]{8,}$/.test(call.name || '') ? call.name : ''));
   const [cfg, setCfg] = useState(null);
-  useEffect(() => { loadConfig().then((c) => { setCfg(c); if (c.staffPhone) setMode('staffphone'); else if (!c.phone && !c.aiPhone) setMode('human'); }); }, []);
-  const isPhone = mode === 'phone' || mode === 'aiphone' || mode === 'staffphone';
+  useEffect(() => { loadConfig().then((c) => { setCfg(c); if (c.staffPhone) setMode(getWebCreds().u ? 'webphone' : 'staffphone'); else if (!c.phone && !c.aiPhone) setMode('human'); }); }, []);
+  const isPhone = ['phone', 'aiphone', 'staffphone', 'webphone'].includes(mode);
+  const epOk = mode !== 'webphone' || !!(ep.u && ep.p);
   const brandNo = cfg?.telephony?.callerId; const myN = normalizePhone(myPhone); const custN = normalizePhone(phone);
   const clash = mode !== 'staffphone' ? '' : myN && myN === brandNo ? 'That is the brand number. Type YOUR OWN mobile number here (the phone the provider should ring first).' : myN && custN && myN === custN ? 'Your number and the customer number are the same. Use a different phone for the customer.' : custN && custN === brandNo ? 'The customer number is the brand number. Type the customer\'s own number.' : '';
   const myOk = mode !== 'staffphone' || (!!myN && !clash);
   const needCode = mode === 'human' || mode === 'ai';
   const phoneOk = !!normalizePhone(phone);
-  const ready = !isPhone || !cfg || (mode === 'staffphone' ? cfg.staffPhone : mode === 'phone' ? cfg.phone : cfg.aiPhone);
-  const canPlace = (!needCode || code.length >= 5) && (!isPhone || (phoneOk && ready && myOk));
+  const ready = !isPhone || !cfg || (mode === 'webphone' ? (cfg.staffPhone && cfg.telephony?.provider === 'vobiz') : mode === 'staffphone' ? cfg.staffPhone : mode === 'phone' ? cfg.phone : cfg.aiPhone);
+  const canPlace = (!needCode || code.length >= 5) && (!isPhone || (phoneOk && ready && myOk && epOk));
   const first = call.name.split(' ')[0];
   const meta = leadMeta(lead);
   if (brief) return <PrepBrief onReady={() => setBrief(false)} />;
@@ -111,6 +114,13 @@ function PreCall({ onPlace }) {
           <label className="pc__code">Customer's real phone number
             <input className="pc__tel" value={phone} onChange={(e) => setPhone(e.target.value.replace(/[^\d+ ]/g, '').slice(0, 16))} inputMode="tel" placeholder="e.g. 98765 43210 or +91…" aria-label="Customer phone number" />
             <small className="pc__note">{phone && !phoneOk ? 'This number does not look right.' : 'Demo leads have fake numbers — type a real one you can answer.'}</small>
+          </label>
+        )}
+        {mode === 'webphone' && (
+          <label className="pc__code">Your Vobiz web-calling login (saved on this device only)
+            <input className="pc__tel" value={ep.u || ''} onChange={(e) => { const n = { ...ep, u: e.target.value.replace(/[^A-Za-z0-9]/g, '') }; setEp(n); setWebCreds(n); }} placeholder="Endpoint username" aria-label="Endpoint username" autoComplete="off" />
+            <input className="pc__tel" type="password" style={{ marginTop: 6 }} value={ep.p || ''} onChange={(e) => { const n = { ...ep, p: e.target.value }; setEp(n); setWebCreds(n); }} placeholder="Endpoint password" aria-label="Endpoint password" autoComplete="off" />
+            <small className="pc__note">{cfg?.telephony?.callerId ? `Customer will see ${cfg.telephony.callerId}. ` : ''}Allow the microphone when the browser asks.</small>
           </label>
         )}
         {mode === 'staffphone' && (

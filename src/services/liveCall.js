@@ -3,7 +3,7 @@
 //  - 'ai' mode:    the AI voice agent (Avani) talks to the person on the /customer page; the agent watches the live transcript.
 // No backend of our own is needed: audio flows peer to peer; only the "who is calling whom" handshake uses PeerJS cloud.
 import Peer from 'peerjs';
-import { startStaffPhoneCall, startPhoneCall, startAiPhoneCall, stopPhoneCall, setPhoneMuted, setPhoneCaptions } from './phoneCall.js';
+import { startWebPhoneCall, startStaffPhoneCall, startPhoneCall, startAiPhoneCall, stopPhoneCall, setPhoneMuted, setPhoneCaptions } from './phoneCall.js';
 
 export const LINE_PREFIX = 'ogcc-';
 
@@ -42,6 +42,7 @@ let session = null;
  * handlers: { onLine(line), onEnd(reason) }
  */
 export function startLiveCall({ mode, code, phone, lead, handlers }) {
+  if (mode === 'webphone') return startWebPhoneCall({ phone, handlers });
   if (mode === 'staffphone') return startStaffPhoneCall({ phone, handlers });
   if (mode === 'phone') return startPhoneCall({ phone, handlers });
   if (mode === 'aiphone') return startAiPhoneCall({ phone, lead, handlers });

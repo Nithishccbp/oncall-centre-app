@@ -35,6 +35,15 @@ export default async function handler(req, res) {
       telephony: { ...tel, canSave: storeReady() }, staffPhone: tel.ready,
     });
   }
+  if (op === 'webrtc') { // Vobiz asks this when a browser (SIP endpoint) places a call. Public on purpose; only browser-originated calls get a Dial.
+    const p = { ...(req.query || {}), ...(req.body && typeof req.body === 'object' ? req.body : {}) };
+    const fromBrowser = /^sip:/i.test(String(p.From || '')) || /sip/i.test(String(p.RouteType || ''));
+    const to = toE164(String(p.To || p.to || '').replace(/^sip:/i, '').split('@')[0]); const cid = cidOf(cfg);
+    res.setHeader('Content-Type', 'text/xml');
+    if (!fromBrowser || !to || !cid) return res.status(200).send('<?xml version="1.0" encoding="UTF-8"?><Response><Speak>This call cannot be connected.</Speak><Hangup/></Response>');
+    const r = crypto.randomBytes(6).toString('hex'); const base = baseUrl(req);
+    return res.status(200).send(`<?xml version="1.0" encoding="UTF-8"?><Response><Dial callerId="${cid}" timeout="45" timeLimit="3600" action="${base}/api/telephony/hook/${r}/dialresult" method="POST" redirect="false"><Number>${to}</Number></Dial></Response>`);
+  }
   if (!allowed(req)) return res.status(401).json({ error: 'passcode' });
   if (op === 'status' || req.method !== 'POST') {
     if (op !== 'status') return res.status(405).json({ error: 'Use POST' });
