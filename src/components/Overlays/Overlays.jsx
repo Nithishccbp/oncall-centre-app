@@ -7,6 +7,7 @@ import { useUi } from '../../context/UiContext.jsx';
 import { avatars, languages, notifications, rankBreakdown } from '../../data/calling.js';
 import { user } from '../../data/dashboard.js';
 import { TODAY } from '../../data/calendar.js';
+import OgScoreModal from '../KpiDetail/OgScoreModal.jsx';
 import LeadsCreatedModal from '../KpiDetail/LeadsCreatedModal.jsx';
 import './Overlays.css';
 
@@ -189,6 +190,7 @@ function DateRange({ close }) {
 
 export default function Overlays() {
   const { overlay, closeOverlay } = useUi();
+  if (overlay === 'kpi-og') return <OgScoreModal close={closeOverlay} />;
   if (overlay === 'kpi-leads') return <LeadsCreatedModal close={closeOverlay} />;
   if (overlay === 'notifications') return <Notifications close={closeOverlay} />;
   if (overlay === 'ogscore') return <OgScore close={closeOverlay} />;

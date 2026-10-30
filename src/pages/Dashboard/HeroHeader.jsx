@@ -6,6 +6,8 @@ import { useIngest } from '../../context/IngestContext.jsx';
 import { DEMO } from '../../data/demo.js';
 import { leads } from '../../data/leads.js';
 
+const KPI_MODAL = { 'LEADS CREATED': 'kpi-leads', 'OG SCORE™': 'kpi-og' };
+
 const greeting = () => {
   const h = new Date().getHours();
   return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
@@ -32,7 +34,7 @@ export default function HeroHeader() {
           </button>
         </div>
       </div>
-      <div className="hero__kpis">{shown.map((k) => <KpiCard key={k.label} {...k} onClick={k.label === 'LEADS CREATED' ? () => openOverlay('kpi-leads') : undefined} />)}</div>
+      <div className="hero__kpis">{shown.map((k) => <KpiCard key={k.label} {...k} onClick={KPI_MODAL[k.label] ? () => openOverlay(KPI_MODAL[k.label]) : undefined} />)}</div>
     </section>
   );
 }

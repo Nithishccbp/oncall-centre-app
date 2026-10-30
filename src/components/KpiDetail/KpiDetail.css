@@ -42,3 +42,28 @@
 .kd__pager button { border: 1px solid #e5e5ee; background: #fff; border-radius: 8px; padding: 3px 7px; cursor: pointer; }
 .kd__pager button:disabled { opacity: .4; cursor: default; }
 @media (max-width: 520px) { .kd__stats { grid-template-columns: 1fr; } }
+/* OG Score (gold) variant */
+.kd--gold { padding: 0; }
+.kd__banner { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 64px 14px 24px; background: linear-gradient(90deg, #5c3d05, #a8700a); color: #fff; }
+.kd__banner .kd__eyebrow { color: #f1dca8; padding: 0; }
+.kd__bt { font-size: 20px; font-weight: 800; }
+.kd__pad { padding: 14px 24px 20px; background: #fbf9f4; }
+.kd--gold .kd__big, .kd--gold .kd__num { line-height: 1.1; }
+.kd__stats--4 { grid-template-columns: 1fr 1.3fr 1.3fr 1.3fr; align-items: stretch; }
+.kd__stats--4 .kd__stat { background: #fff; }
+.kd__tap { cursor: pointer; }
+.kd__insight--gold { background: #fff; border-color: #c8860a; }
+.kd__card { background: #fff; border: 1px solid #e5e5ee; border-radius: 12px; padding: 12px 14px; margin-top: 12px; }
+.kd__sec--tight { margin-top: 0; }
+.kd__sec--row { align-items: flex-end; }
+.kd__sub { font-size: 13px; font-weight: 500; letter-spacing: 0; color: #6b6b74; margin-top: 2px; text-transform: none; }
+.kd__tools--inline { margin: 0; }
+.kd__tools--inline .kd__search { min-width: 180px; background: #fff; }
+.kd__ln--gold { border-top-color: #a8700a; }
+.kd__ln--goldl { border-top-color: #e0c690; }
+.kd__box { background: #fff; border: 1px solid #e5e5ee; border-radius: 12px; }
+.kd__bar { display: inline-block; width: 64px; height: 5px; border-radius: 3px; background: #efe6d2; margin-right: 8px; vertical-align: middle; overflow: hidden; }
+.kd__bar i { display: block; height: 100%; background: #c9a24a; }
+.kd__neg { color: #b3261e; font-weight: 700; }
+.kd__pos { color: #0f6e56; font-weight: 700; }
+@media (max-width: 640px) { .kd__stats--4 { grid-template-columns: 1fr 1fr; } }
