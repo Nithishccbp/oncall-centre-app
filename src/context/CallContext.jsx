@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { recentCalls as seedCalls } from '../data/calls.js';
 import { leads, leadByFirstName } from '../data/leads.js';
+import { logAppCall } from '../data/callLog.js';
 import { buildScript, detectSopSteps, moodOf, nudges, outcomes, sentimentLabel } from '../data/calling.js';
 import { setAgentCaptions, setMuted, signal, startLiveCall, stopLiveCall } from '../services/liveCall.js';
 import { useConsent } from './ConsentContext.jsx';
@@ -163,6 +164,11 @@ export function CallProvider({ children }) {
       consentId: consent.consentId, outcome: outcome || null, summary: save ? summary : '',
     };
     setRecent((list) => [entry, ...list.map((c) => (c.dir === 'missed' && call.dir === 'out' && c.name.startsWith(call.name.split(' ')[0]) ? { ...c, handled: true } : c))]);
+    if (call.dir === 'out') {
+      const lo = outcomes.find((x) => x.id === outcome);
+      logAppCall({ name: call.name, leadId: lead?.id, dur: call.seconds, outcome: summary ? summary.split(/[.\n]/)[0].slice(0, 60) : (lo?.label || 'Called'), summary });
+      if (lead) lead.called = true;
+    }
     if (save) {
       const o = outcomes.find((x) => x.id === outcome);
       showToast(`Saved to CRM ✓${o ? ` · closing chance ${o.chance}%` : ''}`);

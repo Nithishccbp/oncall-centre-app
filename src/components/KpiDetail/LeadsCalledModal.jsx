@@ -4,9 +4,8 @@ import { Line } from 'react-chartjs-2';
 import { CategoryScale, Chart as ChartJS, Filler, LinearScale, LineElement, PointElement, Tooltip } from 'chart.js';
 import Modal from '../Modal/Modal.jsx';
 import { useUi } from '../../context/UiContext.jsx';
-import { useIngest } from '../../context/IngestContext.jsx';
 import { DEMO } from '../../data/demo.js';
-import { createdLeads } from './LeadsCreatedModal.jsx';
+import { useKpiData } from '../../data/kpiStats.js';
 import './KpiDetail.css';
 
 ChartJS.register(CategoryScale, LinearScale, LineElement, PointElement, Filler, Tooltip);
@@ -22,13 +21,13 @@ const fmt = (s) => `${Math.floor(s / 60)}m ${String(Math.round(s % 60)).padStart
 
 export default function LeadsCalledModal({ close }) {
   const { showToast } = useUi();
-  const { calledToday } = useIngest();
+  const { calledToday, created } = useKpiData();
   const [q, setQ] = useState('');
   const [sort, setSort] = useState({ k: 'hour', asc: true });
   const [page, setPage] = useState(0);
 
-  const calls = DEMO ? DEMO_CALLS : (calledToday || []);
-  const total = DEMO ? 3 : Math.max(createdLeads().length, calls.length);
+  const calls = DEMO ? [...DEMO_CALLS, ...calledToday] : calledToday;
+  const total = Math.max(created.length, calls.length);
   const n = calls.length;
   const avg = n ? calls.reduce((s, c) => s + c.dur, 0) / n : 0;
   const quotes = calls.filter((c) => c.quote).length;

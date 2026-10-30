@@ -5,7 +5,7 @@ import { CategoryScale, Chart as ChartJS, Filler, LinearScale, LineElement, Poin
 import Modal from '../Modal/Modal.jsx';
 import { useUi } from '../../context/UiContext.jsx';
 import { DEMO } from '../../data/demo.js';
-import { leads } from '../../data/leads.js';
+import { useKpiData } from '../../data/kpiStats.js';
 import { formatINR } from '../../data/selectors.js';
 import './KpiDetail.css';
 
@@ -16,21 +16,21 @@ const HOURS = ['9am', '12pm', '3pm', '5pm', 'Now'];
 const fit = (n) => (n >= 80 ? ['Strong fit', 'good'] : n >= 55 ? ['Partial fit', 'warn'] : ['Weak fit', 'bad']);
 const tone = (n) => (n >= 80 ? 'good' : n >= 55 ? 'warn' : 'bad');
 
-export function createdLeads() {
-  const ing = leads.filter((l) => l.ingested);
-  return DEMO ? [...leads.filter((l) => !l.ingested).slice(0, 3), ...ing] : ing;
-}
+const first = (x) => String(x || '').toLowerCase().split(' ')[0];
+const hourOf = (iso) => { const d = new Date(iso); return d.getHours() + d.getMinutes() / 60; };
+const CUTS = [9, 12, 15, 17, 99];
 
 export default function LeadsCreatedModal({ close }) {
   const { showToast } = useUi();
   const [q, setQ] = useState('');
   const [desc, setDesc] = useState(true);
   const [page, setPage] = useState(0);
+  const { created, calledToday } = useKpiData();
 
-  const rows = useMemo(() => createdLeads().map((l, i) => {
-    const called = l.called ?? (DEMO && i < 2);
+  const rows = useMemo(() => created.map((l, i) => {
+    const called = calledToday.some((c) => (c.leadId && c.leadId === l.id) || first(c.name) === first(l.name)) || (DEMO && !l.ingested && !l.manual && i < 2);
     return { ...l, called, next: called ? `Called · ${l.actionNote || 'follow-up noted'}` : `Call due ${l.callDue || (DEMO ? '4:30pm' : 'today')}` };
-  }), []);
+  }), [created, calledToday]);
 
   const total = rows.length;
   const calledN = rows.filter((r) => r.called).length;
@@ -46,7 +46,7 @@ export default function LeadsCreatedModal({ close }) {
   const cur = Math.min(page, pages - 1);
   const slice = shown.slice(cur * PAGE, cur * PAGE + PAGE);
 
-  const thisLine = DEMO ? [0, 1, 2, 2, total].map((v) => Math.min(v, total)) : [0, 0, 0, 0, total];
+  const thisLine = DEMO ? [0, 1, 2, 2, total].map((v) => Math.min(v, total)) : CUTS.map((cut, i) => (i === 4 ? total : rows.filter((r) => r.createdAt && hourOf(r.createdAt) < cut).length));
   const priorLine = DEMO ? [0, 1, 1, 2, 2].map((v) => Math.min(v, prior)) : [0, 0, 0, 0, 0];
   const max = Math.max(3, total, ...priorLine);
 

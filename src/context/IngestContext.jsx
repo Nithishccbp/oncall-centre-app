@@ -35,7 +35,7 @@ function landLead(c) {
       crossSell: c.interest?.cross_sell || 'Covered parking', emiNote: 'Not discussed yet, share the payment plan early', story: entry.text,
       status: 'Open', score: c.scores?.intent || 60, icp: c.scores?.icp || 60, intent: c.scores?.intent || 60, expectedValue: c.interest?.price || 0, slaLeft: 'New lead',
       actionNote: 'New from conversation', phone: c.customer.phone || '', icpBreakdown: [{ label: 'Budget Fit', pct: c.scores?.icp || 60 }, { label: 'Need Match', pct: 60 }, { label: 'Decision Stage', pct: 50 }],
-      journey: [], signals: [], notes: [], cumulativeMissed: 0, ingested: true,
+      journey: [], signals: [], notes: [], cumulativeMissed: 0, ingested: true, createdAt: c.started_at || new Date().toISOString(),
     };
     leads.unshift(lead);
   }
@@ -97,7 +97,7 @@ export function IngestProvider({ children }) {
       version: state.version, convs: state.convs, refresh: pull,
       todays: today.map((c) => ({ time: hhmm(c.started_at), name: c.customer.name || 'Customer', topic: `${outcomeLabel[c.outcome] || 'Call'} · ${fmtDur(c.duration_sec || 0)}`, stars: c.csat || 4 })).reverse(),
       ratedToday: rated.map((c) => ({ time: hhmm(c.started_at), name: c.customer.name || 'Customer', stars: c.csat, comment: c.csat_comment || '' })),
-      calledToday: today.filter((c) => c.direction === 'out').map((c) => ({ time: hhmm(c.started_at), hour: new Date(c.started_at).getHours() + new Date(c.started_at).getMinutes() / 60, name: c.customer.name || c.customer.phone || 'Lead', dur: c.duration_sec || 0, outcome: c.summary || outcomeLabel[c.outcome] || 'Called', quote: !!c.quote_sent })).reverse(),
+      calledToday: today.filter((c) => c.direction === 'out').map((c) => ({ time: hhmm(c.started_at), hour: new Date(c.started_at).getHours() + new Date(c.started_at).getMinutes() / 60, name: c.customer.name || c.customer.phone || 'Lead', dur: c.duration_sec || 0, outcome: c.summary || outcomeLabel[c.outcome] || 'Called', quote: !!c.quote_sent || /cost sheet|quote/i.test(c.summary || '') })).reverse(),
       week: Array.from({ length: 7 }, (_, i) => {
         const d = new Date(); d.setDate(d.getDate() - (6 - i));
         const list = state.convs.filter((c) => c.type === 'call' && c.direction !== 'missed' && new Date(c.started_at).toDateString() === d.toDateString());

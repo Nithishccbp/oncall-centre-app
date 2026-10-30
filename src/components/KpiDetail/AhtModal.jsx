@@ -4,7 +4,7 @@ import { Line } from 'react-chartjs-2';
 import { CategoryScale, Chart as ChartJS, Filler, LinearScale, LineElement, PointElement, Tooltip } from 'chart.js';
 import Modal from '../Modal/Modal.jsx';
 import { useUi } from '../../context/UiContext.jsx';
-import { useIngest } from '../../context/IngestContext.jsx';
+import { useKpiData } from '../../data/kpiStats.js';
 import { DEMO } from '../../data/demo.js';
 import { callsLast7 } from '../../data/dashboard.js';
 import './KpiDetail.css';
@@ -19,7 +19,7 @@ const short = (s) => `${Math.floor(s / 60)}m ${String(Math.round(s % 60)).padSta
 
 export default function AhtModal({ close }) {
   const { showToast } = useUi();
-  const { week } = useIngest();
+  const { week } = useKpiData();
   const [q, setQ] = useState('');
   const [sort, setSort] = useState({ k: 'i', asc: true });
 
@@ -92,7 +92,7 @@ export default function AhtModal({ close }) {
               <div className="kd__muted">vs similar prior period</div>
             </div>
             <div className="kd__stat"><div className="kd__sl">CALLS THIS WEEK</div><div className="kd__sv">{totalCalls}</div></div>
-            <div className="kd__stat"><div className="kd__sl">BUSIEST DAY</div><div className="kd__sv">{busiest ? busiest.day : '—'}</div><div className="kd__muted">{busiest ? `${busiest.calls} calls` : ' '}</div></div>
+            <div className="kd__stat"><div className="kd__sl">BUSIEST DAY</div><div className="kd__sv">{busiest ? busiest.day : '—'}</div><div className="kd__muted">{busiest ? `${busiest.calls} call${busiest.calls === 1 ? "" : "s"}` : ' '}</div></div>
             <div className="kd__stat"><div className="kd__sl">BEST AHT</div><div className="kd__sv">{best ? fmt(best.aht) : '—'}</div><div className="kd__muted">{best ? best.day.toLowerCase() : ' '}</div></div>
           </div>
 
