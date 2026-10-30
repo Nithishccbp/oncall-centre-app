@@ -6,7 +6,7 @@ import { useIngest } from '../../context/IngestContext.jsx';
 import { DEMO } from '../../data/demo.js';
 import { leads } from '../../data/leads.js';
 
-const KPI_MODAL = { 'LEADS CREATED': 'kpi-leads', 'OG SCORE™': 'kpi-og', 'CSAT TODAY': 'kpi-csat' };
+const KPI_MODAL = { 'LEADS CREATED': 'kpi-leads', 'OG SCORE™': 'kpi-og', 'CSAT TODAY': 'kpi-csat', 'AVG HANDLE TIME': 'kpi-aht' };
 
 const greeting = () => {
   const h = new Date().getHours();

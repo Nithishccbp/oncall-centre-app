@@ -83,3 +83,11 @@
 .kd__stars { color: #c8860a; letter-spacing: 1px; font-size: 12px; white-space: nowrap; }
 .kd__stars i { color: #ddd; font-style: normal; }
 @media (max-width: 640px) { .kd__two { grid-template-columns: 1fr; } }
+/* Avg Handle Time extras */
+.kd__num--md { font-size: 30px; }
+.kd__ln--navy { border-top-color: #1a3fa8; }
+.kd__r { text-align: right !important; }
+.kd__bar--blue { background: #e6ebf5; margin-right: 10px; }
+.kd__bar--blue i { background: #1a3fa8; }
+.kd__rate--day { margin: 7px 0; grid-template-columns: 38px 1fr 24px; }
+.kd__rate--day .kd__rbar i { background: #1a3fa8; }
