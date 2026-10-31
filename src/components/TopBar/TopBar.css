@@ -1,6 +1,6 @@
 .topbar {
   height: var(--topbar-h); flex-shrink: 0; background: rgba(18, 60, 48, 0.97); padding: 8px 16px;
-  display: flex; align-items: center; justify-content: space-between; gap: 8px; position: relative; z-index: 40;
+  display: flex; align-items: center; justify-content: space-between; gap: 8px; position: relative; z-index: 900;
 }
 .topbar__brand { display: flex; align-items: center; gap: 8px; }
 .topbar__logo {

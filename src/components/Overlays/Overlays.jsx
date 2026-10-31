@@ -6,6 +6,8 @@ import { useUi } from '../../context/UiContext.jsx';
 import { useNotifications } from '../../data/notifications.js';
 import { avatars, languages, rankBreakdown } from '../../data/calling.js';
 import { user } from '../../data/dashboard.js';
+import { DEMO } from '../../data/demo.js';
+import { useKpiData } from '../../data/kpiStats.js';
 import { TODAY } from '../../data/calendar.js';
 import './Overlays.css';
 
@@ -53,6 +55,19 @@ function Notifications({ close }) {
 
 function OgScore({ close }) {
   const navigate = useNavigate();
+  if (!DEMO) {
+    return (
+      <Modal open onClose={close} width={380} label="OG Score">
+        <div className="og">
+          <small>OG SCORE™</small>
+          <div className="og__ring"><b>{user.ogScore || '–'}</b><span>/ 100</span></div>
+          <div className="muted">{user.ogScore ? 'Your current OG Score™' : 'Your OG Score™ appears here once your calls have been scored.'}</div>
+          <div className="og__box amber"><p>OG Score™ is the single number most closely tied to your earning potential. It is worked out from your call quality: greeting, discovery, objections and closing.</p></div>
+          <button className="og__cta" onClick={() => { close(); navigate('/pulse/avani-coaching'); }}>🎓 Practise a skill →</button>
+        </div>
+      </Modal>
+    );
+  }
   return (
     <Modal open onClose={close} width={380} label="OG Score">
       <div className="og">
@@ -74,6 +89,17 @@ function OgScore({ close }) {
 }
 
 function Rank({ close }) {
+  const { created, calledToday, week } = useKpiData();
+  const mins = Math.round(((week[6] || {}).calls ? calledToday.reduce((n, c) => n + (c.dur || 0), 0) : 0) / 60);
+  const live = [
+    { icon: '🏆', label: 'OG Score™', value: String(user.ogScore || 0), weight: 40, pct: Math.min(100, user.ogScore || 0) },
+    { icon: '📞', label: 'Leads Called', value: String(calledToday.length), weight: 20, pct: Math.min(100, calledToday.length * 20) },
+    { icon: '🎯', label: 'Leads Created', value: String(created.length), weight: 15, pct: Math.min(100, created.length * 20) },
+    { icon: '⏱️', label: 'Conversation Time', value: `${mins}m`, weight: 15, pct: Math.min(100, Math.round((mins / 80) * 100)) },
+    { icon: '🚚', label: 'On-time Follow-up', value: '0%', weight: 10, pct: 0 },
+  ];
+  const rows = DEMO ? rankBreakdown : live;
+  const comp = DEMO ? '66.9' : (rows.reduce((n, r) => n + (r.pct * r.weight) / 100, 0)).toFixed(1);
   return (
     <Modal open onClose={close} width={400} label="Your rank">
       <div className="rk">
@@ -81,14 +107,15 @@ function Rank({ close }) {
         <div className="rk__n">#{user.rank}</div>
         <div className="muted">within RT Nagar · 6 staff ranked</div>
         <p className="rk__intro">Your rank is a weighted blend of the same numbers in My Progress above — not just one metric. Here's exactly how it adds up this period.</p>
-        {rankBreakdown.map((r) => (
+        {rows.map((r) => (
           <div key={r.label} className="rk__row">
             <div><span>{r.icon} {r.label}</span><span className="muted">{r.value} · {r.weight}% weight</span></div>
             <div className="rk__bar"><span style={{ width: `${r.pct}%` }} /></div>
           </div>
         ))}
-        <div className="rk__comp"><span>Composite score</span><b>66.9 / 100</b></div>
-        <div className="rk__tip">💡 Closing 1 more lead this week would add ~4 points — enough to pass #2. Leads Called is your fastest lever right now.</div>
+        <div className="rk__comp"><span>Composite score</span><b>{comp} / 100</b></div>
+        {DEMO ? <div className="rk__tip">💡 Closing 1 more lead this week would add ~4 points — enough to pass #2. Leads Called is your fastest lever right now.</div>
+          : <div className="rk__tip">💡 Calling your new leads is the fastest way to move up. Each call adds to Leads Called.</div>}
         <small className="muted rk__foot">Weights are store defaults, set by your manager under Settings → Customer Interaction preferences.</small>
       </div>
     </Modal>
