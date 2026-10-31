@@ -7,6 +7,7 @@ import { CallProvider } from './context/CallContext.jsx';
 import { ConsentProvider } from './context/ConsentContext.jsx';
 import { IngestProvider } from './context/IngestContext.jsx';
 import { UiProvider } from './context/UiContext.jsx';
+import UpdateBanner from './components/UpdateBanner/UpdateBanner.jsx';
 import PlanLayout from './pages/Plan/PlanLayout.jsx';
 import CustomerLine from './pages/Customer/CustomerLine.jsx';
 import AudioTest from './pages/AudioTest/AudioTest.jsx';
@@ -22,6 +23,7 @@ import ChannelChat from './pages/Pulse/ChannelChat.jsx';
 export default function App() {
   return (
     <UiProvider>
+    <UpdateBanner />
     <PulseProvider>
       <ConsentProvider>
       <CallProvider>
