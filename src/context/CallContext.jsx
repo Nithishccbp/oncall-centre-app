@@ -46,9 +46,17 @@ export const fmtDuration = (s) => `${Math.floor(s / 60)}m ${String(s % 60).padSt
 export const fmtClock = (s) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 const LINE_MS = 2600;
 
+const REC_KEY = 'og_recent_calls';
+const loadLocal = () => { try { return JSON.parse(localStorage.getItem(REC_KEY) || '[]').filter((c) => Date.now() - new Date(c.ts).getTime() < 30 * 864e5); } catch { return []; } };
+
 export function CallProvider({ children }) {
   const [call, dispatch] = useReducer(reducer, initial);
-  const [recent, setRecent] = useState(seedCalls);
+  const [recent, setRecent] = useState(() => [...loadLocal(), ...seedCalls]);
+  // Calls made or received in this app survive a reload (the backend's own calls come back from the API).
+  useEffect(() => { try { localStorage.setItem(REC_KEY, JSON.stringify(recent.filter((c) => c.local).slice(0, 100))); } catch { /* ignore */ } }, [recent]);
+  const logCall = useCallback((dir, name, duration = '—', extra = {}) => {
+    setRecent((list) => [{ id: `c-${Date.now()}-${list.length}`, dir, name: name || 'Unknown', time: 'Just now', ts: new Date().toISOString(), local: true, duration, ...extra }, ...list]);
+  }, []);
   const mergeRecent = useCallback((list) => setRecent((cur) => {
     const have = new Set(cur.map((c) => c.id));
     const add = list.filter((c) => !have.has(c.id));
@@ -84,7 +92,7 @@ export function CallProvider({ children }) {
     };
     startLiveCall({ mode: call.mode, code: call.code, phone: call.phone, lead, handlers: { ...liveHandlers, onConsent } })
       .then(() => { if (!cancelled) { begin(); dispatch({ type: 'CONNECT', script: [] }); } })
-      .catch((e) => { if (!cancelled) { showToast(e.message); dispatch({ type: 'RESET' }); resetConsent(); } });
+      .catch((e) => { if (!cancelled) { showToast(e.message); logCall('out', call.name, '—', { note: 'Not connected' }); dispatch({ type: 'RESET' }); resetConsent(); } });
     return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [call.status === 'ringing']);
@@ -147,6 +155,8 @@ export function CallProvider({ children }) {
 
   /** Hang up. With a live customer we go to the wrap-up form; otherwise just close. */
   const end = useCallback(() => {
+    if (call.status === 'ringing') logCall('out', call.name, '—', { note: 'Not connected' });
+    if (call.status === 'incoming') logCall('missed', call.name, '—');
     if (call.mode !== 'sim') stopLiveCall();
     if (call.status === 'inCall' || call.status === 'consent') {
       if (call.status === 'consent') addLog(call.seconds, 'Call ended before consent was answered.');
@@ -155,11 +165,11 @@ export function CallProvider({ children }) {
       dispatch({ type: 'RESET' });
       resetConsent();
     }
-  }, [call.status, call.seconds, addLog, resetConsent]);
+  }, [call.status, call.seconds, call.name, call.mode, addLog, resetConsent, logCall]);
 
   const finishWrapup = useCallback(({ outcome, summary, save }) => {
     const entry = {
-      id: `c-${Date.now()}`, dir: call.dir, name: call.name, time: 'Just now', duration: fmtDuration(call.seconds),
+      id: `c-${Date.now()}`, dir: call.dir, name: call.name, time: 'Just now', ts: new Date().toISOString(), local: true, duration: fmtDuration(call.seconds),
       live: true, sopDone: call.sopDone, recorded: consent.status === 'recording' || consent.status === 'withdrawn',
       consentId: consent.consentId, outcome: outcome || null, summary: save ? summary : '',
     };

@@ -77,7 +77,7 @@ export function IngestProvider({ children }) {
       });
       if (fresh.length) {
         mergeRecent(conversations.filter((c) => c.type === 'call').map((c) => ({
-          id: `ing-${c.conversation_id}`, dir: c.direction, name: c.customer.name || c.customer.phone || 'Unknown', time: when(c.started_at),
+          id: `ing-${c.conversation_id}`, ts: c.started_at, dir: c.direction, name: c.customer.name || c.customer.phone || 'Unknown', time: when(c.started_at),
           duration: c.direction === 'missed' ? '—' : fmtDur(c.duration_sec || 0), summary: c.summary, ingested: true, handled: c.direction === 'missed' ? false : undefined,
           review: c.sop.length ? { score: c.sop_score, items: c.sop.map((s) => ({ label: s.label, passed: s.passed, quote: s.quote })) } : null,
         })));
