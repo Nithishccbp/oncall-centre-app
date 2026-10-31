@@ -38,6 +38,19 @@ export function useKpiData() {
       const calls = w.calls + extra.length;
       return { ...w, calls, aht: Math.round((w.aht * w.calls + extra.reduce((n, c) => n + c.dur, 0)) / calls) };
     });
-    return { created, calledToday, week, lv };
+    // CSAT: customer ratings entered at wrap-up (local) + backend ratings.
+    const stars = (list) => (list.length ? Math.round((list.reduce((n, c) => n + c.stars, 0) / list.length) * 20) : null);
+    const localRated = local.filter((c) => c.csat && sameDay(c.ts)).map((c) => ({ time: hh(new Date(c.ts)), name: c.name, stars: c.csat, comment: c.comment || '' }));
+    const ratedToday = [...localRated, ...(ing.ratedToday || [])];
+    const csatToday = stars(ratedToday);
+    const weekC = week.map((w, i) => {
+      const d = new Date(); d.setDate(d.getDate() - (6 - i));
+      const ex = local.filter((c) => c.csat && sameDay(c.ts, d));
+      if (!ex.length) return w;
+      if (i === 6) return { ...w, csat: csatToday };
+      return { ...w, csat: Math.round(ex.reduce((n, c) => n + c.csat, 0) / ex.length * 20) };
+    });
+    const todaysLocal = local.filter((c) => sameDay(c.ts)).map((c) => ({ time: hh(new Date(c.ts)), name: c.name, topic: `${c.outcome || 'Call'} · ${Math.floor(c.dur / 60)}m ${String(c.dur % 60).padStart(2, '0')}s`, stars: c.csat || 0 })).reverse();
+    return { created, calledToday, week: weekC, ratedToday, csatToday, todaysLocal, lv };
   }, [ing.calledToday, ing.convs, ing.week, ing.version, app, lv]);
 }

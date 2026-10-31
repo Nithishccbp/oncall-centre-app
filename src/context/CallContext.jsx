@@ -181,17 +181,17 @@ export function CallProvider({ children }) {
     }
   }, [call.status, call.seconds, call.name, call.mode, addLog, resetConsent, logCall]);
 
-  const finishWrapup = useCallback(({ outcome, summary, save }) => {
+  const finishWrapup = useCallback(({ outcome, summary, save, csat, comment }) => {
     const entry = {
       id: `c-${Date.now()}`, dir: call.dir, name: call.name, time: 'Just now', ts: new Date().toISOString(), local: true, duration: `${fmtDuration(call.seconds)}${call.mode === 'practice' ? ' · Practice' : ''}`,
       live: true, sopDone: call.sopDone, recorded: consent.status === 'recording' || consent.status === 'withdrawn',
       consentId: consent.consentId, outcome: outcome || null, summary: save ? summary : '',
     };
     setRecent((list) => [entry, ...list.map((c) => (c.dir === 'missed' && call.dir === 'out' && c.name.startsWith(call.name.split(' ')[0]) ? { ...c, handled: true } : c))]);
-    if (call.dir === 'out') {
+    if (call.dir === 'out' || csat) {
       const lo = outcomes.find((x) => x.id === outcome);
-      logAppCall({ name: call.name, leadId: lead?.id, dur: call.seconds, outcome: summary ? summary.split(/[.\n]/)[0].slice(0, 60) : (lo?.label || 'Called'), summary });
-      if (lead) lead.called = true;
+      logAppCall({ name: call.name, leadId: lead?.id, dur: call.seconds, outcome: summary ? summary.split(/[.\n]/)[0].slice(0, 60) : (lo?.label || 'Called'), summary, csat, comment });
+      if (lead && call.dir === 'out') lead.called = true;
     }
     if (save) {
       const o = outcomes.find((x) => x.id === outcome);

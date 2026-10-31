@@ -11,6 +11,8 @@ export default function WrapUpModal() {
   const open = call.status === 'wrapup';
   const [summary, setSummary] = useState('');
   const [outcome, setOutcome] = useState(null);
+  const [csat, setCsat] = useState(0);
+  const [cmt, setCmt] = useState('');
 
   useEffect(() => {
     if (!open) return;
@@ -18,7 +20,7 @@ export default function WrapUpModal() {
     setSummary(noTranscript
       ? `Recording was off for this call with ${call.name.split(' ')[0]}. Add your notes here.`
       : draftSummary(lead, call.shown.filter((l) => l.who !== 'nudge'), call.sopDone));
-    setOutcome(null);
+    setOutcome(null); setCsat(0); setCmt('');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
@@ -36,9 +38,17 @@ export default function WrapUpModal() {
           <button key={o.id} className={outcome === o.id ? 'on' : ''} aria-pressed={outcome === o.id} onClick={() => setOutcome(o.id)}><i className={`ti ${o.icon}`} /> {o.label}</button>
         ))}
       </div>
+      <div className="wu__cap muted">CUSTOMER RATING (CSAT) — ASK THE CUSTOMER: "HOW WAS THIS CALL, 1 TO 5?"</div>
+      <div className="wu__stars">
+        {[1, 2, 3, 4, 5].map((n) => (
+          <button key={n} className={n <= csat ? 'on' : ''} aria-label={`${n} star${n > 1 ? 's' : ''}`} aria-pressed={csat === n} onClick={() => setCsat(csat === n ? 0 : n)}>★</button>
+        ))}
+        <span className="muted">{csat ? `${csat * 20}%` : 'Skip if not rated'}</span>
+      </div>
+      {csat > 0 && <input className="wu__cmt" placeholder="Customer's comment (optional)" value={cmt} onChange={(e) => setCmt(e.target.value)} />}
       <div className="wu__btns">
-        <button className="wu__skip" onClick={() => finishWrapup({ save: false })}>Skip</button>
-        <button className="wu__save" onClick={() => finishWrapup({ save: true, summary, outcome })}><i className="ti ti-database-plus" /> Save to CRM</button>
+        <button className="wu__skip" onClick={() => finishWrapup({ save: false, csat, comment: cmt })}>Skip</button>
+        <button className="wu__save" onClick={() => finishWrapup({ save: true, summary, outcome, csat, comment: cmt })}><i className="ti ti-database-plus" /> Save to CRM</button>
       </div>
     </Modal>
   );

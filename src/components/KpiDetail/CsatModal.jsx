@@ -4,7 +4,7 @@ import { Line } from 'react-chartjs-2';
 import { CategoryScale, Chart as ChartJS, Filler, LinearScale, LineElement, PointElement, Tooltip } from 'chart.js';
 import Modal from '../Modal/Modal.jsx';
 import { useUi } from '../../context/UiContext.jsx';
-import { useIngest } from '../../context/IngestContext.jsx';
+import { useKpiData } from '../../data/kpiStats.js';
 import { DEMO } from '../../data/demo.js';
 import { csatLast7 } from '../../data/dashboard.js';
 import './KpiDetail.css';
@@ -26,7 +26,7 @@ const Stars = ({ n }) => <span className="kd__stars" aria-label={`${n} stars`}>{
 
 export default function CsatModal({ close }) {
   const { showToast } = useUi();
-  const { ratedToday, csatToday } = useIngest();
+  const { ratedToday, csatToday } = useKpiData();
   const [q, setQ] = useState('');
   const [sort, setSort] = useState({ k: 'time', asc: true });
   const [page, setPage] = useState(0);

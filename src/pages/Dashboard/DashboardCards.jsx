@@ -6,6 +6,7 @@ import { getOutgoingPlan } from '../../data/selectors.js';
 import { formatINR } from '../../data/selectors.js';
 import { usePulse } from '../../context/PulseContext.jsx';
 import { useIngest } from '../../context/IngestContext.jsx';
+import { useKpiData } from '../../data/kpiStats.js';
 
 export function WhosWaiting() {
   return (
@@ -64,11 +65,12 @@ export function TasksCard({ onTaskClick }) {
 const Stars = ({ n }) => <span className="stars" aria-label={`${n} of 5`}>{'★'.repeat(n)}<i>{'★'.repeat(5 - n)}</i></span>;
 
 export function TodaysCalls() {
-  const { todays, handledToday, csatToday } = useIngest();
-  const rows = [...todays, ...todaysCalls].slice(0, 6);
+  const { todays, handledToday } = useIngest();
+  const { todaysLocal, csatToday } = useKpiData();
+  const rows = [...todaysLocal, ...todays, ...todaysCalls].slice(0, 6);
   return (
     <section className="card dcard">
-      <div className="dcard__head"><b className="label-caps">Today's calls</b><span className="muted">{(DEMO ? 14 : 0) + handledToday} handled · {csatToday ?? (DEMO ? 94 : 0)}% CSAT</span></div>
+      <div className="dcard__head"><b className="label-caps">Today's calls</b><span className="muted">{(DEMO ? 14 : 0) + handledToday + todaysLocal.length} handled · {csatToday ?? (DEMO ? 94 : 0)}% CSAT</span></div>
       {rows.length === 0 && <div className="empty">No calls yet today</div>}
       {rows.map((c, i) => (
         <div key={`${c.time}-${c.name}-${i}`} className="dcall">

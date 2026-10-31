@@ -15,8 +15,7 @@ const greeting = () => {
 
 export default function HeroHeader() {
   const { range, openOverlay } = useUi();
-  const { csatToday } = useIngest();
-  const { created: createdList, calledToday, week } = useKpiData();
+  const { created: createdList, calledToday, week, csatToday } = useKpiData();
   const created = createdList.length;
   const today = week[6] || { calls: 0, aht: 0 };
   const ahtTxt = `${Math.floor(today.aht / 60)}m ${String(today.aht % 60).padStart(2, '0')}s`;
