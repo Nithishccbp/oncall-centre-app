@@ -10,13 +10,15 @@
 .modal-body { padding: 16px; overflow-y: auto; flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .modal-body.flush { padding: 0; }
 .modal-close {
-  position: absolute; top: 12px; right: 12px; z-index: 5; width: 30px; height: 30px; border-radius: 50%;
+  position: absolute; top: 14px; right: 26px; z-index: 5; width: 34px; height: 34px; border-radius: 50%; cursor: pointer; transition: background .15s, color .15s, transform .15s;
   background: rgba(120, 120, 128, 0.16); display: flex; align-items: center; justify-content: center;
 }
-.modal-close:hover { background: rgba(120, 120, 128, 0.3); }
+.modal-close:hover, .modal-close:focus-visible { background: #e5484d !important; color: #fff !important; border-color: #e5484d !important; transform: scale(1.06); }
+.modal-close:hover i, .modal-close:hover svg, .modal-close:focus-visible i { color: #fff !important; stroke: #fff; }
 @keyframes modalIn { from { transform: translateY(8px) scale(0.98); opacity: 0; } to { transform: none; opacity: 1; } }
 
 @media (max-width: 768px) {
   .modal-overlay { align-items: flex-end; padding: 0; }
   .modal-card { max-width: none !important; max-height: 92vh; border-radius: 20px 20px 0 0; }
 }
+.modal-close:hover, .modal-close:focus-visible { outline-color: #e5484d; }

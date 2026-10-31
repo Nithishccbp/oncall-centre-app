@@ -44,7 +44,7 @@
 @media (max-width: 520px) { .kd__stats { grid-template-columns: 1fr; } }
 /* OG Score (gold) variant */
 .kd--gold { padding: 0; }
-.kd__banner { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 64px 14px 24px; background: linear-gradient(90deg, #5c3d05, #a8700a); color: #fff; }
+.kd__banner { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 84px 14px 24px; background: linear-gradient(90deg, #5c3d05, #a8700a); color: #fff; }
 .kd__banner .kd__eyebrow { color: #f1dca8; padding: 0; }
 .kd__bt { font-size: 20px; font-weight: 800; }
 .kd__pad { padding: 14px 24px 20px; background: #fbf9f4; }
