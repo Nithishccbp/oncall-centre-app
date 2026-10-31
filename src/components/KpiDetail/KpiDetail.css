@@ -101,3 +101,9 @@
 .kd__stats--3b { grid-template-columns: 1fr 1.3fr 1.3fr 1.3fr; }
 .kd__ln--green { border-top-color: #0f6e56; }
 .kd__ln--greenl { border-top-color: #5dcaa5; }
+/* Leads Created extras */
+.kd__insight--green { background: #fff; border-color: #167a5e; }
+.kd__sw { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 2px; }
+.kd__sw--green { background: #0f6e56; }
+.kd__chart--tall { height: 220px; }
+.kd__nw { white-space: nowrap; }
