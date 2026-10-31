@@ -30,7 +30,7 @@ const modes = [
   { id: 'ai', label: 'AI (web)', hint: 'Our AI agent (Avani) phones the person on the customer page.' },
 ];
 
-function PrepBrief({ onReady, onBack }) {
+function PrepBrief({ onReady, onBack, onChange }) {
   const { call, lead } = useCall();
   const p = prepFor(lead);
   return (
@@ -47,13 +47,14 @@ function PrepBrief({ onReady, onBack }) {
       <div className="pb__last">Last touch: {p.last}</div>
       <button className="pb__go" onClick={onReady}><i className="ti ti-phone" /> I’m ready · call</button>
       <div className="pb__last center">Recording starts when they pick up, so their consent is on the call.</div>
+      <button className="pb__chg" onClick={onChange}>Change how I call</button>
     </Modal>
   );
 }
 
 function PreCall({ onPlace }) {
   const { call, lead, end } = useCall();
-  const [brief, setBrief] = useState(null); // holds the chosen call options while the 20-second brief is shown
+  const [setup, setSetup] = useState(false); // the call-options window only opens when needed or asked for
   const [mode, setMode] = useState('phone');
   const [ep, setEp] = useState(getWebCreds());
   const [myPhone, setMyPhone] = useState(getAgentPhone() || user.phone || '');
@@ -72,9 +73,28 @@ function PreCall({ onPlace }) {
   const canPlace = (!needCode || code.length >= 5) && (!isPhone || (phoneOk && ready && myOk && epOk));
   const first = call.name.split(' ')[0];
   const meta = leadMeta(lead);
-  if (brief) return <PrepBrief onReady={() => onPlace(brief)} onBack={() => setBrief(null)} />;
+  const modeSaved = () => { try { return localStorage.getItem('og_call_mode'); } catch { return null; } };
+  // Pick the best way to call from what is already saved, so the agent goes straight: Place call -> brief -> call.
+  const tryAuto = () => {
+    if (!cfg) return null;
+    const cust = normalizePhone(lead?.phone || phone) || '';
+    const web = getWebCreds();
+    const mine = normalizePhone(getAgentPhone() || user.phone || '');
+    const okWeb = cfg.staffPhone && cfg.telephony?.provider === 'vobiz' && web.u && web.p;
+    const okStaff = cfg.staffPhone && mine && mine !== cfg.telephony?.callerId && mine !== cust;
+    let m = null;
+    for (const c of [modeSaved(), 'webphone', 'staffphone', 'phone']) {
+      if ((c === 'webphone' && okWeb) || (c === 'staffphone' && okStaff) || (c === 'phone' && cfg.phone)) { m = c; break; }
+    }
+    if (!m) { if (!cfg.reachable || (!cfg.staffPhone && !cfg.phone && !cfg.aiPhone)) m = 'sim'; else return null; }
+    if (m !== 'sim' && !cust) return null;
+    return { mode: m, code: '', phone: cust, autoConsent: !!cfg.transcripts };
+  };
+  const go = () => { const o = tryAuto(); if (o) onPlace(o); else setSetup(true); };
+  useEffect(() => { if (cfg && !lead && !setup) go(); }, [cfg]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (!setup) return lead ? <PrepBrief onReady={go} onBack={end} onChange={() => setSetup(true)} /> : null;
   return (
-    <Modal open onClose={end} width={460} flush label="Before you call">
+    <Modal open onClose={lead ? () => setSetup(false) : end} width={460} flush label="Before you call">
       <div className="pc__head">
         <span className="pc__av">{initials(call.name)}</span>
         <div><div className="pc__title">Before you call {first}</div><div className="pc__sub">Lead SOP parameters · review, then place the call</div></div>
@@ -137,7 +157,7 @@ function PreCall({ onPlace }) {
             <input value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 5))} inputMode="numeric" placeholder="5 digits shown on /customer" aria-label="Customer line code" />
           </label>
         )}
-        <button className="pc__place" disabled={!canPlace} onClick={() => { const o = { mode, code, phone: normalizePhone(phone) || '', autoConsent: !!cfg?.transcripts }; if (lead) setBrief(o); else onPlace(o); }}><i className="ti ti-phone" /> {mode === 'sim' ? 'Skip · Place the call' : 'Place the live call'}</button>
+        <button className="pc__place" disabled={!canPlace} onClick={() => { try { localStorage.setItem('og_call_mode', mode); } catch { /* ignore */ } onPlace({ mode, code, phone: normalizePhone(phone) || '', autoConsent: !!cfg?.transcripts }); }}><i className="ti ti-phone" /> {mode === 'sim' ? 'Skip · Place the call' : 'Place the live call'}</button>
         <p>These are the same Lead SOP checkpoints your manager set — reviewing them takes 10 seconds and keeps the call on-target.</p>
       </div>
     </Modal>
