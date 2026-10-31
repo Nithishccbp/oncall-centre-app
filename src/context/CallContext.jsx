@@ -4,6 +4,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useReducer,
 import { recentCalls as seedCalls } from '../data/calls.js';
 import { leads, leadByFirstName } from '../data/leads.js';
 import { logAppCall } from '../data/callLog.js';
+import { startPractice } from '../services/practice.js';
+import { pickPersona } from '../data/practice.js';
 import { buildScript, detectSopSteps, moodOf, nudges, outcomes, sentimentLabel } from '../data/calling.js';
 import { setAgentCaptions, setMuted, signal, startLiveCall, stopLiveCall } from '../services/liveCall.js';
 import { useConsent } from './ConsentContext.jsx';
@@ -35,6 +37,7 @@ function reducer(state, a) {
     };
     case 'TOGGLE_SOP': return { ...state, sopDone: state.sopDone.includes(a.i) ? state.sopDone.filter((x) => x !== a.i) : [...state.sopDone, a.i] };
     case 'INCOMING': return { ...initial, status: 'incoming', name: a.name, dir: 'in' };
+    case 'PRACTICE_INCOMING': return { ...initial, status: 'incoming', name: a.persona.name, dir: 'in', mode: 'practice', persona: a.persona };
     case 'WRAPUP': return { ...state, status: 'wrapup' };
     case 'HANGUP_REMOTE': return state.status === 'inCall' || state.status === 'consent' ? { ...state, status: 'wrapup' } : initial;
     case 'RESET': return initial;
@@ -117,7 +120,7 @@ export function CallProvider({ children }) {
   // and the AI voice agent only starts talking once the consent step is finished.
   const aiStarted = useRef(false);
   useEffect(() => {
-    if (call.mode === 'sim' || !['consent', 'inCall'].includes(call.status)) { aiStarted.current = false; return; }
+    if (call.mode === 'sim' || call.mode === 'practice' || !['consent', 'inCall'].includes(call.status)) { aiStarted.current = false; return; }
     if (call.mode === 'phone' || call.mode === 'webphone') { setAgentCaptions(consent.status === 'recording', onLiveLine); return; }
     if (call.mode === 'aiphone' || call.mode === 'staffphone') return; // Avani and the server handle consent and transcript on that call
     const on = consent.status === 'recording';
@@ -126,16 +129,27 @@ export function CallProvider({ children }) {
     if (call.mode === 'ai' && call.status === 'inCall' && !aiStarted.current) { aiStarted.current = true; signal({ type: 'start' }); }
   }, [call.status, call.mode, consent.status, onLiveLine]);
 
+  // Practise a call: once the agent picks up, the AI customer starts talking.
+  const practiceOn = useRef(false);
+  useEffect(() => {
+    if (call.mode !== 'practice' || call.status !== 'inCall') { if (call.status !== 'inCall') practiceOn.current = false; return; }
+    if (practiceOn.current) return;
+    practiceOn.current = true;
+    startPractice({ persona: call.persona, onLine: onLiveLine, onEnd: (m) => { showToast(m); dispatch({ type: 'HANGUP_REMOTE' }); }, onError: (m) => showToast(m) });
+  }, [call.status, call.mode]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const startCall = useCallback((name) => dispatch({ type: 'START', name }), []);
   const placeCall = useCallback((opts) => dispatch({ type: 'RING', ...(opts || {}) }), []);
   const simulateIncoming = useCallback((name) => {
     const pick = name || (leads.length ? leads[Math.floor(Math.random() * leads.length)].name : 'Unknown caller');
     dispatch({ type: 'INCOMING', name: pick });
   }, []);
+  const practiceCall = useCallback(() => dispatch({ type: 'PRACTICE_INCOMING', persona: pickPersona() }), []);
   const acceptIncoming = useCallback(() => {
     begin();
+    if (call.mode === 'practice') { dispatch({ type: 'CONNECT', script: [] }); dispatch({ type: 'GO_LIVE' }); return; } // practice: no consent step, nothing is recorded
     dispatch({ type: 'CONNECT', script: buildScript(leadByFirstName(call.name)) });
-  }, [begin, call.name]);
+  }, [begin, call.name, call.mode]);
   const goLive = useCallback(() => dispatch({ type: 'GO_LIVE' }), []);
   const toggleSop = useCallback((i) => dispatch({ type: 'TOGGLE_SOP', i }), []);
   const addAgentLine = useCallback((text, sop) => dispatch({ type: 'ADD_LINE', line: { who: 'agent', text, sop } }), []);
@@ -169,7 +183,7 @@ export function CallProvider({ children }) {
 
   const finishWrapup = useCallback(({ outcome, summary, save }) => {
     const entry = {
-      id: `c-${Date.now()}`, dir: call.dir, name: call.name, time: 'Just now', ts: new Date().toISOString(), local: true, duration: fmtDuration(call.seconds),
+      id: `c-${Date.now()}`, dir: call.dir, name: call.name, time: 'Just now', ts: new Date().toISOString(), local: true, duration: `${fmtDuration(call.seconds)}${call.mode === 'practice' ? ' · Practice' : ''}`,
       live: true, sopDone: call.sopDone, recorded: consent.status === 'recording' || consent.status === 'withdrawn',
       consentId: consent.consentId, outcome: outcome || null, summary: save ? summary : '',
     };
@@ -190,10 +204,10 @@ export function CallProvider({ children }) {
   const sentiment = useMemo(() => ({ value: call.sentiment, label: sentimentLabel(call.sentiment) }), [call.sentiment]);
 
   const value = useMemo(() => ({
-    call, lead, recent, mergeRecent, sentiment, dispatch, startCall, placeCall, simulateIncoming, acceptIncoming, goLive, toggleSop,
+    call, lead, recent, mergeRecent, sentiment, dispatch, startCall, placeCall, simulateIncoming, practiceCall, acceptIncoming, goLive, toggleSop,
     addAgentLine, triggerNudge, withdrawConsent, end, finishWrapup,
     leadFor: (name) => leadByFirstName(name),
-  }), [call, lead, recent, mergeRecent, sentiment, startCall, placeCall, simulateIncoming, acceptIncoming, goLive, toggleSop, addAgentLine, triggerNudge, withdrawConsent, end, finishWrapup]);
+  }), [call, lead, recent, mergeRecent, sentiment, startCall, placeCall, simulateIncoming, practiceCall, acceptIncoming, goLive, toggleSop, addAgentLine, triggerNudge, withdrawConsent, end, finishWrapup]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

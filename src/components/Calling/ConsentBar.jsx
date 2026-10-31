@@ -7,7 +7,7 @@ export default function ConsentBar() {
   const { call } = useCall();
   const { consent } = useConsent();
   const { openOverlay } = useUi();
-  if (call.status !== 'inCall' && call.status !== 'consent') return null;
+  if (call.mode === 'practice' || (call.status !== 'inCall' && call.status !== 'consent')) return null;
   const id = consent.consentId ? consent.consentId.split('-').pop() : '';
   const map = {
     recording: ['rec', `Recording · ${id}`],

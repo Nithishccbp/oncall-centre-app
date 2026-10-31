@@ -26,6 +26,32 @@ export async function avaniReply(messages, lead = {}) {
   } catch { return { reply: null, source: 'error' }; }
 }
 
+const customerSystem = (p = {}) => [
+  `You are ${p.name || 'a customer'}, a real person phoning Godrej Properties about apartments at Lakeside Towers, Whitefield, Bengaluru, India. You are talking to a presales agent who is practising their call skills.`,
+  `You are interested in: ${p.product || 'a 2 BHK'}. Your budget: ${p.budget || 'about 95 lakh'}. Your personality: ${p.trait || 'practical'}.`,
+  `Your concerns, to raise one at a time and not all at once: ${(p.concerns || []).join('; ')}.`,
+  'Rules: reply in 1 or 2 short spoken sentences of natural Indian English. No markdown, no emojis, no lists. Do not volunteer everything. Push back politely if the agent is vague or pushy, and become warmer when they answer well.',
+  'Never say you are an AI, never coach the agent, never break character. When your concerns are handled and you agree a next step, or the agent says goodbye, say a short goodbye and end your sentence with the word [END].',
+].join(' ');
+
+/** The AI plays the CUSTOMER for call practice. messages: [{role:'agent'|'cust', text}] -> { reply, source } */
+export async function customerReply(messages, persona = {}) {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) return { reply: null, source: 'no-key' };
+  const model = process.env.GEMINI_MODEL || 'gemini-flash-latest';
+  const contents = messages.slice(-14).map((m) => ({ role: m.role === 'cust' ? 'model' : 'user', parts: [{ text: String(m.text).slice(0, 500) }] }));
+  if (!contents.length || contents[0].role !== 'user') contents.unshift({ role: 'user', parts: [{ text: '(the agent just picked up the phone)' }] });
+  try {
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ systemInstruction: { parts: [{ text: customerSystem(persona) }] }, contents, generationConfig: { maxOutputTokens: 160, temperature: 0.85, thinkingConfig: { thinkingBudget: 0 } } }),
+    });
+    const data = await r.json();
+    const reply = data?.candidates?.[0]?.content?.parts?.map((p) => p.text).join(' ').trim();
+    return reply ? { reply, source: 'gemini' } : { reply: null, source: 'empty' };
+  } catch { return { reply: null, source: 'error' }; }
+}
+
 /** Offline rulebook so the call never goes silent if Gemini is down. */
 export function fallbackReply(heard, turn, lead = {}) {
   const t = String(heard || '').toLowerCase();

@@ -15,7 +15,7 @@ function ActiveCallCard() {
   const tone = sentiment.value >= 65 ? 'pos' : sentiment.value >= 40 ? 'neu' : 'neg';
   return (
     <section className="acc">
-      <div className="acc__kicker">{ringing ? 'CALLING…' : call.mode === 'aiphone' && call.autoConsent && consent.status === 'none' ? 'AVANI IS ASKING FOR CONSENT' : consent.status === 'none' || consent.status === 'pending' ? 'CONNECTED' : hold ? 'ON HOLD' : 'CALL IN PROGRESS'}</div>
+      <div className="acc__kicker">{ringing ? 'CALLING…' : call.mode === 'practice' ? 'PRACTICE CALL' : call.mode === 'aiphone' && call.autoConsent && consent.status === 'none' ? 'AVANI IS ASKING FOR CONSENT' : consent.status === 'none' || consent.status === 'pending' ? 'CONNECTED' : hold ? 'ON HOLD' : 'CALL IN PROGRESS'}</div>
       <div className="acc__name">{call.name}</div>
       <div className="acc__time">{fmtClock(call.seconds)}</div>
       {call.mode !== 'sim' && <span className="acc__mode">{{ ai: '🤖 AI → HUMAN · LIVE', human: '🎙️ HUMAN ↔ HUMAN · LIVE', phone: '📞 WEB → PHONE NUMBER · LIVE', staffphone: '☎️ YOUR PHONE → CUSTOMER · LIVE', webphone: '🎧 WEB → CUSTOMER · LIVE', aiphone: '🤖 AI → PHONE NUMBER · LIVE' }[call.mode]}</span>}
@@ -57,9 +57,10 @@ function LiveTranscript() {
     <section className="lt">
       <h2 className="lt__h"><span className="lt__dot" /> LIVE TRANSCRIPT</h2>
       <div className="lt__body">
-        {(consent.status === 'none' || consent.status === 'pending' || consent.status === 'declined') && <div className="lt__pill">On call · recording · ask for consent now</div>}
-        {(consent.status === 'recording' || consent.status === 'withdrawn') && <div className="lt__pill">On call · recording · consent given</div>}
-        {off && <div className="lt__pill">Recording stopped · nothing after this is kept</div>}
+        {call.mode === 'practice' && <div className="lt__pill">Practice call · AI customer · nothing is recorded</div>}
+        {call.mode !== 'practice' && (consent.status === 'none' || consent.status === 'pending' || consent.status === 'declined') && <div className="lt__pill">On call · recording · ask for consent now</div>}
+        {call.mode !== 'practice' && (consent.status === 'recording' || consent.status === 'withdrawn') && <div className="lt__pill">On call · recording · consent given</div>}
+        {off && call.mode !== 'practice' && <div className="lt__pill">Recording stopped · nothing after this is kept</div>}
         {call.shown.map((l, i) => (l.who === 'nudge' ? <Nudge key={i} n={l} /> : (
           <div key={i} className={`bub bub--${l.who} ${l.ai ? 'bub--ai' : ''}`}>
             <span className="bub__av">{l.ai ? 'AI' : l.who === 'agent' ? 'AR' : 'C'}</span>

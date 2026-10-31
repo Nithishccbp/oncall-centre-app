@@ -20,7 +20,7 @@ function MainItem({ to, icon, tone, label, active }) {
 
 export default function Sidebar() {
   const { pathname } = useLocation();
-  const { simulateIncoming, call } = useCall();
+  const { practiceCall, call } = useCall();
   const navigate = useNavigate();
   const is = (p) => (p === '/' ? pathname === '/' : pathname.startsWith(p));
 
@@ -36,7 +36,7 @@ export default function Sidebar() {
               <i className={`ti ${s.icon}`} /> {s.label}
             </NavLink>
           ))}
-          <button className="sb-subitem" disabled={call.status !== 'idle'} onClick={() => { navigate('/plan/outgoing'); simulateIncoming(); }}>
+          <button className="sb-subitem" disabled={call.status !== 'idle'} onClick={() => { navigate('/plan/outgoing'); practiceCall(); }}>
             <i className="ti ti-phone-ringing" /> Practise a call
           </button>
         </div>
