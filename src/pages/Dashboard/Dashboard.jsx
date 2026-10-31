@@ -3,13 +3,20 @@ import { useNavigate } from 'react-router-dom';
 import HeroHeader from './HeroHeader.jsx';
 import { EarningsCard, TasksCard, WhosWaiting, TodaysCalls, LeadsNext, ThanksVisits } from './DashboardCards.jsx';
 import BarChart from '../../components/BarChart/BarChart.jsx';
-import { callsLast7, csatLast7 } from '../../data/dashboard.js';
+import { callsLast7 as demoCalls, csatLast7 as demoCsat } from '../../data/dashboard.js';
+import { DEMO } from '../../data/demo.js';
+import { useKpiData } from '../../data/kpiStats.js';
+import { useIngest } from '../../context/IngestContext.jsx';
 import { useLeadsModal } from '../../context/LeadsModalContext.jsx';
 import './Dashboard.css';
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const { openLeads } = useLeadsModal();
+  const { week } = useKpiData();
+  const ing = useIngest();
+  const callsLast7 = DEMO ? demoCalls : week.map((w) => ({ day: w.day, v: w.calls }));
+  const csatLast7 = DEMO ? demoCsat : week.map((w, i) => ({ day: w.day, v: i === 6 && ing.csatToday != null ? ing.csatToday : w.csat || 0 }));
 
   const onTaskClick = (task) => {
     if (task.id === 'hotleads') openLeads(0);
