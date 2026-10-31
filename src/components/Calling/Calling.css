@@ -232,3 +232,5 @@
 .cc--no { border-color: #c0392b; }
 .cc--no .cc__stop { color: #c0392b; }
 .pb__chg { display: block; margin: 6px auto 0; background: none; border: 0; color: #6b7280; font-size: 12.5px; text-decoration: underline; cursor: pointer; }
+.cc__btns button:disabled { opacity: .45; cursor: default; }
+.cc__wait { text-align: center; color: #6b7280; font-size: 12.5px; margin-top: 10px; }
