@@ -57,9 +57,9 @@ function LiveTranscript() {
     <section className="lt">
       <h2 className="lt__h"><span className="lt__dot" /> LIVE TRANSCRIPT</h2>
       <div className="lt__body">
-        {consent.consentId && !off && <div className="lt__pill">Consent {consent.consentId} · recording on</div>}
-        {(consent.status === 'none' || consent.status === 'pending') && <div className="lt__note">Waiting for the customer's answer on recording…</div>}
-        {off && <div className="lt__note">Recording is off{consent.status === 'withdrawn' ? ' (consent withdrawn)' : ''} — nothing is being transcribed. Tick the SOP chips yourself as you go.</div>}
+        {(consent.status === 'none' || consent.status === 'pending' || consent.status === 'declined') && <div className="lt__pill">On call · recording · ask for consent now</div>}
+        {(consent.status === 'recording' || consent.status === 'withdrawn') && <div className="lt__pill">On call · recording · consent given</div>}
+        {off && <div className="lt__pill">Recording stopped · nothing after this is kept</div>}
         {call.shown.map((l, i) => (l.who === 'nudge' ? <Nudge key={i} n={l} /> : (
           <div key={i} className={`bub bub--${l.who} ${l.ai ? 'bub--ai' : ''}`}>
             <span className="bub__av">{l.ai ? 'AI' : l.who === 'agent' ? 'AR' : 'C'}</span>

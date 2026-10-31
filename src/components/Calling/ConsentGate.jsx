@@ -6,7 +6,7 @@ import { useConsent } from '../../context/ConsentContext.jsx';
 import { useUi } from '../../context/UiContext.jsx';
 import { consentLanguages, leadMeta } from '../../data/calling.js';
 
-export default function ConsentGate() {
+export default function ConsentGate({ show = false }) {
   const { call, lead, goLive } = useCall();
   const { consent, setField, sendRequest, grant, refuse } = useConsent();
   const { showToast } = useUi();
@@ -14,7 +14,7 @@ export default function ConsentGate() {
   const [mode, setMode] = useState('whatsapp'); // 'whatsapp' | 'voice'
   const [phone, setPhone] = useState(leadMeta(lead).phone);
   useEffect(() => { setPhone(leadMeta(lead).phone); }, [call.name]); // eslint-disable-line react-hooks/exhaustive-deps
-  const open = call.status === 'consent' && !(call.mode === 'aiphone' && call.autoConsent) && (consent.status === 'none' || consent.status === 'pending');
+  const open = show && call.status === 'consent' && !(call.mode === 'aiphone' && call.autoConsent) && (consent.status === 'none' || consent.status === 'pending');
   const pending = consent.status === 'pending';
   const script = consentLanguages.find((l) => l.id === lang);
   const first = (call.name || '').split(' ')[0];

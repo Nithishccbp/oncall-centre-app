@@ -8,6 +8,7 @@ import ConsentLog from './ConsentLog.jsx';
 import RightsPanel from './RightsPanel.jsx';
 import WrapUpModal from './WrapUpModal.jsx';
 import DemoStrip from './DemoStrip.jsx';
+import ConsentCard from './ConsentCard.jsx';
 import { useCall, fmtClock } from '../../context/CallContext.jsx';
 import { loadConfig, normalizePhone, getAgentPhone, setAgentPhone, getWebCreds, setWebCreds } from '../../services/phoneCall.js';
 import { checkpointsFor, leadMeta, pitchFor } from '../../data/calling.js';
@@ -29,11 +30,11 @@ const modes = [
   { id: 'ai', label: 'AI (web)', hint: 'Our AI agent (Avani) phones the person on the customer page.' },
 ];
 
-function PrepBrief({ onReady }) {
-  const { call, lead, end } = useCall();
+function PrepBrief({ onReady, onBack }) {
+  const { call, lead } = useCall();
   const p = prepFor(lead);
   return (
-    <Modal open onClose={end} width={440} label="Before you talk">
+    <Modal open onClose={onBack} width={440} label="Before you talk">
       <div className="pb__head">
         <span className="pb__ic">📝</span>
         <div><b>Before you talk to {call.name.split(' ')[0]}</b><small>Avani’s brief · 20 seconds</small></div>
@@ -52,7 +53,7 @@ function PrepBrief({ onReady }) {
 
 function PreCall({ onPlace }) {
   const { call, lead, end } = useCall();
-  const [brief, setBrief] = useState(!!lead);
+  const [brief, setBrief] = useState(null); // holds the chosen call options while the 20-second brief is shown
   const [mode, setMode] = useState('phone');
   const [ep, setEp] = useState(getWebCreds());
   const [myPhone, setMyPhone] = useState(getAgentPhone() || user.phone || '');
@@ -71,7 +72,7 @@ function PreCall({ onPlace }) {
   const canPlace = (!needCode || code.length >= 5) && (!isPhone || (phoneOk && ready && myOk && epOk));
   const first = call.name.split(' ')[0];
   const meta = leadMeta(lead);
-  if (brief) return <PrepBrief onReady={() => setBrief(false)} />;
+  if (brief) return <PrepBrief onReady={() => onPlace(brief)} onBack={() => setBrief(null)} />;
   return (
     <Modal open onClose={end} width={460} flush label="Before you call">
       <div className="pc__head">
@@ -136,7 +137,7 @@ function PreCall({ onPlace }) {
             <input value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 5))} inputMode="numeric" placeholder="5 digits shown on /customer" aria-label="Customer line code" />
           </label>
         )}
-        <button className="pc__place" disabled={!canPlace} onClick={() => onPlace({ mode, code, phone: normalizePhone(phone) || '', autoConsent: !!cfg?.transcripts })}><i className="ti ti-phone" /> {mode === 'sim' ? 'Skip · Place the call' : 'Place the live call'}</button>
+        <button className="pc__place" disabled={!canPlace} onClick={() => { const o = { mode, code, phone: normalizePhone(phone) || '', autoConsent: !!cfg?.transcripts }; if (lead) setBrief(o); else onPlace(o); }}><i className="ti ti-phone" /> {mode === 'sim' ? 'Skip · Place the call' : 'Place the live call'}</button>
         <p>These are the same Lead SOP checkpoints your manager set — reviewing them takes 10 seconds and keeps the call on-target.</p>
       </div>
     </Modal>
@@ -178,6 +179,7 @@ function Keypad({ onClose, startCall }) {
 export default function CallHost() {
   const { call, placeCall, startCall } = useCall();
   const [pad, setPad] = useState(false);
+  const [gate, setGate] = useState(false); // the full "ask on WhatsApp / other language" consent window
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const live = ['ringing', 'consent', 'inCall'].includes(call.status);
@@ -188,7 +190,8 @@ export default function CallHost() {
     <>
       {call.status === 'precheck' && <PreCall onPlace={place} />}
       {call.status === 'incoming' && <Incoming />}
-      <ConsentGate />
+      <ConsentGate show={gate} />
+      <ConsentCard onMore={() => setGate(true)} gateOpen={gate} onDone={() => setGate(false)} />
       <WrapUpModal />
       <RightsPanel />
       <ConsentLog />
