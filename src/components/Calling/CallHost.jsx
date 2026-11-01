@@ -32,6 +32,32 @@ const modes = [
   { id: 'ai', label: 'AI (web)', hint: 'Our AI agent (Avani) phones the person on the customer page.' },
 ];
 
+function NumberPrompt({ lead, first, onClose, onCall, onMore }) {
+  const [txt, setTxt] = useState('');
+  const digits = txt.replace(/\D/g, '');
+  const n = normalizePhone(txt);
+  const ok = digits.length === 10 || (digits.length >= 11 && !!n);
+  const fmt = (v) => { const d = v.replace(/\D/g, '').slice(0, 10); return d.length > 5 ? `${d.slice(0, 5)} ${d.slice(5)}` : d; };
+  return (
+    <Modal open onClose={onClose} width={400} label="Enter phone number">
+      <div className="np">
+        <div className="np__top">
+          <span className="np__av">{initials(lead?.name || first)}</span>
+          <div><div className="np__name">Call {first}</div><div className="np__sub">{lead?.interest || 'New lead'}</div></div>
+        </div>
+        <label className="np__lbl" htmlFor="np-num">Customer's mobile number</label>
+        <div className={`np__field${txt && !ok ? ' bad' : ''}`}>
+          <span className="np__cc">🇮🇳 +91</span>
+          <input id="np-num" className="np__in" autoFocus value={txt} onChange={(e) => setTxt(txt.trim().startsWith('+') || e.target.value.trim().startsWith('+') ? e.target.value.replace(/[^\d+ ]/g, '').slice(0, 16) : fmt(e.target.value))} onKeyDown={(e) => { if (e.key === 'Enter' && ok) onCall(n); }} inputMode="tel" placeholder="98765 43210" aria-label="Customer phone number" />
+        </div>
+        <div className="np__hint">{txt && !ok ? 'Type the full 10-digit mobile number.' : 'Type it once. We remember it for this lead.'}</div>
+        <button className="np__go" disabled={!ok} onClick={() => onCall(n)}><i className="ti ti-phone" /> Call {first}</button>
+        <button type="button" className="np__more" onClick={onMore}>More call options</button>
+      </div>
+    </Modal>
+  );
+}
+
 function PrepBrief({ onReady, onBack, onChange }) {
   const { call, lead } = useCall();
   const p = prepFor(lead);
@@ -94,25 +120,11 @@ function PreCall({ onPlace }) {
   };
   const noNum = !!lead && !normalizePhone(lead.phone || '');
   const [askNum, setAskNum] = useState(false);
-  const [numText, setNumText] = useState('');
   // Calling already works but this lead has no number: ask for just the number, nothing else.
   const go = () => { const o = tryAuto(); if (o) onPlace(o); else if (noNum && tryAuto('+910000000000')) setAskNum(true); else setSetup(true); };
-  const numN = normalizePhone(numText);
-  const numOk = !!numN && numN.replace(/\D/g, '').length >= 11;
-  const callNum = () => { if (!numOk) return; setLeadPhone(lead.id, numN); const o = tryAuto(numN); if (o) onPlace(o); else { setPhone(numN); setAskNum(false); setSetup(true); } };
+  const callNum = (numN) => { setLeadPhone(lead.id, numN); const o = tryAuto(numN); if (o) onPlace(o); else { setPhone(numN); setAskNum(false); setSetup(true); } };
   useEffect(() => { if (cfg && !lead && !setup) go(); }, [cfg]); // eslint-disable-line react-hooks/exhaustive-deps
-  if (askNum && !setup) return (
-    <Modal open onClose={() => setAskNum(false)} width={400} label="Enter phone number">
-      <div style={{ padding: 22 }}>
-        <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>Call {first}</div>
-        <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 14 }}>This lead has no number yet. Type it once, we remember it.</div>
-        <input className="pc__tel" autoFocus value={numText} onChange={(e) => setNumText(e.target.value.replace(/[^\d+ ]/g, '').slice(0, 16))} onKeyDown={(e) => { if (e.key === 'Enter') callNum(); }} inputMode="tel" placeholder="98765 43210" aria-label="Customer phone number" />
-        <small className="pc__note">{numText && !numOk ? 'Type the full 10-digit mobile number.' : 'Just the 10 digits. +91 is added for you.'}</small>
-        <button className="pc__place" style={{ marginTop: 14, width: '100%' }} disabled={!numOk} onClick={callNum}><i className="ti ti-phone" /> Call {first}</button>
-        <button type="button" onClick={() => { setAskNum(false); setSetup(true); }} style={{ background: 'none', border: 0, color: '#6b7280', fontSize: 12, marginTop: 10, cursor: 'pointer', width: '100%' }}>More call options</button>
-      </div>
-    </Modal>
-  );
+  if (askNum && !setup) return <NumberPrompt lead={lead} first={first} onClose={() => setAskNum(false)} onCall={callNum} onMore={() => { setAskNum(false); setSetup(true); }} />;
   if (!setup) return lead ? <PrepBrief onReady={go} onBack={end} onChange={() => setSetup(true)} /> : null;
   return (
     <Modal open onClose={lead ? () => setSetup(false) : end} width={460} flush label="Before you call">
