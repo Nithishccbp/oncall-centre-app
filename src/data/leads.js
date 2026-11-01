@@ -15,7 +15,22 @@ export const leadByFirstName = (name) => leads.find((l) => name && name.startsWi
 // Leads typed in by the agent (Plan > Calls to make > Add a lead). Kept in this browser until the backend supplies real leads.
 const KEY = 'og_manual_leads';
 const loadManual = () => { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch { return []; } };
-loadManual().forEach((l) => { if (!leads.some((x) => x.id === l.id)) leads.push(l); });
+// Earlier hand-added test leads are cleared. Test leads now come from the list below (all dial the same test number).
+try { localStorage.removeItem(KEY); } catch { /* ignore */ }
+
+const TEST_PHONE = '+917995807656';
+const TEST = [
+  ['Arjun Mehta', 'Tower A · 2 BHK', 9800000, 82], ['Divya Rao', 'Tower B · 3 BHK', 14200000, 76], ['Karthik Nair', 'Tower A · 3 BHK', 13500000, 71],
+  ['Sneha Iyer', 'Tower B · 2 BHK', 9200000, 64], ['Rohit Verma', 'Tower A · 2 BHK', 9500000, 58],
+];
+if (!DEMO) {
+  TEST.forEach(([name, prod, price, score], i) => leads.push({
+    id: `test-${i + 1}`, name, initials: name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase(), avatarBg: '#e1f5ee', avatarColor: '#0f6e56',
+    product: prod, price, interest: `Interested: ${prod}`, crossSell: 'Covered parking', emiNote: 'Not discussed yet, share the payment plan early', story: 'Test lead.',
+    status: 'Open', score, icp: score, intent: score, expectedValue: price, slaLeft: 'New lead', actionNote: 'Test lead', phone: TEST_PHONE,
+    icpBreakdown: [{ label: 'Budget Fit', pct: 60 }, { label: 'Need Match', pct: 60 }, { label: 'Decision Stage', pct: 50 }], journey: [], signals: [], notes: [], cumulativeMissed: 0, manual: true,
+  }));
+}
 let lver = 0;
 const lsubs = new Set();
 export const touchLeads = () => { lver += 1; lsubs.forEach((f) => f()); };
