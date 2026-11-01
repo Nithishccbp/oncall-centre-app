@@ -5,10 +5,10 @@ import TelephonyCard from './TelephonyCard.jsx';
 import Modal from '../Modal/Modal.jsx';
 import { useUi } from '../../context/UiContext.jsx';
 import { useNotifications } from '../../data/notifications.js';
-import { avatars, languages, rankBreakdown } from '../../data/calling.js';
-import { user } from '../../data/dashboard.js';
 import { DEMO } from '../../data/demo.js';
 import { useKpiData } from '../../data/kpiStats.js';
+import { avatars, languages, rankBreakdown } from '../../data/calling.js';
+import { user } from '../../data/dashboard.js';
 import { TODAY } from '../../data/calendar.js';
 import LeadsCalledModal from '../KpiDetail/LeadsCalledModal.jsx';
 import AhtModal from '../KpiDetail/AhtModal.jsx';
@@ -124,26 +124,50 @@ function AvatarPanel({ close }) {
 }
 
 function SettingsPanel({ close }) {
-  // Read-only: everything here comes from the login profile / backend / code. Nothing can be edited in the app.
-  const dash = (v) => v || '—';
-  const Info = ({ k, v }) => <div className="card set__row" style={{ cursor: 'default' }}><span><b>{v}</b><small>{k}</small></span></div>;
+  const { showToast } = useUi();
+  const [lang, setLang] = useState('English');
+  const [dev, setDev] = useState(false);
+  const [industry, setIndustry] = useState('realestate');
+  const [li, setLi] = useState('');
   return (
-    <Panel title="Settings" onBack={close} sub="Managed in code and by your admin">
+    <Panel title="Settings" onBack={close}>
       <div className="label-caps">Employee profile</div>
-      <Info k="Full name" v={dash(user.name)} />
-      <Info k="Employee ID" v={dash(user.employeeId)} />
-      <Info k="Email" v={dash(user.email)} />
-      <Info k="Phone number" v={dash(user.phone)} />
+      <div className="card set__grid">
+        <label>FULL NAME<input defaultValue="Meghna Rao" /></label>
+        <label>EMPLOYEE ID<input defaultValue="OG-EMP-07734" disabled /></label>
+        <label>EMAIL<input defaultValue="meghna.r@godrejproperties.in" /></label>
+        <label>PHONE NUMBER<input defaultValue="+91 98450 11223" /></label>
+      </div>
+      <div className="label-caps">Security</div>
+      <button className="card set__row" onClick={() => showToast('PIN change is a demo — not connected')}><i className="ti ti-lock" /><span><b>Change App Password</b><small>Update your 4-digit login PIN</small></span><i className="ti ti-chevron-right" /></button>
       <div className="label-caps">Experience centre</div>
-      <Info k="Base experience centre" v={dash(user.location)} />
-      {user.allocated && <div className="set__alloc">Allocated: {user.allocated}</div>}
+      <div className="card set__row"><i className="ti ti-building-store" /><span><b>Base Experience centre</b><small>Whitefield · Godrej Properties</small></span></div>
+      <div className="set__alloc">Allocated: Lakeside Towers · HSR Layout · Indiranagar</div>
       <div className="label-caps">Telephony</div>
-      <TelephonyCard />
+      <TelephonyCard toast={showToast} />
       <div className="label-caps">Role &amp; designation</div>
-      <Info k="Designation" v={dash(user.role)} />
+      <div className="card set__row"><span className="set__badge">M0</span><span><b>M0 · Presales Staff</b><small>Staff tier — sits below Manager designations (M1 Experience centre Manager, M2 Ops Manager) shown in Settings on the Manager app.</small></span></div>
       <div className="label-caps">Your customer channel</div>
-      <Info k="Channel" v={dash(user.channel)} />
-      <p className="muted" style={{ padding: '10px 4px' }}>These settings cannot be changed here. They are set in code and pulled from the backend.</p>
+      <div className="card set__row on"><span>☎️</span><span><b>Presales Staff</b><small>I mostly handle customers over the phone</small></span><i className="ti ti-circle-check ok" /></div>
+      <div className="label-caps">Language</div>
+      <div className="set__langs">
+        {languages.map(([native, en]) => (
+          <button key={en} className={lang === en ? 'on' : ''} aria-pressed={lang === en} onClick={() => { setLang(en); showToast(`Language: ${en} (labels stay English in this demo)`); }}><b>{native}</b><small>{en}</small></button>
+        ))}
+      </div>
+      <div className="label-caps">Dev mode</div>
+      <label className="card set__row"><span>🛠️</span><span><b>Override inherited industry</b><small>For building/demoing — unlocks manual vertical switching below.</small></span>
+        <input type="checkbox" checked={dev} onChange={(e) => setDev(e.target.checked)} /></label>
+      <div className="label-caps">Industry</div>
+      {[['realestate', '🏢', 'Real estate — Presales', 'Godrej Properties — Presales Staff'], ['retail', '🛏️', 'Retail — Premium Brands', 'Home / furniture retail — Call Centre Staff'], ['health', '🏥', 'Healthcare — Hospital', 'Patient helpline — Helpline Staff']].map(([id, ic, t, s]) => (
+        <button key={id} disabled={!dev && industry !== id} className={`card set__row ${industry === id ? 'on' : ''}`} onClick={() => setIndustry(id)}><span>{ic}</span><span><b>{t}</b><small>{s}</small></span></button>
+      ))}
+      <div className="label-caps">OG Score™ on LinkedIn</div>
+      <div className="card set__li">
+        <p className="muted">Link once — whenever you're ready to announce a milestone, push a ready-made OG Score™ story to LinkedIn in one tap.</p>
+        <label>LINKEDIN PROFILE URL<input value={li} onChange={(e) => setLi(e.target.value)} placeholder="https://www.linkedin.com/in/…" /></label>
+        <button className="btn-primary" disabled={!li.trim()} onClick={() => showToast('LinkedIn linked (demo)')}>Save &amp; Connect LinkedIn</button>
+      </div>
     </Panel>
   );
 }

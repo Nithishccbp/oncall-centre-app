@@ -9,9 +9,9 @@ import RightsPanel from './RightsPanel.jsx';
 import WrapUpModal from './WrapUpModal.jsx';
 import DemoStrip from './DemoStrip.jsx';
 import ConsentCard from './ConsentCard.jsx';
-import { startRing, stopRing } from '../../services/practice.js';
 import { useCall, fmtClock } from '../../context/CallContext.jsx';
-import { loadConfig, normalizePhone, setAgentPhone } from '../../services/phoneCall.js';
+import { startRing, stopRing } from '../../services/practice.js';
+import { loadConfig, normalizePhone, getAgentPhone, setAgentPhone, getWebCreds, setWebCreds } from '../../services/phoneCall.js';
 import { checkpointsFor, leadMeta, pitchFor } from '../../data/calling.js';
 import { prepFor } from '../../data/prep.js';
 import { user } from '../../data/dashboard.js';
@@ -57,13 +57,14 @@ function PreCall({ onPlace }) {
   const { call, lead, end } = useCall();
   const [setup, setSetup] = useState(false); // the call-options window only opens when needed or asked for
   const [mode, setMode] = useState('phone');
+  const [ep, setEp] = useState(getWebCreds());
+  const [myPhone, setMyPhone] = useState(getAgentPhone() || user.phone || '');
   const [code, setCode] = useState('');
   const [phone, setPhone] = useState(lead?.phone || (/^[\d+ ]{8,}$/.test(call.name || '') ? call.name : ''));
   const [cfg, setCfg] = useState(null);
-  useEffect(() => { loadConfig().then((c) => { setCfg(c); if (c.staffPhone) setMode(c.webCalling ? 'webphone' : 'staffphone'); else if (!c.phone && !c.aiPhone) setMode('human'); }); }, []);
+  useEffect(() => { loadConfig().then((c) => { setCfg(c); if (c.staffPhone) setMode('webphone'); else if (!c.phone && !c.aiPhone) setMode('human'); }); }, []);
   const isPhone = ['phone', 'aiphone', 'staffphone', 'webphone'].includes(mode);
-  const myPhone = cfg?.agentPhone || user.phone || ''; // the staff phone comes from the server / login profile, never typed here
-  const epOk = mode !== 'webphone' || !!cfg?.webCalling;
+  const epOk = mode !== 'webphone' || !!(ep.u && ep.p);
   const brandNo = cfg?.telephony?.callerId; const myN = normalizePhone(myPhone); const custN = normalizePhone(phone);
   const clash = mode !== 'staffphone' ? '' : myN && myN === brandNo ? 'That is the brand number. Type YOUR OWN mobile number here (the phone the provider should ring first).' : myN && custN && myN === custN ? 'Your number and the customer number are the same. Use a different phone for the customer.' : custN && custN === brandNo ? 'The customer number is the brand number. Type the customer\'s own number.' : '';
   const myOk = mode !== 'staffphone' || (!!myN && !clash);
@@ -78,7 +79,8 @@ function PreCall({ onPlace }) {
   const tryAuto = () => {
     if (!cfg) return null;
     const cust = normalizePhone(lead?.phone || phone) || '';
-    const okWeb = cfg.staffPhone && cfg.telephony?.provider === 'vobiz' && cfg.webCalling;
+    const web = getWebCreds();
+    const okWeb = cfg.staffPhone && cfg.telephony?.provider === 'vobiz' && web.u && web.p;
     let m = null;
     // Calls go straight to the customer: the browser (web) call first. The staff-phone route (rings the agent first) is never picked automatically.
     const saved = modeSaved() === 'staffphone' ? null : modeSaved();
@@ -89,7 +91,7 @@ function PreCall({ onPlace }) {
     if (m !== 'sim' && !cust) return null;
     return { mode: m, code: '', phone: cust, autoConsent: !!cfg.transcripts };
   };
-  const go = () => { if (myPhone) setAgentPhone(myPhone); const o = tryAuto(); if (o) onPlace(o); else setSetup(true); };
+  const go = () => { const o = tryAuto(); if (o) onPlace(o); else setSetup(true); };
   useEffect(() => { if (cfg && !lead && !setup) go(); }, [cfg]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!setup) return lead ? <PrepBrief onReady={go} onBack={end} onChange={() => setSetup(true)} /> : null;
   return (
@@ -136,8 +138,19 @@ function PreCall({ onPlace }) {
             <small className="pc__note">{phone && !phoneOk ? 'This number does not look right.' : 'Demo leads have fake numbers — type a real one you can answer.'}</small>
           </label>
         )}
-        {mode === 'webphone' && <p className="pc__note">{cfg?.webCalling ? `Web calling is set up on the server. ${brandNo ? `Customer will see ${brandNo}. ` : ''}Allow the microphone when the browser asks.` : 'Web calling is not set up on the server yet (TEL_WEB_USER and TEL_WEB_PASS in Vercel).'}</p>}
-        {mode === 'staffphone' && <p className="pc__note" style={clash || !myN ? { color: '#c0392b', fontWeight: 600 } : undefined}>{clash || (!myN ? 'Your phone number is not set on the server yet (TEL_AGENT_PHONE in Vercel).' : `The app rings your phone ${myN} first, then connects the customer. They see ${brandNo || 'the brand number'}.`)}</p>}
+        {mode === 'webphone' && (
+          <label className="pc__code">Your Vobiz web-calling login (saved on this device only)
+            <input className="pc__tel" value={ep.u || ''} onChange={(e) => { const n = { ...ep, u: e.target.value.replace(/[^A-Za-z0-9]/g, '') }; setEp(n); setWebCreds(n); }} placeholder="Endpoint username" aria-label="Endpoint username" autoComplete="off" />
+            <input className="pc__tel" type="password" style={{ marginTop: 6 }} value={ep.p || ''} onChange={(e) => { const n = { ...ep, p: e.target.value }; setEp(n); setWebCreds(n); }} placeholder="Endpoint password" aria-label="Endpoint password" autoComplete="off" />
+            <small className="pc__note">{cfg?.telephony?.callerId ? `Customer will see ${cfg.telephony.callerId}. ` : ''}Allow the microphone when the browser asks.</small>
+          </label>
+        )}
+        {mode === 'staffphone' && (
+          <label className="pc__code">YOUR mobile number — saved once. The app rings you first, then connects the customer
+            <input className="pc__tel" value={myPhone} onChange={(e) => { const v = e.target.value.replace(/[^\d+ ]/g, '').slice(0, 16); setMyPhone(v); setAgentPhone(v); }} inputMode="tel" placeholder="e.g. 98765 43210" aria-label="Your phone number" />
+            <small className="pc__note" style={clash ? { color: '#c0392b', fontWeight: 600 } : undefined}>{clash || (brandNo ? `Customer will see ${brandNo} as the caller. Do not enter that number here.` : 'Caller ID comes from the provider setup.')}</small>
+          </label>
+        )}
         {isPhone && cfg && !ready && <p className="pc__warn">{mode === 'staffphone' ? `Provider calling is not set up yet. Missing in Vercel: ${(cfg.telephony?.missing || ['TEL_PROVIDER']).join(', ')}. See TELEPHONY_SETUP.md.` : 'Phone calling is not switched on for this site yet. Add the Vonage keys (VONAGE_SETUP.md) or the Twilio keys in Vercel, then redeploy.'}</p>}
         {isPhone && cfg && !cfg.reachable && <p className="pc__warn">The /api server is not reachable here. Phone calls work on the deployed Vercel site (or with “vercel dev”), not plain “npm run dev”.</p>}
         {needCode && (
@@ -145,7 +158,7 @@ function PreCall({ onPlace }) {
             <input value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 5))} inputMode="numeric" placeholder="5 digits shown on /customer" aria-label="Customer line code" />
           </label>
         )}
-        <button className="pc__place" disabled={!canPlace} onClick={() => { if (myPhone) setAgentPhone(myPhone); try { localStorage.setItem('og_call_mode', mode); } catch { /* ignore */ } onPlace({ mode, code, phone: normalizePhone(phone) || '', autoConsent: !!cfg?.transcripts }); }}><i className="ti ti-phone" /> {mode === 'sim' ? 'Skip · Place the call' : 'Place the live call'}</button>
+        <button className="pc__place" disabled={!canPlace} onClick={() => { try { localStorage.setItem('og_call_mode', mode); } catch { /* ignore */ } onPlace({ mode, code, phone: normalizePhone(phone) || '', autoConsent: !!cfg?.transcripts }); }}><i className="ti ti-phone" /> {mode === 'sim' ? 'Skip · Place the call' : 'Place the live call'}</button>
         <p>These are the same Lead SOP checkpoints your manager set — reviewing them takes 10 seconds and keeps the call on-target.</p>
       </div>
     </Modal>
