@@ -5,7 +5,9 @@ import { useSyncExternalStore } from 'react';
 const KEY = 'og_app_calls';
 const subs = new Set();
 const load = () => { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch { return []; } };
-let list = load().filter((c) => Date.now() - new Date(c.ts).getTime() < 35 * 864e5);
+// Practice calls from earlier versions were logged here by mistake: drop them.
+const PRACTICE_NAMES = ['Anil Kumar', 'Priya Nair', 'Suresh Reddy', 'Meera Joshi', 'Farhan Sheikh'];
+let list = load().filter((c) => !PRACTICE_NAMES.includes(c.name)).filter((c) => Date.now() - new Date(c.ts).getTime() < 35 * 864e5);
 
 export function logAppCall({ name, leadId, dur, outcome, summary, csat, comment }) {
   const ts = new Date().toISOString();

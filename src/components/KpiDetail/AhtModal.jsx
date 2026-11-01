@@ -18,7 +18,7 @@ const fmt = (s) => `${Math.floor(s / 60)}m ${String(Math.round(s % 60)).padStart
 const short = (s) => `${Math.floor(s / 60)}m ${String(Math.round(s % 60)).padStart(2, '0')}s`;
 
 export default function AhtModal({ close }) {
-  const { showToast } = useUi();
+  const { showToast, range } = useUi();
   const { week } = useKpiData();
   const [q, setQ] = useState('');
   const [sort, setSort] = useState({ k: 'i', asc: true });
@@ -79,7 +79,7 @@ export default function AhtModal({ close }) {
     <Modal open onClose={close} width={880} flush label="Avg Handle Time">
       <div className="kd kd--blue">
         <div className="kd__banner">
-          <div><div className="kd__eyebrow">TODAY · VS YOUR WEEKLY AVERAGE</div><div className="kd__bt">Avg Handle Time</div></div>
+          <div><div className="kd__eyebrow">{range === 'Today' ? 'TODAY · VS YOUR WEEKLY AVERAGE' : `${range.toUpperCase()} · VS PRIOR PERIOD`}</div><div className="kd__bt">Avg Handle Time</div></div>
           <button className="kd__pdf" onClick={() => showToast('PDF to WhatsApp will work once the backend is connected')}>
             <i className="ti ti-brand-whatsapp" /> Send PDF
           </button>

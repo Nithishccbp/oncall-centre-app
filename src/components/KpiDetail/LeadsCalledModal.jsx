@@ -21,14 +21,15 @@ const fmt = (s) => `${Math.floor(s / 60)}m ${String(Math.round(s % 60)).padStart
 
 export default function LeadsCalledModal({ close }) {
   const { showToast } = useUi();
-  const { calledToday, created } = useKpiData();
+  const { calledToday, calledLeads, created } = useKpiData();
+  const { range } = useUi();
   const [q, setQ] = useState('');
   const [sort, setSort] = useState({ k: 'hour', asc: true });
   const [page, setPage] = useState(0);
 
   const calls = DEMO ? [...DEMO_CALLS, ...calledToday] : calledToday;
-  const total = Math.max(created.length, calls.length);
   const n = calls.length;
+  const leadsN = DEMO ? 2 + calledLeads : calledLeads;
   const avg = n ? calls.reduce((s, c) => s + c.dur, 0) / n : 0;
   const quotes = calls.filter((c) => c.quote).length;
   const line = CUTS.map((cut, i) => (i === 4 ? n : calls.filter((c) => c.hour < cut).length));
@@ -45,7 +46,7 @@ export default function LeadsCalledModal({ close }) {
 
   const csv = () => {
     const esc = (v) => `"${String(v).replace(/"/g, '""')}"`;
-    const body = [['When', 'Lead', 'Duration', 'Outcome'], ...rows.map((r) => [`Today ${r.time}`, r.name, fmt(r.dur), r.outcome])].map((r) => r.map(esc).join(',')).join('\n');
+    const body = [['When', 'Lead', 'Duration', 'Outcome'], ...rows.map((r) => [`${new Date(r.ts || Date.now()).toLocaleDateString('en-IN')} ${r.time}`, r.name, fmt(r.dur), r.outcome])].map((r) => r.map(esc).join(',')).join('\n');
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([body], { type: 'text/csv' }));
     a.download = 'leads-called.csv';
@@ -87,24 +88,24 @@ export default function LeadsCalledModal({ close }) {
         <div className="kd__pad">
           <div className="kd__stats kd__stats--4 kd__stats--3b">
             <div>
-              <div className="kd__num">{n}</div>
+              <div className="kd__num">{DEMO ? n : leadsN}</div>
               {DEMO && <span className="kd__delta kd__delta--good">▲ +2</span>}
-              <div className="kd__muted">vs similar prior period</div>
+              <div className="kd__muted">{leadsN === 1 ? 'lead' : 'leads'} called · {n} {n === 1 ? 'call' : 'calls'} made</div>
             </div>
-            <div className="kd__stat"><div className="kd__sl">CALLED</div><div className="kd__sv">{n} of {total}</div></div>
+            <div className="kd__stat"><div className="kd__sl">CALLS MADE</div><div className="kd__sv">{n}</div></div>
             <div className="kd__stat"><div className="kd__sl">AVG CALL</div><div className="kd__sv">{n ? fmt(avg) : '—'}</div></div>
             <div className="kd__stat"><div className="kd__sl">QUOTES SENT</div><div className="kd__sv">{quotes}</div></div>
           </div>
 
           <div className="kd__card">
-            <div className="kd__sec kd__sec--tight">TREND · TODAY
+            <div className="kd__sec kd__sec--tight">TREND · {range.toUpperCase()}
               <span className="kd__legend"><i className="kd__ln kd__ln--green" /> This period <i className="kd__ln kd__ln--dash kd__ln--greenl" /> Prior</span>
             </div>
             <div className="kd__chart"><Line data={data} options={opts} /></div>
           </div>
 
           <div className="kd__sec kd__sec--row">
-            <div>CALLS TO YOUR LEADS<div className="kd__sub">{n} of {total} leads called. Confirmed sales appear here once ERP is connected.</div></div>
+            <div>CALLS TO YOUR LEADS<div className="kd__sub">{leadsN} {leadsN === 1 ? 'lead' : 'leads'} called in {n} {n === 1 ? 'call' : 'calls'}. Confirmed sales appear here once ERP is connected.</div></div>
             <div className="kd__tools kd__tools--inline">
               <div className="kd__search"><i className="ti ti-search" /><input placeholder="Search" value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} /></div>
               <button className="kd__icon" onClick={csv} aria-label="Download CSV" title="Download CSV"><i className="ti ti-download" /></button>

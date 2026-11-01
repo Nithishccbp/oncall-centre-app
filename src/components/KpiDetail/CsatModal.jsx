@@ -25,7 +25,7 @@ const DEMO_CALLS = [
 const Stars = ({ n }) => <span className="kd__stars" aria-label={`${n} stars`}>{'★'.repeat(n)}<i>{'★'.repeat(5 - n)}</i></span>;
 
 export default function CsatModal({ close }) {
-  const { showToast } = useUi();
+  const { showToast, range } = useUi();
   const { ratedToday, csatToday } = useKpiData();
   const [q, setQ] = useState('');
   const [sort, setSort] = useState({ k: 'time', asc: true });
@@ -87,7 +87,7 @@ export default function CsatModal({ close }) {
     <Modal open onClose={close} width={880} flush label="CSAT">
       <div className="kd kd--blue">
         <div className="kd__banner">
-          <div><div className="kd__eyebrow">TODAY · VS YOUR WEEKLY AVERAGE</div><div className="kd__bt">CSAT</div></div>
+          <div><div className="kd__eyebrow">{range === 'Today' ? 'TODAY · VS YOUR WEEKLY AVERAGE' : `${range.toUpperCase()} · VS PRIOR PERIOD`}</div><div className="kd__bt">CSAT</div></div>
           <button className="kd__pdf" onClick={() => showToast('PDF to WhatsApp will work once the backend is connected')}>
             <i className="ti ti-brand-whatsapp" /> Send PDF
           </button>

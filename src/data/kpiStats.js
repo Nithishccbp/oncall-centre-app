@@ -56,9 +56,10 @@ export function useKpiData() {
       if (bk && bk.csat) return { ...w, csat: Math.round((bk.csat + (ex.reduce((n, c) => n + c.csat, 0) / ex.length) * 20) / 2) };
       return { ...w, csat: Math.round((ex.reduce((n, c) => n + c.csat, 0) / ex.length) * 20) };
     });
+    const calledLeads = new Set(calledToday.map((c) => c.leadId || first(c.name))).size;
     const handled = all.length;
     const aht = handled ? Math.round(all.reduce((n, c) => n + (c.dur || 0), 0) / handled) : 0;
     const todaysList = [...all].sort((a, b) => (a.ts < b.ts ? 1 : -1)).map((c) => ({ time: c.time, name: c.name, topic: c.topic, stars: c.stars || 0 }));
-    return { created, calledToday, week: weekC, ratedToday, csatToday, todaysList, handled, aht, lv };
+    return { created, calledToday, calledLeads, week: weekC, ratedToday, csatToday, todaysList, handled, aht, lv };
   }, [ing.callsAll, ing.convs, ing.week, ing.version, app, lv, span]);
 }

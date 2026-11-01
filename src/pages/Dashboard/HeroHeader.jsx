@@ -15,10 +15,21 @@ const greeting = () => {
 
 export default function HeroHeader() {
   const { range, openOverlay } = useUi();
-  const { created: createdList, calledToday, aht: ahtSec, csatToday } = useKpiData();
+  const { created: createdList, calledToday, calledLeads, handled, ratedToday, aht: ahtSec, csatToday } = useKpiData();
   const created = createdList.length;
   const ahtTxt = `${Math.floor(ahtSec / 60)}m ${String(ahtSec % 60).padStart(2, '0')}s`;
-  const shown = kpis.map((k) => (k.label === 'LEADS CALLED' && !DEMO ? { ...k, value: String(calledToday.length) } : k.label === 'LEADS CALLED' ? { ...k, value: String(2 + calledToday.length) } : k.label === 'AVG HANDLE TIME' && !DEMO ? { ...k, value: ahtTxt } : k.label === 'CSAT TODAY' && csatToday ? { ...k, value: `${csatToday}%`, tone: 'good' } : k.label === 'LEADS CREATED' ? { ...k, value: String(created) } : k.label === 'LEADS CALLED' ? { ...k, value: String((DEMO ? 2 : 0) + handledToday) } : k));
+  const per = range === 'Custom' ? 'selected dates' : range.toLowerCase();
+  const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
+  const shown = kpis.map((k) => {
+    if (DEMO) {
+      return k.label === 'LEADS CALLED' ? { ...k, value: String(2 + calledLeads) } : k.label === 'LEADS CREATED' ? { ...k, value: String(created) } : k.label === 'CSAT TODAY' && csatToday ? { ...k, value: `${csatToday}%`, tone: 'good' } : k;
+    }
+    if (k.label === 'LEADS CREATED') return { ...k, value: String(created), delta: `new ${per}` };
+    if (k.label === 'LEADS CALLED') return { ...k, value: String(calledLeads), delta: `in ${plural(calledToday.length, 'call')}` };
+    if (k.label === 'AVG HANDLE TIME') return { ...k, value: ahtTxt, delta: `${plural(handled, 'call')} ${per}` };
+    if (k.label === 'CSAT TODAY') return { ...k, value: csatToday ? `${csatToday}%` : '0%', delta: `${ratedToday.length} rated`, tone: csatToday ? 'good' : 'info' };
+    return k;
+  });
   return (
     <section className="hero">
       <div className="hero__top">

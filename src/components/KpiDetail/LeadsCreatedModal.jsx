@@ -28,7 +28,7 @@ const DEMO_ROWS = [
 const COLS = [['name', 'LEAD', ''], ['score', 'ATTRACTIVENESS', 'kd__r'], ['icp', 'ICP RATING', 'kd__r'], ['expectedValue', 'VALUE', 'kd__r'], ['next', 'NEXT STEP', '']];
 
 export default function LeadsCreatedModal({ close }) {
-  const { showToast } = useUi();
+  const { showToast, range } = useUi();
   const { created, calledToday } = useKpiData();
   const [q, setQ] = useState('');
   const [sort, setSort] = useState({ k: 'score', asc: false });
@@ -130,7 +130,7 @@ export default function LeadsCreatedModal({ close }) {
           </div>
 
           <div className="kd__card">
-            <div className="kd__sec kd__sec--tight">TREND · TODAY
+            <div className="kd__sec kd__sec--tight">TREND · {range.toUpperCase()}
               <span className="kd__legend"><i className="kd__sw kd__sw--green" /> This period <i className="kd__ln kd__ln--dash kd__ln--greenl" /> Prior</span>
             </div>
             <div className="kd__chart kd__chart--tall"><Line data={data} options={opts} /></div>
