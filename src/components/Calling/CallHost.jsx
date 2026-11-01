@@ -7,7 +7,6 @@ import ConsentBar from './ConsentBar.jsx';
 import ConsentLog from './ConsentLog.jsx';
 import RightsPanel from './RightsPanel.jsx';
 import WrapUpModal from './WrapUpModal.jsx';
-import DemoStrip from './DemoStrip.jsx';
 import ConsentCard from './ConsentCard.jsx';
 import { useCall, fmtClock } from '../../context/CallContext.jsx';
 import { startRing, stopRing } from '../../services/practice.js';
@@ -257,7 +256,6 @@ export default function CallHost() {
           <span className="call-pill__dot" /> {call.name} · {fmtClock(call.seconds)} · Return to call
         </button>
       )}
-      <DemoStrip />
       <button className="dial-fab" onClick={() => setPad(true)} aria-label="Open keypad"><i className="ti ti-keyboard" /></button>
       {pad && <Keypad onClose={() => setPad(false)} startCall={startCall} />}
     </>
