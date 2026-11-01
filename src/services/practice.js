@@ -21,20 +21,55 @@ export function startRing() {
 }
 export function stopRing() { if (ring) { clearInterval(ring.t); try { ring.ctx.close(); } catch { /* ignore */ } ring = null; } }
 
-const speak = (text, persona) => new Promise((resolve) => {
+// Natural voice from the server (Gemini speech). Falls back to the best voice the browser has.
+let ctx = null; let cur = null; let ttsOk = true;
+const audioCtx = () => { if (!ctx || ctx.state === 'closed') ctx = new (window.AudioContext || window.webkitAudioContext)(); if (ctx.state === 'suspended') ctx.resume(); return ctx; };
+async function fetchVoice(text, persona) {
+  if (!ttsOk) return null;
+  const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 9000);
+  try {
+    const r = await fetch('/api/ai-agent', { method: 'POST', signal: ctl.signal, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role: 'tts', text, voice: persona?.voice || 'Kore', style: persona?.trait || '' }) });
+    const d = await r.json();
+    if (!d?.audio) { if (d?.source === 'no-key') ttsOk = false; return null; }
+    return d;
+  } catch { return null; } finally { clearTimeout(t); }
+}
+function playPcm(d) {
+  return new Promise((resolve) => {
+    try {
+      const bin = atob(d.audio); const n = bin.length >> 1;
+      const c = audioCtx(); const buf = c.createBuffer(1, n, d.rate || 24000); const ch = buf.getChannelData(0);
+      for (let i = 0; i < n; i += 1) { const v = bin.charCodeAt(2 * i) | (bin.charCodeAt(2 * i + 1) << 8); ch[i] = (v > 32767 ? v - 65536 : v) / 32768; }
+      const src = c.createBufferSource(); src.buffer = buf; src.connect(c.destination);
+      src.onended = () => { cur = null; resolve(); };
+      cur = src; src.start();
+    } catch { resolve(); }
+  });
+}
+const bestVoice = () => {
+  const vs = window.speechSynthesis.getVoices();
+  const rank = (v) => (/natural|neural|online/i.test(v.name) ? 4 : 0) + (/google/i.test(v.name) ? 2 : 0) + (/en[-_]IN/i.test(v.lang) ? 3 : /^en/i.test(v.lang) ? 1 : 0);
+  return [...vs].sort((x, y) => rank(y) - rank(x))[0];
+};
+const browserSpeak = (text, persona) => new Promise((resolve) => {
   const synth = window.speechSynthesis;
   if (!synth) { resolve(); return; }
   const done = () => resolve();
   try { // a failure to speak must never freeze the call
     const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'en-IN'; u.pitch = persona?.pitch || 1; u.rate = 1;
-    const v = synth.getVoices().find((x) => /en[-_]IN/i.test(x.lang)) || synth.getVoices().find((x) => /^en/i.test(x.lang));
+    u.lang = 'en-IN'; u.pitch = persona?.pitch || 1; u.rate = 0.97;
+    const v = bestVoice();
     if (v) u.voice = v;
     u.onend = done; u.onerror = done;
     synth.cancel(); synth.speak(u);
   } catch { done(); return; }
   setTimeout(done, 5000 + text.length * 90);
 });
+const speak = async (text, persona) => {
+  const d = await fetchVoice(text, persona);
+  if (d) { await playPcm(d); return; }
+  await browserSpeak(text, persona);
+};
 
 /** Offline customer, used when the AI service is not reachable: walks through the persona's concerns. */
 function localCustomer(history, persona) {
@@ -102,4 +137,6 @@ export function stopPractice() {
   s.alive = false; S = null;
   try { s.rec?.stop(); } catch { /* ignore */ }
   try { window.speechSynthesis?.cancel(); } catch { /* ignore */ }
+  try { cur?.stop(); } catch { /* ignore */ }
+  cur = null;
 }

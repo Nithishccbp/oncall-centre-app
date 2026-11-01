@@ -30,7 +30,7 @@ const customerSystem = (p = {}) => [
   `You are ${p.name || 'a customer'}, a real person phoning Godrej Properties about apartments at Lakeside Towers, Whitefield, Bengaluru, India. You are talking to a presales agent who is practising their call skills.`,
   `You are interested in: ${p.product || 'a 2 BHK'}. Your budget: ${p.budget || 'about 95 lakh'}. Your personality: ${p.trait || 'practical'}.`,
   `Your concerns, to raise one at a time and not all at once: ${(p.concerns || []).join('; ')}.`,
-  'Rules: reply in 1 or 2 short spoken sentences of natural Indian English. No markdown, no emojis, no lists. Do not volunteer everything. Push back politely if the agent is vague or pushy, and become warmer when they answer well.',
+  'Rules: reply in 1 or 2 short spoken sentences of casual, natural Indian English, the way people really talk on the phone (contractions, an occasional "hmm", "see", "acha" or "okay", never formal or scripted). No markdown, no emojis, no lists. Do not volunteer everything. Push back politely if the agent is vague or pushy, and become warmer when they answer well.',
   'Never say you are an AI, never coach the agent, never break character. When your concerns are handled and you agree a next step, or the agent says goodbye, say a short goodbye and end your sentence with the word [END].',
 ].join(' ');
 
@@ -50,6 +50,23 @@ export async function customerReply(messages, persona = {}) {
     const reply = data?.candidates?.[0]?.content?.parts?.map((p) => p.text).join(' ').trim();
     return reply ? { reply, source: 'gemini' } : { reply: null, source: 'empty' };
   } catch { return { reply: null, source: 'error' }; }
+}
+
+/** Natural speaking voice for the AI customer (Gemini text-to-speech). Returns raw 16-bit PCM, 24 kHz mono, base64. */
+export async function speakText(text, voice = 'Kore', style = '') {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) return { audio: null, source: 'no-key' };
+  const model = process.env.GEMINI_TTS_MODEL || 'gemini-2.5-flash-preview-tts';
+  const say = `Speak like a real person on a phone call in India, relaxed and natural, with a slight Indian English accent and small natural pauses. Do not sound like a presenter or a robot.${style ? ` The speaker is ${style}.` : ''} Say exactly this: ${String(text).slice(0, 400)}`;
+  try {
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ parts: [{ text: say }] }], generationConfig: { responseModalities: ['AUDIO'], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } } } } }),
+    });
+    const data = await r.json();
+    const audio = data?.candidates?.[0]?.content?.parts?.find((p) => p.inlineData?.data)?.inlineData?.data;
+    return audio ? { audio, rate: 24000, source: 'gemini-tts' } : { audio: null, source: 'empty' };
+  } catch { return { audio: null, source: 'error' }; }
 }
 
 /** AI coach: reviews a practice call. messages: [{role:'agent'|'cust', text}] -> { review } or { review: null } */
