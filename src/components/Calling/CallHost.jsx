@@ -13,6 +13,7 @@ import { useCall, fmtClock } from '../../context/CallContext.jsx';
 import { startRing, stopRing } from '../../services/practice.js';
 import { loadConfig, normalizePhone, getAgentPhone, setAgentPhone, getWebCreds, setWebCreds } from '../../services/phoneCall.js';
 import { checkpointsFor, leadMeta, pitchFor } from '../../data/calling.js';
+import { setLeadPhone } from '../../data/leads.js';
 import { prepFor } from '../../data/prep.js';
 import { user } from '../../data/dashboard.js';
 import { formatINR } from '../../data/selectors.js';
@@ -76,9 +77,9 @@ function PreCall({ onPlace }) {
   const meta = leadMeta(lead);
   const modeSaved = () => { try { return localStorage.getItem('og_call_mode'); } catch { return null; } };
   // Pick the best way to call from what is already saved, so the agent goes straight: Place call -> brief -> call.
-  const tryAuto = () => {
+  const tryAuto = (override) => {
     if (!cfg) return null;
-    const cust = normalizePhone(lead?.phone || phone) || '';
+    const cust = override || normalizePhone(lead?.phone || phone) || '';
     const web = getWebCreds();
     const okWeb = cfg.staffPhone && cfg.telephony?.provider === 'vobiz' && web.u && web.p;
     let m = null;
@@ -91,8 +92,27 @@ function PreCall({ onPlace }) {
     if (m !== 'sim' && !cust) return null;
     return { mode: m, code: '', phone: cust, autoConsent: !!cfg.transcripts };
   };
-  const go = () => { const o = tryAuto(); if (o) onPlace(o); else setSetup(true); };
+  const noNum = !!lead && !normalizePhone(lead.phone || '');
+  const [askNum, setAskNum] = useState(false);
+  const [numText, setNumText] = useState('');
+  // Calling already works but this lead has no number: ask for just the number, nothing else.
+  const go = () => { const o = tryAuto(); if (o) onPlace(o); else if (noNum && tryAuto('+910000000000')) setAskNum(true); else setSetup(true); };
+  const numN = normalizePhone(numText);
+  const numOk = !!numN && numN.replace(/\D/g, '').length >= 11;
+  const callNum = () => { if (!numOk) return; setLeadPhone(lead.id, numN); const o = tryAuto(numN); if (o) onPlace(o); else { setPhone(numN); setAskNum(false); setSetup(true); } };
   useEffect(() => { if (cfg && !lead && !setup) go(); }, [cfg]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (askNum && !setup) return (
+    <Modal open onClose={() => setAskNum(false)} width={400} label="Enter phone number">
+      <div style={{ padding: 22 }}>
+        <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>Call {first}</div>
+        <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 14 }}>This lead has no number yet. Type it once, we remember it.</div>
+        <input className="pc__tel" autoFocus value={numText} onChange={(e) => setNumText(e.target.value.replace(/[^\d+ ]/g, '').slice(0, 16))} onKeyDown={(e) => { if (e.key === 'Enter') callNum(); }} inputMode="tel" placeholder="98765 43210" aria-label="Customer phone number" />
+        <small className="pc__note">{numText && !numOk ? 'Type the full 10-digit mobile number.' : 'Just the 10 digits. +91 is added for you.'}</small>
+        <button className="pc__place" style={{ marginTop: 14, width: '100%' }} disabled={!numOk} onClick={callNum}><i className="ti ti-phone" /> Call {first}</button>
+        <button type="button" onClick={() => { setAskNum(false); setSetup(true); }} style={{ background: 'none', border: 0, color: '#6b7280', fontSize: 12, marginTop: 10, cursor: 'pointer', width: '100%' }}>More call options</button>
+      </div>
+    </Modal>
+  );
   if (!setup) return lead ? <PrepBrief onReady={go} onBack={end} onChange={() => setSetup(true)} /> : null;
   return (
     <Modal open onClose={lead ? () => setSetup(false) : end} width={460} flush label="Before you call">
@@ -135,7 +155,7 @@ function PreCall({ onPlace }) {
         {isPhone && (
           <label className="pc__code">Customer's real phone number
             <input className="pc__tel" value={phone} onChange={(e) => setPhone(e.target.value.replace(/[^\d+ ]/g, '').slice(0, 16))} inputMode="tel" placeholder="e.g. 98765 43210 or +91…" aria-label="Customer phone number" />
-            <small className="pc__note">{phone && !phoneOk ? 'This number does not look right.' : 'Demo leads have fake numbers — type a real one you can answer.'}</small>
+            <small className="pc__note">{phone && !phoneOk ? 'This number does not look right.' : (noNum ? 'This lead has no number yet. Type it here, it is saved for next time.' : 'Demo leads have fake numbers — type a real one you can answer.')}</small>
           </label>
         )}
         {mode === 'webphone' && (
@@ -158,7 +178,7 @@ function PreCall({ onPlace }) {
             <input value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 5))} inputMode="numeric" placeholder="5 digits shown on /customer" aria-label="Customer line code" />
           </label>
         )}
-        <button className="pc__place" disabled={!canPlace} onClick={() => { try { localStorage.setItem('og_call_mode', mode); } catch { /* ignore */ } onPlace({ mode, code, phone: normalizePhone(phone) || '', autoConsent: !!cfg?.transcripts }); }}><i className="ti ti-phone" /> {mode === 'sim' ? 'Skip · Place the call' : 'Place the live call'}</button>
+        <button className="pc__place" disabled={!canPlace} onClick={() => { try { localStorage.setItem('og_call_mode', mode); } catch { /* ignore */ } if (lead && normalizePhone(phone) && isPhone) setLeadPhone(lead.id, normalizePhone(phone)); onPlace({ mode, code, phone: normalizePhone(phone) || '', autoConsent: !!cfg?.transcripts }); }}><i className="ti ti-phone" /> {mode === 'sim' ? 'Skip · Place the call' : 'Place the live call'}</button>
         <p>These are the same Lead SOP checkpoints your manager set — reviewing them takes 10 seconds and keeps the call on-target.</p>
       </div>
     </Modal>
