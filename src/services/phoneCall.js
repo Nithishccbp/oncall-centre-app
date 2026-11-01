@@ -148,7 +148,8 @@ export async function startWebPhoneCall({ phone, handlers }) {
       onCallFailed: (x) => fail(answered ? 'The call ended.' : `The call could not be connected${why(x) ? ` (${why(x)})` : ''}.`),
       onCallTerminated: () => { if (!s.ended) fail(answered ? 'The call ended.' : 'The call ended before the customer answered.'); },
     };
-    const place = () => { try { if (!c.call(to, { 'X-VH-Source': 'call-centre-web' })) fail('Could not start the call.'); } catch (e) { fail(e.message || 'Could not start the call.'); } };
+    // No extra headers: Vobiz trial accounts reject them ("Invalid or disallowed parameters").
+    const place = () => { try { if (!c.call(to)) fail('Could not start the call.'); } catch (e) { fail(e.message || 'Could not start the call.'); } };
     s.timer = setTimeout(() => fail('No answer after 75 seconds.'), 75000);
     if (web.loggedIn && web.user === cr.u) return place();
     const lt = setTimeout(() => { if (!web.loggedIn) fail('Could not connect to Vobiz in 15 seconds. Check the endpoint username and password, and the internet connection.'); }, 15000);
