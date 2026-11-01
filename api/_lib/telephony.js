@@ -48,8 +48,21 @@ const vobiz = {
   async verify(c) { const v = vb(c); const r = await fetch(`${v.base}/api/v1/Account/${v.id}/`, { headers: v.h }); return r.status === 401 || r.status === 403 ? 'Vobiz rejected the Auth ID / Secret.' : ''; },
   async start(c, { agentPhone, urls, ref }) {
     const v = vb(c);
-    const r = await fetch(`${v.base}/api/v1/Account/${v.id}/Call/`, { method: 'POST', headers: v.h, body: JSON.stringify({ from: cidOf(c), to: agentPhone, answer_url: urls.answer, answer_method: 'POST', ring_url: urls.ring, ring_method: 'POST', hangup_url: urls.hangup, hangup_method: 'POST', time_limit: 3600 }) });
-    const d = await j(r); const id = d.request_uuid || d.call_uuid;
+    // Vobiz trial accounts only allow a few parameters. Try the full request first, then drop the optional ones until it is accepted.
+    const base = { from: cidOf(c), to: agentPhone, answer_url: urls.answer, answer_method: 'POST' };
+    const tiers = [
+      { ...base, ring_url: urls.ring, ring_method: 'POST', hangup_url: urls.hangup, hangup_method: 'POST', time_limit: 3600 },
+      { ...base, ring_url: urls.ring, ring_method: 'POST', hangup_url: urls.hangup, hangup_method: 'POST' },
+      { ...base, hangup_url: urls.hangup, hangup_method: 'POST' },
+      base,
+    ];
+    let r; let d; let id;
+    for (const body of tiers) {
+      r = await fetch(`${v.base}/api/v1/Account/${v.id}/Call/`, { method: 'POST', headers: v.h, body: JSON.stringify(body) });
+      d = await j(r); id = d.request_uuid || d.call_uuid;
+      if (r.ok && id) break;
+      if (!/trial|disallow|limited|invalid.*param/i.test(`${d?.error || ''} ${d?.message || ''} ${d?.raw || ''}`)) break;
+    }
     if (!(r.ok && id)) return fail(r, d);
     await cmd(['SET', `tel:uuid:${ref}`, id, 'EX', '7200']).catch(() => {});
     return { ok: true, id: ref };
