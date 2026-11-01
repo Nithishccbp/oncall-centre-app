@@ -78,12 +78,12 @@ function PreCall({ onPlace }) {
   const tryAuto = () => {
     if (!cfg) return null;
     const cust = normalizePhone(lead?.phone || phone) || '';
-    const mine = normalizePhone(cfg.agentPhone || user.phone || '');
     const okWeb = cfg.staffPhone && cfg.telephony?.provider === 'vobiz' && cfg.webCalling;
-    const okStaff = cfg.staffPhone && mine && mine !== cfg.telephony?.callerId && mine !== cust;
     let m = null;
-    for (const c of [modeSaved(), 'webphone', 'staffphone', 'phone']) {
-      if ((c === 'webphone' && okWeb) || (c === 'staffphone' && okStaff) || (c === 'phone' && cfg.phone)) { m = c; break; }
+    // Calls go straight to the customer: the browser (web) call first. The staff-phone route (rings the agent first) is never picked automatically.
+    const saved = modeSaved() === 'staffphone' ? null : modeSaved();
+    for (const c of ['webphone', saved, 'phone']) {
+      if ((c === 'webphone' && okWeb) || (c === 'phone' && cfg.phone)) { m = c; break; }
     }
     if (!m) { if (!cfg.reachable || (!cfg.staffPhone && !cfg.phone && !cfg.aiPhone)) m = 'sim'; else return null; }
     if (m !== 'sim' && !cust) return null;
