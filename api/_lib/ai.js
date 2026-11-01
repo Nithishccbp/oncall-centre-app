@@ -102,6 +102,29 @@ ${transcript}`;
   } catch { return { review: null, source: 'error' }; }
 }
 
+/** Reads a real call and estimates how satisfied the customer was (1-5 stars) plus a one-line reason. */
+export async function rateCall(messages) {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) return { csat: null, source: 'no-key' };
+  const model = process.env.GEMINI_MODEL || 'gemini-flash-latest';
+  const transcript = messages.slice(-80).map((m) => `${m.role === 'agent' ? 'AGENT' : 'CUSTOMER'}: ${String(m.text).slice(0, 400)}`).join('\n');
+  const prompt = `You judge how satisfied a real-estate customer was after a presales phone call (Godrej Properties). Read the conversation (it may mix English, Hindi, Telugu) and estimate the customer's satisfaction as a 1 to 5 star CSAT, judging only what the CUSTOMER said and how they reacted: were their questions answered, did they sound happy, annoyed, confused or rushed, did they agree to a next step. Do not reward the agent for talking a lot. 5 = clearly delighted or committed to a next step, 4 = positive, 3 = neutral or unclear, 2 = frustrated or unanswered concerns, 1 = angry or ended badly. If the customer barely spoke, return null.
+Return JSON: {"stars":1-5 or null,"mood":"happy|neutral|confused|annoyed|angry","comment":"one short sentence (max 14 words) saying why, written like a customer remark summary"}.
+
+${transcript}`;
+  try {
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: prompt }] }], generationConfig: { maxOutputTokens: 200, temperature: 0.2, responseMimeType: 'application/json', thinkingConfig: { thinkingBudget: 0 } } }),
+    });
+    const data = await r.json();
+    const v = JSON.parse(data?.candidates?.[0]?.content?.parts?.map((p) => p.text).join('') || '{}');
+    const st = Math.round(Number(v.stars));
+    if (!(st >= 1 && st <= 5)) return { csat: null, source: 'gemini' };
+    return { csat: { stars: st, mood: String(v.mood || '').slice(0, 20), comment: String(v.comment || '').slice(0, 160) }, source: 'gemini' };
+  } catch { return { csat: null, source: 'error' }; }
+}
+
 /** Offline rulebook so the call never goes silent if Gemini is down. */
 export function fallbackReply(heard, turn, lead = {}) {
   const t = String(heard || '').toLowerCase();
