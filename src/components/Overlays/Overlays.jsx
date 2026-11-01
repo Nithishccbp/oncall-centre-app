@@ -13,6 +13,7 @@ import { TODAY } from '../../data/calendar.js';
 import LeadsCalledModal from '../KpiDetail/LeadsCalledModal.jsx';
 import AhtModal from '../KpiDetail/AhtModal.jsx';
 import CsatModal from '../KpiDetail/CsatModal.jsx';
+import { useOgScore } from '../../data/ogScore.js';
 import OgScoreModal from '../KpiDetail/OgScoreModal.jsx';
 import LeadsCreatedModal from '../KpiDetail/LeadsCreatedModal.jsx';
 import './Overlays.css';
@@ -61,6 +62,26 @@ function Notifications({ close }) {
 
 function OgScore({ close }) {
   const navigate = useNavigate();
+  const og = useOgScore();
+  if (!DEMO) {
+    const low = [...og.skills].sort((x, y) => x.score - y.score).slice(0, 2);
+    return (
+      <Modal open onClose={close} width={380} label="OG Score">
+        <div className="og">
+          <small>OG SCORE™</small>
+          <div className="og__ring"><b>{og.score}</b><span>/ 100</span></div>
+          {og.delta ? <div className="og__up">{og.delta > 0 ? '▲ +' : '▼ '}{Math.abs(og.delta)} vs last week</div> : <div className="muted">{og.hasData ? 'Same as last week' : 'No scored calls yet'}</div>}
+          <div className="muted">Based on {og.scored} scored {og.scored === 1 ? 'item' : 'items'} in the last 7 days (practice reviews and customer ratings)</div>
+          {low.length > 0 && (
+            <div className="og__box red"><b>Your biggest lever right now</b>
+              {low.map((x) => <p key={x.key}>{x.score < 65 ? '🔴' : '🟠'} <b>{x.skill} ({x.score})</b> — {x.next}</p>)}
+            </div>
+          )}
+          <button className="og__cta" onClick={() => { close(); navigate('/plan/practice'); }}>🎓 {low.length ? 'Practise these skills' : 'Start a practice call'} →</button>
+        </div>
+      </Modal>
+    );
+  }
   return (
     <Modal open onClose={close} width={380} label="OG Score">
       <div className="og">

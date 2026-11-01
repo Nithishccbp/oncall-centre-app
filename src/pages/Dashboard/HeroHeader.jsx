@@ -1,5 +1,6 @@
 // Indigo hero: greeting, status pills and the 4 KPI cards.
 import KpiCard from '../../components/KpiCard/KpiCard.jsx';
+import { useOgScore } from '../../data/ogScore.js';
 import { kpis, user, queueCount } from '../../data/dashboard.js';
 import { useUi } from '../../context/UiContext.jsx';
 import { useIngest } from '../../context/IngestContext.jsx';
@@ -14,6 +15,7 @@ const greeting = () => {
 };
 
 export default function HeroHeader() {
+  const og = useOgScore();
   const { range, openOverlay } = useUi();
   const { created: createdList, calledToday, calledLeads, handled, ratedToday, aht: ahtSec, csatToday } = useKpiData();
   const created = createdList.length;
@@ -24,6 +26,7 @@ export default function HeroHeader() {
     if (DEMO) {
       return k.label === 'LEADS CALLED' ? { ...k, value: String(2 + calledLeads) } : k.label === 'LEADS CREATED' ? { ...k, value: String(created) } : k.label === 'CSAT TODAY' && csatToday ? { ...k, value: `${csatToday}%`, tone: 'good' } : k;
     }
+    if (k.label === 'OG SCORE™') return { ...k, value: String(og.score), delta: og.delta ? `${og.delta > 0 ? '▲' : '▼'}${Math.abs(og.delta)}` : (og.hasData ? 'this week' : '–'), tone: og.hasData ? (og.delta < 0 ? 'bad' : 'good') : 'info' };
     if (k.label === 'LEADS CREATED') return { ...k, value: String(created), delta: `new ${per}` };
     if (k.label === 'LEADS CALLED') return { ...k, value: String(calledLeads), delta: `in ${plural(calledToday.length, 'call')}` };
     if (k.label === 'AVG HANDLE TIME') return { ...k, value: ahtTxt, delta: `${plural(handled, 'call')} ${per}` };

@@ -5,20 +5,21 @@ import { CategoryScale, Chart as ChartJS, Filler, LinearScale, LineElement, Poin
 import Modal from '../Modal/Modal.jsx';
 import { useUi } from '../../context/UiContext.jsx';
 import { DEMO } from '../../data/demo.js';
+import { useOgScore } from '../../data/ogScore.js';
 import './KpiDetail.css';
 
 ChartJS.register(CategoryScale, LinearScale, LineElement, PointElement, Filler, Tooltip);
 
-const SKILLS = DEMO ? [
+const DEMO_SKILLS = DEMO ? [
   { skill: 'Closing', score: 58, vs: -3, next: 'Ask for the booking before the demo ends' },
   { skill: 'Objections', score: 65, vs: -1, next: 'Use the EMI line on price push-back' },
   { skill: 'Possession date', score: 71, vs: 2, next: 'Explain the 10-year cover before price' },
   { skill: 'Product Knowledge', score: 78, vs: 3, next: 'Mention the possession date early' },
   { skill: 'Greeting', score: 82, vs: 4, next: 'Keep it up' },
 ] : [];
-const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Today'];
-const THIS = DEMO ? [64, 66, 71, 74, 76] : [0, 0, 0, 0, 0];
-const PRIOR = DEMO ? [60, 61, 62, 63, 63] : [0, 0, 0, 0, 0];
+const DEMO_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Today'];
+const DEMO_THIS = [64, 66, 71, 74, 76];
+const DEMO_PRIOR = [60, 61, 62, 63, 63];
 const tone = (n) => (n >= 80 ? 'good' : n >= 65 ? 'warn' : 'bad');
 const COLS = [['skill', 'SKILL'], ['score', 'SCORE'], ['vs', 'VS PRIOR'], ['next', 'NEXT STEP']];
 
@@ -27,16 +28,19 @@ export default function OgScoreModal({ close }) {
   const [q, setQ] = useState('');
   const [sort, setSort] = useState({ k: 'score', asc: true });
 
-  const score = THIS[4];
-  const delta = DEMO ? 13 : 0; // demo: +13 vs similar prior period
+  const og = useOgScore();
+  const SKILLS = DEMO ? DEMO_SKILLS : og.skills;
+  const DAYS = DEMO ? DEMO_DAYS : og.labels; const THIS = DEMO ? DEMO_THIS : og.trend; const PRIOR = DEMO ? DEMO_PRIOR : og.prior;
+  const score = DEMO ? THIS[4] : og.score;
+  const delta = DEMO ? 13 : og.delta;
   const low = [...SKILLS].sort((a, b) => a.score - b.score)[0];
 
   const rows = useMemo(() => SKILLS.filter((r) => r.skill.toLowerCase().includes(q.toLowerCase()))
     .sort((a, b) => {
-      const x = a[sort.k]; const y = b[sort.k];
+      const x = a[sort.k] ?? 0; const y = b[sort.k] ?? 0;
       const c = typeof x === 'string' ? x.localeCompare(y) : x - y;
       return sort.asc ? c : -c;
-    }), [q, sort]);
+    }), [q, sort, SKILLS]);
 
   const csv = () => {
     const esc = (v) => `"${String(v).replace(/"/g, '""')}"`;
@@ -79,8 +83,8 @@ export default function OgScoreModal({ close }) {
           <div className="kd__stats kd__stats--4">
             <div>
               <div className="kd__num">{score}</div>
-              {DEMO && <span className="kd__delta kd__delta--good">▲ +{delta}</span>}
-              <div className="kd__muted">vs similar prior period</div>
+              {delta != null && delta !== 0 && <span className={`kd__delta kd__delta--${delta > 0 ? 'good' : 'bad'}`}>{delta > 0 ? '▲ +' : '▼ '}{Math.abs(delta)}</span>}
+              <div className="kd__muted">{DEMO || og.hasData ? 'vs similar prior period' : 'scored from your calls and practice'}</div>
             </div>
             <div className="kd__stat"><div className="kd__sl">PERCENTILE</div><div className="kd__sv">{DEMO ? '72nd' : '—'}</div><div className="kd__muted">across all staff</div></div>
             <div className="kd__stat kd__tap" onClick={() => openOverlay('rank')} role="button"><div className="kd__sl">EXPERIENCE CENTRE RANK</div><div className="kd__sv">{DEMO ? '#3' : '—'}</div><div className="kd__muted">tap to see why</div></div>
@@ -89,7 +93,7 @@ export default function OgScoreModal({ close }) {
 
           <div className="kd__insight kd__insight--gold">
             <i className="ti ti-bulb" />
-            <span>{low ? <><b>{low.skill}</b> is your biggest lever. +5 pts there unlocks about <b>+4% earning potential</b>.</> : 'Your skill scores will appear here once calls are scored.'}</span>
+            <span>{low ? <><b>{low.skill}</b> is your biggest lever. +5 pts there unlocks about <b>+4% earning potential</b>.</> : 'Your skill scores appear here after your first practice call or a rated customer call.'}</span>
           </div>
 
           <div className="kd__card">
@@ -120,11 +124,11 @@ export default function OgScoreModal({ close }) {
                   <tr key={r.skill}>
                     <td>{r.skill}</td>
                     <td><span className="kd__bar"><i style={{ width: `${r.score}%` }} /></span><span className={`kd__pill kd__pill--${tone(r.score)}`}>{r.score}</span></td>
-                    <td className={r.vs < 0 ? 'kd__neg' : 'kd__pos'}>{r.vs < 0 ? '▼' : '▲'} {r.vs < 0 ? Math.abs(r.vs) : `+${r.vs}`}</td>
+                    <td className={r.vs == null ? '' : r.vs < 0 ? 'kd__neg' : 'kd__pos'}>{r.vs == null ? '–' : `${r.vs < 0 ? '▼' : '▲'} ${r.vs < 0 ? Math.abs(r.vs) : `+${r.vs}`}`}</td>
                     <td>{r.next}</td>
                   </tr>
                 ))}
-                {!rows.length && <tr><td colSpan="4" className="kd__empty">No skill scores yet</td></tr>}
+                {!rows.length && <tr><td colSpan="4" className="kd__empty">No skill scores yet. Do a practice call to see them.</td></tr>}
               </tbody>
             </table>
           </div>

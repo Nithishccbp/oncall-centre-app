@@ -2,6 +2,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { user } from '../../data/dashboard.js';
 import { useNotifications } from '../../data/notifications.js';
+import { useOgScore } from '../../data/ogScore.js';
+import { DEMO } from '../../data/demo.js';
 import { useUi } from '../../context/UiContext.jsx';
 import './TopBar.css';
 
@@ -20,6 +22,7 @@ function ScoreRing({ score }) {
 export default function TopBar() {
   const [open, setOpen] = useState(false);
   const { openOverlay, avatar, showToast } = useUi();
+  const og = useOgScore();
   const notes = useNotifications();
   const ref = useRef(null);
 
@@ -41,7 +44,7 @@ export default function TopBar() {
       <div className="topbar__right" ref={ref}>
         <button className="bell" aria-label="Notifications" onClick={() => openOverlay('notifications')}><i className="ti ti-bell" />{notes.some((n) => n.kind === 'action') && <span className="bell__dot" />}</button>
         <div className="scorepill" title="OG score and rank">
-          <button className="scorepill__btn" aria-label="OG score details" onClick={() => openOverlay('ogscore')}><ScoreRing score={user.ogScore} /></button>
+          <button className="scorepill__btn" aria-label="OG score details" onClick={() => openOverlay('ogscore')}><ScoreRing score={DEMO ? user.ogScore : og.score} /></button>
           <button className="scorepill__rank" aria-label="Rank details" onClick={() => openOverlay('rank')}>⭐#{user.rank}</button>
         </div>
         <button className="avatar" aria-label="Avatar" onClick={() => openOverlay('avatar')}>
