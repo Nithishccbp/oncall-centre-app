@@ -35,6 +35,24 @@ let lver = 0;
 const lsubs = new Set();
 export const touchLeads = () => { lver += 1; lsubs.forEach((f) => f()); };
 export const useLeadsVersion = () => useSyncExternalStore((f) => { lsubs.add(f); return () => lsubs.delete(f); }, () => lver);
+// Three leads with no number yet: the agent types the number when calling, and it is remembered on this device.
+if (!DEMO) {
+  [['Mukunda', 'Tower A · 2 BHK', 9800000, 90], ['Prabhas', 'Tower B · 3 BHK', 14200000, 85], ['Arjun', 'Tower A · 3 BHK', 13500000, 80]].forEach(([name, prod, price, score], i) => leads.unshift({
+    id: `nonum-${i + 1}`, name, initials: name.slice(0, 2).toUpperCase(), avatarBg: '#e1f5ee', avatarColor: '#0f6e56',
+    product: prod, price, interest: `Interested: ${prod}`, crossSell: 'Covered parking', emiNote: 'Not discussed yet, share the payment plan early', story: 'New lead, no phone number yet.',
+    status: 'Open', score, icp: score, intent: score, expectedValue: price, slaLeft: 'New lead', actionNote: 'Number to be added before calling', phone: '',
+    icpBreakdown: [{ label: 'Budget Fit', pct: 60 }, { label: 'Need Match', pct: 60 }, { label: 'Decision Stage', pct: 50 }], journey: [], signals: [], notes: [], cumulativeMissed: 0, manual: true,
+  }));
+}
+// Numbers typed at call time are remembered per lead.
+const PKEY = 'og_lead_phones';
+const loadPhones = () => { try { return JSON.parse(localStorage.getItem(PKEY) || '{}'); } catch { return {}; } };
+{ const ph = loadPhones(); leads.forEach((l) => { if (ph[l.id]) l.phone = ph[l.id]; }); }
+export function setLeadPhone(id, phone) {
+  const l = leads.find((x) => x.id === id); if (!l || !phone) return;
+  l.phone = phone; touchLeads();
+  try { localStorage.setItem(PKEY, JSON.stringify({ ...loadPhones(), [id]: phone })); } catch { /* ignore */ }
+}
 
 export function addManualLead({ name, phone, product }) {
   const n = String(name || '').trim() || 'New lead';
