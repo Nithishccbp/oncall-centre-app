@@ -5,7 +5,7 @@ import { useSyncExternalStore } from 'react';
 const KEY = 'og_app_calls';
 const subs = new Set();
 const load = () => { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch { return []; } };
-let list = load().filter((c) => Date.now() - new Date(c.ts).getTime() < 8 * 864e5);
+let list = load().filter((c) => Date.now() - new Date(c.ts).getTime() < 35 * 864e5);
 
 export function logAppCall({ name, leadId, dur, outcome, summary, csat, comment }) {
   const ts = new Date().toISOString();

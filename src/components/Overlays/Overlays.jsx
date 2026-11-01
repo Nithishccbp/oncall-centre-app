@@ -154,8 +154,7 @@ function DateRange({ close }) {
   const [pick, setPick] = useState(range);
   const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   const today = new Date(TODAY.getFullYear(), TODAY.getMonth(), TODAY.getDate());
-  const span = { Today: 0, 'This Week': 6, 'This Month': 30, 'Last 30 Days': 30 };
-  const start = (r) => { const d = new Date(today); d.setDate(d.getDate() - (span[r] ?? 6)); return iso(d); };
+  const start = (r) => { const d = new Date(today); if (r === 'Today') return iso(d); if (r === 'This Month') return iso(new Date(d.getFullYear(), d.getMonth(), 1)); if (r === 'Last 30 Days') d.setDate(d.getDate() - 29); else d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return iso(d); };
   const [from, setFrom] = useState(start(range));
   const [to, setTo] = useState(iso(today));
   const choose = (r) => { setPick(r); if (r !== 'Custom') { setFrom(start(r)); setTo(iso(today)); } };
@@ -167,7 +166,7 @@ function DateRange({ close }) {
         <label>FROM<input type="date" value={from} max={to} onChange={(e) => { setFrom(e.target.value); setPick('Custom'); }} /></label>
         <label>TO<input type="date" value={to} min={from} onChange={(e) => { setTo(e.target.value); setPick('Custom'); }} /></label>
       </div>
-      <button className="btn-primary dr__apply" disabled={!from || !to || from > to} onClick={() => { setRange(pick); showToast(`Showing ${pick === 'Custom' ? `${from} → ${to}` : pick}`); close(); }}>Apply Range</button>
+      <button className="btn-primary dr__apply" disabled={!from || !to || from > to} onClick={() => { setRange(pick, from, to); showToast(`Showing ${pick === 'Custom' ? `${from} → ${to}` : pick}`); close(); }}>Apply Range</button>
     </Modal>
   );
 }

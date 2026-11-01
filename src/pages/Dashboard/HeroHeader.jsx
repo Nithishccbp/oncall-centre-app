@@ -15,10 +15,9 @@ const greeting = () => {
 
 export default function HeroHeader() {
   const { range, openOverlay } = useUi();
-  const { created: createdList, calledToday, week, csatToday } = useKpiData();
+  const { created: createdList, calledToday, aht: ahtSec, csatToday } = useKpiData();
   const created = createdList.length;
-  const today = week[6] || { calls: 0, aht: 0 };
-  const ahtTxt = `${Math.floor(today.aht / 60)}m ${String(today.aht % 60).padStart(2, '0')}s`;
+  const ahtTxt = `${Math.floor(ahtSec / 60)}m ${String(ahtSec % 60).padStart(2, '0')}s`;
   const shown = kpis.map((k) => (k.label === 'LEADS CALLED' && !DEMO ? { ...k, value: String(calledToday.length) } : k.label === 'LEADS CALLED' ? { ...k, value: String(2 + calledToday.length) } : k.label === 'AVG HANDLE TIME' && !DEMO ? { ...k, value: ahtTxt } : k.label === 'CSAT TODAY' && csatToday ? { ...k, value: `${csatToday}%`, tone: 'good' } : k.label === 'LEADS CREATED' ? { ...k, value: String(created) } : k.label === 'LEADS CALLED' ? { ...k, value: String((DEMO ? 2 : 0) + handledToday) } : k));
   return (
     <section className="hero">
@@ -36,7 +35,7 @@ export default function HeroHeader() {
           </button>
         </div>
       </div>
-      <div className="hero__kpis">{shown.map((k) => <KpiCard key={k.label} {...k} onClick={KPI_MODAL[k.label] ? () => openOverlay(KPI_MODAL[k.label]) : undefined} />)}</div>
+      <div className="hero__kpis">{shown.map((k) => <KpiCard key={k.label} {...k} label={k.label === 'CSAT TODAY' && range !== 'Today' ? 'CSAT' : k.label} onClick={KPI_MODAL[k.label] ? () => openOverlay(KPI_MODAL[k.label]) : undefined} />)}</div>
     </section>
   );
 }

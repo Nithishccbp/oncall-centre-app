@@ -95,6 +95,7 @@ export function IngestProvider({ children }) {
     const rated = today.filter((c) => c.csat);
     return {
       version: state.version, convs: state.convs, refresh: pull,
+      callsAll: state.convs.filter((c) => c.type === 'call' && c.direction !== 'missed').map((c) => ({ ts: c.started_at, time: hhmm(c.started_at), hour: new Date(c.started_at).getHours() + new Date(c.started_at).getMinutes() / 60, name: c.customer.name || c.customer.phone || 'Customer', dir: c.direction, dur: c.duration_sec || 0, outcome: c.summary || outcomeLabel[c.outcome] || 'Called', topic: `${outcomeLabel[c.outcome] || 'Call'} · ${fmtDur(c.duration_sec || 0)}`, quote: !!c.quote_sent || /cost sheet|quote/i.test(c.summary || ''), stars: c.csat || 0, comment: c.csat_comment || '' })),
       todays: today.map((c) => ({ time: hhmm(c.started_at), name: c.customer.name || 'Customer', topic: `${outcomeLabel[c.outcome] || 'Call'} · ${fmtDur(c.duration_sec || 0)}`, stars: c.csat || 4 })).reverse(),
       ratedToday: rated.map((c) => ({ time: hhmm(c.started_at), name: c.customer.name || 'Customer', stars: c.csat, comment: c.csat_comment || '' })),
       calledToday: today.filter((c) => c.direction === 'out').map((c) => ({ time: hhmm(c.started_at), hour: new Date(c.started_at).getHours() + new Date(c.started_at).getMinutes() / 60, name: c.customer.name || c.customer.phone || 'Lead', dur: c.duration_sec || 0, outcome: c.summary || outcomeLabel[c.outcome] || 'Called', quote: !!c.quote_sent || /cost sheet|quote/i.test(c.summary || '') })).reverse(),

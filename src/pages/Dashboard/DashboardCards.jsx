@@ -6,6 +6,7 @@ import { getOutgoingPlan } from '../../data/selectors.js';
 import { formatINR } from '../../data/selectors.js';
 import { usePulse } from '../../context/PulseContext.jsx';
 import { useIngest } from '../../context/IngestContext.jsx';
+import { useUi } from '../../context/UiContext.jsx';
 import { useKpiData } from '../../data/kpiStats.js';
 
 export function WhosWaiting() {
@@ -65,13 +66,13 @@ export function TasksCard({ onTaskClick }) {
 const Stars = ({ n }) => <span className="stars" aria-label={`${n} of 5`}>{'★'.repeat(n)}<i>{'★'.repeat(5 - n)}</i></span>;
 
 export function TodaysCalls() {
-  const { todays, handledToday } = useIngest();
-  const { todaysLocal, csatToday } = useKpiData();
-  const rows = [...todaysLocal, ...todays, ...todaysCalls].slice(0, 6);
+  const { todaysList, handled, csatToday } = useKpiData();
+  const { range } = useUi();
+  const rows = [...todaysList, ...(DEMO ? todaysCalls : [])].slice(0, 6);
   return (
     <section className="card dcard">
-      <div className="dcard__head"><b className="label-caps">Today's calls</b><span className="muted">{(DEMO ? 14 : 0) + handledToday + todaysLocal.length} handled · {csatToday ?? (DEMO ? 94 : 0)}% CSAT</span></div>
-      {rows.length === 0 && <div className="empty">No calls yet today</div>}
+      <div className="dcard__head"><b className="label-caps">{range === 'Today' ? "Today's calls" : `Calls · ${range}`}</b><span className="muted">{(DEMO ? 14 : 0) + handled} handled · {csatToday ?? (DEMO ? 94 : 0)}% CSAT</span></div>
+      {rows.length === 0 && <div className="empty">{range === 'Today' ? 'No calls yet today' : 'No calls in this period'}</div>}
       {rows.map((c, i) => (
         <div key={`${c.time}-${c.name}-${i}`} className="dcall">
           <span className="dcall__t">{c.time}</span>
