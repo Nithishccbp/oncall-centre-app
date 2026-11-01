@@ -5,7 +5,9 @@ import { recentCalls as seedCalls } from '../data/calls.js';
 import { leads, leadByFirstName } from '../data/leads.js';
 import { logAppCall } from '../data/callLog.js';
 import { startPractice } from '../services/practice.js';
-import { pickPersona } from '../data/practice.js';
+import { pickPersona, personas } from '../data/practice.js';
+import { addSession, updateSession } from '../data/practiceLog.js';
+import { localReview, aiReview } from '../services/practiceReview.js';
 import { buildScript, detectSopSteps, moodOf, nudges, outcomes, sentimentLabel } from '../data/calling.js';
 import { setAgentCaptions, setMuted, signal, startLiveCall, stopLiveCall } from '../services/liveCall.js';
 import { useConsent } from './ConsentContext.jsx';
@@ -50,7 +52,8 @@ export const fmtClock = (s) => `${String(Math.floor(s / 60)).padStart(2, '0')}:$
 const LINE_MS = 2600;
 
 const REC_KEY = 'og_recent_calls';
-const loadLocal = () => { try { return JSON.parse(localStorage.getItem(REC_KEY) || '[]').filter((c) => Date.now() - new Date(c.ts).getTime() < 30 * 864e5); } catch { return []; } };
+const loadLocal = () => { try { return JSON.parse(localStorage.getItem(REC_KEY) || '[]')
+  .filter((c) => Date.now() - new Date(c.ts).getTime() < 30 * 864e5 && !/practice/i.test(c.duration || '') && !(c.local && c.dir === 'missed' && personas.some((p) => p.name === c.name))); } catch { return []; } };
 
 export function CallProvider({ children }) {
   const [call, dispatch] = useReducer(reducer, initial);
@@ -170,7 +173,7 @@ export function CallProvider({ children }) {
   /** Hang up. With a live customer we go to the wrap-up form; otherwise just close. */
   const end = useCallback(() => {
     if (call.status === 'ringing') logCall('out', call.name, '—', { note: 'Not connected' });
-    if (call.status === 'incoming') logCall('missed', call.name, '—');
+    if (call.status === 'incoming' && call.mode !== 'practice') logCall('missed', call.name, '—');
     if (call.mode !== 'sim') stopLiveCall();
     if (call.status === 'inCall' || call.status === 'consent') {
       if (call.status === 'consent') addLog(call.seconds, 'Call ended before consent was answered.');
@@ -180,6 +183,21 @@ export function CallProvider({ children }) {
       resetConsent();
     }
   }, [call.status, call.seconds, call.name, call.mode, addLog, resetConsent, logCall]);
+
+  /** A practice call never goes to Recent, Incoming or the dashboard numbers: it is saved under Practise a call, with a review. */
+  const finishPractice = useCallback(() => {
+    const lines = call.shown.filter((l) => (l.who === 'agent' || l.who === 'cust') && l.text).map((l) => ({ who: l.who, text: l.text }));
+    const persona = { name: call.persona?.name, product: call.persona?.product, budget: call.persona?.budget };
+    const spoke = lines.some((l) => l.who === 'agent');
+    let id = null;
+    if (spoke) {
+      id = addSession({ persona, lines, seconds: call.seconds, review: localReview(lines, call.seconds) });
+      aiReview(lines, persona).then((r) => { if (r) updateSession(id, { review: { ...r, seconds: call.seconds } }); });
+    } else showToast('No conversation to review. Say a few lines next time.');
+    dispatch({ type: 'RESET' });
+    resetConsent();
+    return id;
+  }, [call.shown, call.persona, call.seconds, resetConsent, showToast]);
 
   const finishWrapup = useCallback(({ outcome, summary, save, csat, comment }) => {
     const entry = {
@@ -204,10 +222,10 @@ export function CallProvider({ children }) {
   const sentiment = useMemo(() => ({ value: call.sentiment, label: sentimentLabel(call.sentiment) }), [call.sentiment]);
 
   const value = useMemo(() => ({
-    call, lead, recent, mergeRecent, sentiment, dispatch, startCall, placeCall, simulateIncoming, practiceCall, acceptIncoming, goLive, toggleSop,
+    call, lead, recent, mergeRecent, sentiment, dispatch, startCall, placeCall, simulateIncoming, practiceCall, finishPractice, acceptIncoming, goLive, toggleSop,
     addAgentLine, triggerNudge, withdrawConsent, end, finishWrapup,
     leadFor: (name) => leadByFirstName(name),
-  }), [call, lead, recent, mergeRecent, sentiment, startCall, placeCall, simulateIncoming, practiceCall, acceptIncoming, goLive, toggleSop, addAgentLine, triggerNudge, withdrawConsent, end, finishWrapup]);
+  }), [call, lead, recent, mergeRecent, sentiment, startCall, placeCall, simulateIncoming, practiceCall, finishPractice, acceptIncoming, goLive, toggleSop, addAgentLine, triggerNudge, withdrawConsent, end, finishWrapup]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

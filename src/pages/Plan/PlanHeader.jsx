@@ -3,7 +3,7 @@ import { NavLink } from 'react-router-dom';
 import { TODAY } from '../../data/calendar.js';
 import './Plan.css';
 
-const tabs = [['outgoing', 'Calls to make'], ['incoming', 'Incoming'], ['recent', 'Recent']];
+const tabs = [['outgoing', 'Calls to make'], ['incoming', 'Incoming'], ['recent', 'Recent'], ['practice', 'Practise']];
 
 export default function PlanHeader() {
   const date = TODAY.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });

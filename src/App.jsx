@@ -15,6 +15,7 @@ import Dashboard from './pages/Dashboard/Dashboard.jsx';
 import OutgoingCalls from './pages/Plan/OutgoingCalls.jsx';
 import IncomingCalls from './pages/Plan/IncomingCalls.jsx';
 import RecentCalls from './pages/Plan/RecentCalls.jsx';
+import PracticePage from './pages/Plan/PracticePage.jsx';
 import CalendarPage from './pages/Calendar/CalendarPage.jsx';
 import Avani from './pages/Avani/Avani.jsx';
 import PulseHome from './pages/Pulse/PulseHome.jsx';
@@ -39,6 +40,7 @@ export default function App() {
                 <Route path="outgoing" element={<OutgoingCalls />} />
                 <Route path="incoming" element={<IncomingCalls />} />
                 <Route path="recent" element={<RecentCalls />} />
+                <Route path="practice" element={<PracticePage />} />
               </Route>
               <Route path="calendar" element={<CalendarPage />} />
               <Route path="avani" element={<Avani />} />

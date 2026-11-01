@@ -52,6 +52,31 @@ export async function customerReply(messages, persona = {}) {
   } catch { return { reply: null, source: 'error' }; }
 }
 
+/** AI coach: reviews a practice call. messages: [{role:'agent'|'cust', text}] -> { review } or { review: null } */
+export async function reviewCall(messages, persona = {}) {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) return { review: null, source: 'no-key' };
+  const model = process.env.GEMINI_MODEL || 'gemini-flash-latest';
+  const transcript = messages.slice(-60).map((m) => `${m.role === 'agent' ? 'AGENT' : 'CUSTOMER'}: ${String(m.text).slice(0, 400)}`).join('\n');
+  const prompt = `You coach real-estate presales agents (Godrej Properties, Lakeside Towers). Review this PRACTICE call where the agent spoke to an AI customer (${persona.name || 'a buyer'}, interested in ${persona.product || 'a flat'}). Score the AGENT only.
+Return JSON: {"score":0-100,"summary":"one or two friendly sentences","skills":{"greeting":0-100,"discovery":0-100,"objections":0-100,"closing":0-100,"tone":0-100},"strengths":["up to 3 short points"],"improve":["up to 3 short, specific, actionable tips, quoting what the agent said where useful"]}.
+Be honest: a very short or empty call scores low.
+
+${transcript}`;
+  try {
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: prompt }] }], generationConfig: { maxOutputTokens: 700, temperature: 0.3, responseMimeType: 'application/json', thinkingConfig: { thinkingBudget: 0 } } }),
+    });
+    const data = await r.json();
+    const txt = data?.candidates?.[0]?.content?.parts?.map((p) => p.text).join('') || '';
+    const v = JSON.parse(txt);
+    const n = (x) => Math.max(0, Math.min(100, Math.round(Number(x) || 0)));
+    const sk = v.skills || {};
+    return { review: { score: n(v.score), summary: String(v.summary || '').slice(0, 300), skills: { greeting: n(sk.greeting), discovery: n(sk.discovery), objections: n(sk.objections), closing: n(sk.closing), tone: n(sk.tone) }, strengths: (v.strengths || []).slice(0, 3).map((x) => String(x).slice(0, 200)), improve: (v.improve || []).slice(0, 3).map((x) => String(x).slice(0, 220)) }, source: 'gemini' };
+  } catch { return { review: null, source: 'error' }; }
+}
+
 /** Offline rulebook so the call never goes silent if Gemini is down. */
 export function fallbackReply(heard, turn, lead = {}) {
   const t = String(heard || '').toLowerCase();

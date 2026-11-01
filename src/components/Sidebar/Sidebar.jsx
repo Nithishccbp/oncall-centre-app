@@ -1,6 +1,5 @@
 // Left navigation: Dashboard, Plan (4 sub-items), Calendar, Pulse.
-import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { useCall } from '../../context/CallContext.jsx';
+import { NavLink, useLocation } from 'react-router-dom';
 import './Sidebar.css';
 
 const planItems = [
@@ -20,8 +19,6 @@ function MainItem({ to, icon, tone, label, active }) {
 
 export default function Sidebar() {
   const { pathname } = useLocation();
-  const { practiceCall, call } = useCall();
-  const navigate = useNavigate();
   const is = (p) => (p === '/' ? pathname === '/' : pathname.startsWith(p));
 
   return (
@@ -36,9 +33,9 @@ export default function Sidebar() {
               <i className={`ti ${s.icon}`} /> {s.label}
             </NavLink>
           ))}
-          <button className="sb-subitem" disabled={call.status !== 'idle'} onClick={() => { navigate('/plan/outgoing'); practiceCall(); }}>
+          <NavLink to="/plan/practice" className={({ isActive }) => `sb-subitem ${isActive ? 'is-active' : ''}`}>
             <i className="ti ti-phone-ringing" /> Practise a call
-          </button>
+          </NavLink>
         </div>
         <MainItem to="/calendar" icon="ti-calendar" tone="amber" label="Calendar" active={is('/calendar')} />
         <MainItem to="/avani" icon="ti-sparkles" tone="green" label="Avani AI" active={is('/avani')} />

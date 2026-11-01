@@ -1,12 +1,14 @@
 // After hang-up: AI-drafted summary (editable), outcome chips, Save to CRM.
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Modal from '../Modal/Modal.jsx';
 import { useCall, fmtClock } from '../../context/CallContext.jsx';
 import { useConsent } from '../../context/ConsentContext.jsx';
 import { draftSummary, outcomes } from '../../data/calling.js';
 
 export default function WrapUpModal() {
-  const { call, lead, finishWrapup } = useCall();
+  const { call, lead, finishWrapup, finishPractice } = useCall();
+  const navigate = useNavigate();
   const { consent } = useConsent();
   const open = call.status === 'wrapup';
   const [summary, setSummary] = useState('');
@@ -14,8 +16,16 @@ export default function WrapUpModal() {
   const [csat, setCsat] = useState(0);
   const [cmt, setCmt] = useState('');
 
+  // Practice calls skip the CRM wrap-up: they are saved in Practise a call, with a review.
   useEffect(() => {
-    if (!open) return;
+    if (!open || call.mode !== 'practice') return;
+    const id = finishPractice();
+    navigate(id ? `/plan/practice?s=${id}` : '/plan/practice');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  useEffect(() => {
+    if (!open || call.mode === 'practice') return;
     const noTranscript = consent.status === 'declined' || call.shown.length === 0;
     setSummary(noTranscript
       ? `Recording was off for this call with ${call.name.split(' ')[0]}. Add your notes here.`
@@ -24,6 +34,7 @@ export default function WrapUpModal() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
+  if (call.mode === 'practice') return null;
   return (
     <Modal open={open} onClose={() => finishWrapup({ save: false })} width={480} label="Call wrap-up">
       <div className="wu__head">
