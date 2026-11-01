@@ -1,6 +1,14 @@
 // Practise a call: an AI "customer" rings the agent, the agent talks (browser speech recognition), the AI answers out loud.
 // Nothing is recorded or saved except the on-screen transcript. Needs Chrome or Edge and a microphone.
+import { moodPlan, moodOpener } from '../data/practice.js';
 let S = null;
+const MOOD_STYLE = { angry: 'angry, sharp and frustrated, a little loud', confused: 'unsure and hesitant, speaking slowly', impatient: 'rushed and curt', worried: 'anxious and soft-spoken', friendly: 'warm and friendly' };
+/** The mood right now. In a mixed call it changes every two agent turns. */
+const effMood = (s) => {
+  if (s.mood !== 'mixed') return s.mood;
+  const t = s.history.filter((m) => m.role === 'agent').length;
+  return s.plan[Math.min(s.plan.length - 1, Math.floor(Math.max(t - 1, 0) / 2))];
+};
 let ring = null;
 
 export const practiceSupported = () => typeof window !== 'undefined' && !!(window.SpeechRecognition || window.webkitSpeechRecognition);
@@ -24,11 +32,11 @@ export function stopRing() { if (ring) { clearInterval(ring.t); try { ring.ctx.c
 // Natural voice from the server (Gemini speech). Falls back to the best voice the browser has.
 let ctx = null; let cur = null; let ttsOk = true;
 const audioCtx = () => { if (!ctx || ctx.state === 'closed') ctx = new (window.AudioContext || window.webkitAudioContext)(); if (ctx.state === 'suspended') ctx.resume(); return ctx; };
-async function fetchVoice(text, persona) {
+async function fetchVoice(text, persona, mood) {
   if (!ttsOk) return null;
   const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 9000);
   try {
-    const r = await fetch('/api/ai-agent', { method: 'POST', signal: ctl.signal, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role: 'tts', text, voice: persona?.voice || 'Kore', style: persona?.trait || '' }) });
+    const r = await fetch('/api/ai-agent', { method: 'POST', signal: ctl.signal, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role: 'tts', text, voice: persona?.voice || 'Kore', style: [MOOD_STYLE[mood], persona?.trait].filter(Boolean).join('; ') }) });
     const d = await r.json();
     if (!d?.audio) { if (d?.source === 'no-key') ttsOk = false; return null; }
     return d;
@@ -65,44 +73,45 @@ const browserSpeak = (text, persona) => new Promise((resolve) => {
   } catch { done(); return; }
   setTimeout(done, 5000 + text.length * 90);
 });
-const speak = async (text, persona) => {
-  const d = await fetchVoice(text, persona);
+const speak = async (text, persona, mood) => {
+  const d = await fetchVoice(text, persona, mood);
   if (d) { await playPcm(d); return; }
   await browserSpeak(text, persona);
 };
 
 /** Offline customer, used when the AI service is not reachable: walks through the persona's concerns. */
-function localCustomer(history, persona) {
+function localCustomer(history, persona, mood = 'friendly') {
   const turns = history.filter((m) => m.role === 'agent').length;
   const last = (history.filter((m) => m.role === 'agent').pop()?.text || '').toLowerCase();
   if (/bye|goodbye|thank you for your time/.test(last)) return 'Okay, thank you. Bye. [END]';
+  const pre = { angry: 'This is not acceptable. ', confused: 'Sorry, I did not understand that. ', impatient: 'Please be quick. ', worried: 'Hmm, I am a bit worried. ' }[mood] || '';
   const c = persona.concerns || [];
-  if (turns <= c.length) return turns === 1 ? `I am looking at ${persona.product}, my budget is around ${persona.budget}. I am worried about ${c[0]}.` : `Okay. Another thing, ${c[turns - 1]}. What can you tell me?`;
+  if (turns <= c.length) return pre + (turns === 1 ? `I am looking at ${persona.product}, my budget is around ${persona.budget}. I am worried about ${c[0]}.` : `Okay. Another thing, ${c[turns - 1]}. What can you tell me?`);
   if (turns === c.length + 1) return 'That makes sense. Can you send me the details on WhatsApp, and a cost sheet?';
   return 'Alright, I will go through it and get back to you. Thank you. Bye. [END]';
 }
 
 async function customerTurn(s) {
   try {
-    const r = await fetch('/api/ai-agent', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role: 'customer', messages: s.history, persona: s.persona }) });
+    const r = await fetch('/api/ai-agent', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role: 'customer', messages: s.history, persona: s.persona, mood: effMood(s) }) });
     const d = await r.json();
     if (d?.reply) return d.reply;
   } catch { /* offline */ }
-  return localCustomer(s.history, s.persona);
+  return localCustomer(s.history, s.persona, effMood(s));
 }
 
-export function startPractice({ persona, onLine, onEnd, onError }) {
+export function startPractice({ persona, mood = 'mixed', onLine, onEnd, onError }) {
   stopPractice();
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) { onError?.('Practise a call needs Chrome or Edge with a microphone.'); return false; }
-  const s = { persona, history: [], busy: true, muted: false, alive: true, endAfter: false, rec: null, spokeAt: 0 };
+  const s = { persona, mood, plan: moodPlan(), history: [], busy: true, muted: false, alive: true, endAfter: false, rec: null, spokeAt: 0 };
   S = s;
 
   const say = async (raw) => {
     const end = /\[END\]/i.test(raw);
     const text = raw.replace(/\[END\]/gi, '').trim();
     s.history.push({ role: 'cust', text }); onLine({ who: 'cust', text });
-    await speak(text, persona);
+    await speak(text, persona, effMood(s));
     s.spokeAt = Date.now(); s.busy = false;
     if (end && s.alive) setTimeout(() => { if (s.alive) { stopPractice(); onEnd('The customer ended the call.'); } }, 700);
   };
@@ -125,7 +134,7 @@ export function startPractice({ persona, onLine, onEnd, onError }) {
   rec.onerror = (e) => { if (e?.error && !['no-speech', 'aborted'].includes(e.error)) onError?.(e.error === 'not-allowed' ? 'Allow the microphone for this site to practise.' : `Speech input problem (${e.error}).`); };
   s.rec = rec;
   try { rec.start(); } catch { /* ignore */ }
-  setTimeout(() => { if (s.alive) say(persona.opener); }, 900);
+  setTimeout(() => { if (s.alive) say(moodOpener(mood, persona)); }, 900);
   return true;
 }
 

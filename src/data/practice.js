@@ -17,3 +17,19 @@ export const personas = [
     opener: 'Hello. I want some quick numbers on Lakeside Towers. Do you have a minute?' },
 ];
 export const pickPersona = () => personas[Math.floor(Math.random() * personas.length)];
+
+// How the AI customer feels. "mixed" starts friendly, then changes mood during the call.
+export const moods = [
+  { id: 'angry', label: 'Angry', emoji: '😠', desc: 'Frustrated, nobody called back. Needs a real apology and a fix.',
+    opener: 'Hello? Finally! I have been waiting two days for somebody from your team to call me back. This is not how you treat customers.' },
+  { id: 'confused', label: 'Confused', emoji: '😕', desc: 'Does not follow the terms. Needs simple, step by step answers.',
+    opener: 'Hello? Um, yes, someone called me from this number? I am not very sure what this is about.' },
+  { id: 'impatient', label: 'Impatient', emoji: '⏱️', desc: 'In a hurry. Wants the point in two sentences.',
+    opener: 'Yes, who is this? I am in the middle of something, so please be quick.' },
+  { id: 'worried', label: 'Worried', emoji: '😟', desc: 'Anxious about money, loan and delays. Needs reassurance.',
+    opener: 'Hello... yes, I enquired about a flat, but honestly I am quite worried about the whole thing.' },
+  { id: 'mixed', label: 'Surprise mix', emoji: '🎭', desc: 'Starts friendly, then turns confused or angry as the call goes on.', opener: null },
+];
+const PLANS = [['friendly', 'confused', 'angry'], ['impatient', 'friendly', 'angry'], ['worried', 'confused', 'angry'], ['friendly', 'worried', 'impatient']];
+export const moodPlan = () => PLANS[Math.floor(Math.random() * PLANS.length)];
+export const moodOpener = (mood, persona) => moods.find((m) => m.id === mood)?.opener || persona.opener;

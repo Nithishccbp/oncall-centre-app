@@ -25,3 +25,10 @@
 .pr__btns { display: flex; gap: 10px; flex-wrap: wrap; }
 .pr__del { border: 1px solid #f0c8c8; background: #fff; color: #c0392b; border-radius: 10px; padding: 9px 14px; font-weight: 700; cursor: pointer; }
 @media (max-width: 700px) { .pr__two { grid-template-columns: 1fr; } .pr__skill { grid-template-columns: 110px 1fr 32px; } }
+
+.pr__moods { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 12px; }
+.pr__mood { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; text-align: left; background: #fff; border: 2px solid #e8e8ee; border-radius: 14px; padding: 12px; cursor: pointer; }
+.pr__mood:hover { border-color: #b9dfcf; } .pr__mood.on { border-color: #1d9e5f; background: #eefaf4; }
+.pr__emo { font-size: 26px; line-height: 1; } .pr__mood small { color: var(--muted); font-size: 12px; line-height: 1.35; }
+.pr__chip { display: inline-block; background: #eef0f4; border-radius: 999px; padding: 2px 9px; font-size: 12px; font-weight: 700; margin-left: 4px; }
+@media (max-width: 900px) { .pr__moods { grid-template-columns: repeat(2, 1fr); } }

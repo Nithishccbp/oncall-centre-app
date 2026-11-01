@@ -39,7 +39,7 @@ function reducer(state, a) {
     };
     case 'TOGGLE_SOP': return { ...state, sopDone: state.sopDone.includes(a.i) ? state.sopDone.filter((x) => x !== a.i) : [...state.sopDone, a.i] };
     case 'INCOMING': return { ...initial, status: 'incoming', name: a.name, dir: 'in' };
-    case 'PRACTICE_INCOMING': return { ...initial, status: 'incoming', name: a.persona.name, dir: 'in', mode: 'practice', persona: a.persona };
+    case 'PRACTICE_INCOMING': return { ...initial, status: 'incoming', name: a.persona.name, dir: 'in', mode: 'practice', persona: a.persona, mood: a.mood || 'mixed' };
     case 'WRAPUP': return { ...state, status: 'wrapup' };
     case 'HANGUP_REMOTE': return state.status === 'inCall' || state.status === 'consent' ? { ...state, status: 'wrapup' } : initial;
     case 'RESET': return initial;
@@ -138,7 +138,7 @@ export function CallProvider({ children }) {
     if (call.mode !== 'practice' || call.status !== 'inCall') { if (call.status !== 'inCall') practiceOn.current = false; return; }
     if (practiceOn.current) return;
     practiceOn.current = true;
-    startPractice({ persona: call.persona, onLine: onLiveLine, onEnd: (m) => { showToast(m); dispatch({ type: 'HANGUP_REMOTE' }); }, onError: (m) => showToast(m) });
+    startPractice({ persona: call.persona, mood: call.mood, onLine: onLiveLine, onEnd: (m) => { showToast(m); dispatch({ type: 'HANGUP_REMOTE' }); }, onError: (m) => showToast(m) });
   }, [call.status, call.mode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const startCall = useCallback((name) => dispatch({ type: 'START', name }), []);
@@ -147,7 +147,7 @@ export function CallProvider({ children }) {
     const pick = name || (leads.length ? leads[Math.floor(Math.random() * leads.length)].name : 'Unknown caller');
     dispatch({ type: 'INCOMING', name: pick });
   }, []);
-  const practiceCall = useCallback(() => dispatch({ type: 'PRACTICE_INCOMING', persona: pickPersona() }), []);
+  const practiceCall = useCallback((mood = 'mixed') => dispatch({ type: 'PRACTICE_INCOMING', persona: pickPersona(), mood: typeof mood === 'string' ? mood : 'mixed' }), []);
   const acceptIncoming = useCallback(() => {
     begin();
     if (call.mode === 'practice') { dispatch({ type: 'CONNECT', script: [] }); dispatch({ type: 'GO_LIVE' }); return; } // practice: no consent step, nothing is recorded
@@ -187,12 +187,12 @@ export function CallProvider({ children }) {
   /** A practice call never goes to Recent, Incoming or the dashboard numbers: it is saved under Practise a call, with a review. */
   const finishPractice = useCallback(() => {
     const lines = call.shown.filter((l) => (l.who === 'agent' || l.who === 'cust') && l.text).map((l) => ({ who: l.who, text: l.text }));
-    const persona = { name: call.persona?.name, product: call.persona?.product, budget: call.persona?.budget };
+    const persona = { name: call.persona?.name, product: call.persona?.product, budget: call.persona?.budget, mood: call.mood || 'mixed' };
     const spoke = lines.some((l) => l.who === 'agent');
     let id = null;
     if (spoke) {
-      id = addSession({ persona, lines, seconds: call.seconds, review: localReview(lines, call.seconds) });
-      aiReview(lines, persona).then((r) => { if (r) updateSession(id, { review: { ...r, seconds: call.seconds } }); });
+      id = addSession({ persona, lines, seconds: call.seconds, review: localReview(lines, call.seconds, call.mood) });
+      aiReview(lines, persona, call.mood).then((r) => { if (r) updateSession(id, { review: { ...r, seconds: call.seconds } }); });
     } else showToast('No conversation to review. Say a few lines next time.');
     dispatch({ type: 'RESET' });
     resetConsent();

@@ -5,6 +5,7 @@ import { useCall } from '../../context/CallContext.jsx';
 import { usePracticeSessions, removeSession } from '../../data/practiceLog.js';
 import { practiceSupported } from '../../services/practice.js';
 import { SKILLS } from '../../services/practiceReview.js';
+import { moods } from '../../data/practice.js';
 import './Practice.css';
 
 const when = (iso) => {
@@ -22,6 +23,8 @@ export default function PracticePage() {
   const [sp, setSp] = useSearchParams();
   const [openId, setOpenId] = useState(sp.get('s'));
   useEffect(() => { if (sp.get('s')) setOpenId(sp.get('s')); }, [sp]);
+  const [mood, setMood] = useState('mixed');
+  const moodOf = (id) => moods.find((m) => m.id === id) || moods[4];
   const open = sessions.find((s) => s.id === openId) || null;
 
   const stats = useMemo(() => {
@@ -47,6 +50,7 @@ export default function PracticePage() {
           <div className="pr__herotxt">
             <h2>Call with {open.persona?.name}</h2>
             <div className="muted">{when(open.ts)} · {dur(open.seconds || 0)} · {open.persona?.product}</div>
+            <span className="pr__chip">{moodOf(open.persona?.mood).emoji} {moodOf(open.persona?.mood).label} customer</span>
             <Stars n={r.stars} />
             <p>{r.summary}</p>
             {r.source !== 'ai' && <small className="muted">Quick review shown. The AI coach's detailed review replaces it in a moment if it is available.</small>}
@@ -54,7 +58,7 @@ export default function PracticePage() {
         </div>
         <div className="card pr__skills">
           <div className="label-caps">Skill by skill</div>
-          {SKILLS.map(([k, label]) => (
+          {SKILLS.filter(([k]) => r.skills[k] !== undefined).map(([k, label]) => (
             <div className="pr__skill" key={k}>
               <span>{label}</span>
               <div className="pr__bar"><i className={`pr__fill pr__fill--${tone(r.skills[k])}`} style={{ width: `${r.skills[k]}%` }} /></div>
@@ -71,7 +75,7 @@ export default function PracticePage() {
           {open.lines.map((l, i) => (<div key={i} className={`pr__line pr__line--${l.who}`}><b>{l.who === 'agent' ? 'You' : open.persona?.name}</b><span>{l.text}</span></div>))}
         </div>
         <div className="pr__btns">
-          <button className="btn-primary" disabled={busy} onClick={() => { close(); practiceCall(); }}><i className="ti ti-phone-ringing" /> Practise again</button>
+          <button className="btn-primary" disabled={busy} onClick={() => { close(); practiceCall(open.persona?.mood || 'mixed'); }}><i className="ti ti-phone-ringing" /> Practise again</button>
           <button className="pr__del" onClick={() => { removeSession(open.id); close(); }}><i className="ti ti-trash" /> Delete session</button>
         </div>
       </div>
@@ -82,10 +86,18 @@ export default function PracticePage() {
     <div className="plan pr">
       <h1 className="plan__title">Practise a call</h1>
       <p className="plan__sub">An AI customer rings you. Talk to them like a real call. Nothing here is a real customer and nothing is added to your Recent calls or dashboard.</p>
+      <div className="label-caps pr__h">Pick how the customer feels</div>
+      <div className="pr__moods">
+        {moods.map((m) => (
+          <button key={m.id} className={`pr__mood ${mood === m.id ? 'on' : ''}`} aria-pressed={mood === m.id} onClick={() => setMood(m.id)}>
+            <span className="pr__emo">{m.emoji}</span><b>{m.label}</b><small>{m.desc}</small>
+          </button>
+        ))}
+      </div>
       <div className="card pr__start">
-        <div><b>Ready when you are</b><div className="muted">You will get a call from a random buyer. Pick up, speak, and hang up when you are done to see your review.</div>
+        <div><b>Ready when you are</b><div className="muted">A random buyer will ring you, feeling <b>{moodOf(mood).label.toLowerCase()}</b>. Pick up, speak, and hang up when you are done to see your strict review.</div>
           {!practiceSupported() && <div className="pr__warn">Practising needs Chrome or Edge with a microphone.</div>}</div>
-        <button className="btn-primary" disabled={busy} onClick={practiceCall}><i className="ti ti-phone-ringing" /> {busy ? 'A call is on' : 'Start practice call'}</button>
+        <button className="btn-primary" disabled={busy} onClick={() => practiceCall(mood)}><i className="ti ti-phone-ringing" /> {busy ? 'A call is on' : 'Start practice call'}</button>
       </div>
       {stats.n > 0 && (
         <div className="summary card">
@@ -100,7 +112,7 @@ export default function PracticePage() {
       {sessions.map((s) => (
         <button key={s.id} className="row pr__row" onClick={() => setOpenId(s.id)}>
           <span className={`pr__mini pr__score--${tone(s.review.score)}`}>{s.review.score}</span>
-          <span className="row__txt"><span className="row__name">{s.persona?.name}</span>
+          <span className="row__txt"><span className="row__name">{s.persona?.name} <span className="pr__chip">{moodOf(s.persona?.mood).emoji} {moodOf(s.persona?.mood).label}</span></span>
             <span className="row__sub">{when(s.ts)} · {dur(s.seconds || 0)} · {s.persona?.product}</span></span>
           <Stars n={s.review.stars} /><i className="ti ti-chevron-right row__chev" />
         </button>
