@@ -23,7 +23,7 @@ const initials = (name) => name.split(' ').map((p) => p[0]).join('').slice(0, 2)
 /** "Before you call X": product to champion, pitching language, cross-sell, ideal home-loan EMI, SOP checkpoints. */
 const modes = [
   { id: 'webphone', label: '🎧 Web → customer', group: 'phone', hint: 'Talk through this browser (microphone and speaker). The call goes straight to the customer, who sees the brand number. No staff phone needed.' },
-  { id: 'staffphone', label: '☎️ My phone → customer', group: 'phone', hint: 'Your telephony provider (Vobiz, Exotel or Ozonetel) rings YOUR phone, then connects the customer. The customer sees the brand number.' },
+  { id: 'staffphone', label: '☎️ My phone → customer', group: 'phone', hint: 'Your telephony provider (Vobiz, Plivo, Twilio, Exotel, Ozonetel, Knowlarity, Tata Tele or your own) rings YOUR phone, then connects the customer. The customer sees the brand number.' },
   { id: 'phone', label: '📞 Phone number', group: 'phone', hint: 'Real call to a normal mobile or landline number, spoken through this browser (Twilio).' },
   { id: 'aiphone', label: '🤖 AI → phone', group: 'phone', hint: 'Avani, our AI agent, rings a real phone number and talks to the customer (Vonage or Twilio, plus Gemini).' },
   { id: 'sim', label: 'Practice', hint: 'Simulated customer — no mic needed.' },
@@ -113,6 +113,8 @@ function PreCall({ onPlace }) {
     for (const c of ['webphone', saved, 'phone']) {
       if ((c === 'webphone' && okWeb) || (c === 'phone' && cfg.phone)) { m = c; break; }
     }
+    // Other providers (Plivo, Twilio, Exotel, ...) call through the staff phone: it rings the agent, then connects the customer.
+    if (!m && cfg.staffPhone && cfg.telephony?.provider && cfg.telephony.provider !== 'vobiz' && normalizePhone(getAgentPhone() || '')) m = 'staffphone';
     if (!m) { if (!cfg.reachable || (!cfg.staffPhone && !cfg.phone && !cfg.aiPhone)) m = 'sim'; else return null; }
     if (m !== 'sim' && !cust) return null;
     return { mode: m, code: '', phone: cust, autoConsent: !!cfg.transcripts };
@@ -182,7 +184,7 @@ function PreCall({ onPlace }) {
             <small className="pc__note" style={clash ? { color: '#c0392b', fontWeight: 600 } : undefined}>{clash || (brandNo ? `Customer will see ${brandNo} as the caller. Do not enter that number here.` : 'Caller ID comes from the provider setup.')}</small>
           </label>
         )}
-        {isPhone && cfg && !ready && <p className="pc__warn">{mode === 'staffphone' ? `Provider calling is not set up yet. Missing in Vercel: ${(cfg.telephony?.missing || ['TEL_PROVIDER']).join(', ')}. See TELEPHONY_SETUP.md.` : 'Phone calling is not switched on for this site yet. Add the Vonage keys (VONAGE_SETUP.md) or the Twilio keys in Vercel, then redeploy.'}</p>}
+        {isPhone && cfg && !ready && <p className="pc__warn">{mode === 'staffphone' ? `Provider calling is not set up yet. Open Settings > Telephony and connect it. Missing: ${(cfg.telephony?.missing || ['Provider']).join(', ')}.` : 'Phone calling is not switched on for this site yet. Add the Vonage keys (VONAGE_SETUP.md) or the Twilio keys in Vercel, then redeploy.'}</p>}
         {isPhone && cfg && !cfg.reachable && <p className="pc__warn">The /api server is not reachable here. Phone calls work on the deployed Vercel site (or with “vercel dev”), not plain “npm run dev”.</p>}
         {needCode && (
           <label className="pc__code">Customer line code

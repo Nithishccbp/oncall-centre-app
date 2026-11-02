@@ -1,14 +1,21 @@
-// Settings > Telephony: connect the brand's calling provider (Vobiz / Exotel / Ozonetel), activate numbers, pick the staff caller ID.
+// Settings > Telephony: connect the brand's calling provider (Vobiz, Plivo, Twilio, Exotel, Ozonetel, Knowlarity, Tata Tele, or any other API), activate numbers, pick the staff caller ID.
 // Secrets are sent to our server once and never come back to the browser.
 import { useEffect, useState } from 'react';
 import { api, getWebCreds, setWebCreds } from '../../services/phoneCall.js';
 
+// [key, label, placeholder, secret, multiline]
 const FIELDS = {
   vobiz: [['id', 'Auth ID', 'MA_XXXXXXXX'], ['token', 'Auth Secret', 'Auth token from the Vobiz console', true]],
+  plivo: [['id', 'Auth ID', 'from the Plivo console'], ['token', 'Auth Token', '', true]],
+  twilio: [['sid', 'Account SID', 'AC…'], ['token', 'Auth Token', '', true]],
   exotel: [['sid', 'Account SID', ''], ['key', 'API key', ''], ['token', 'API token', '', true], ['sub', 'Subdomain (optional)', 'api.exotel.com']],
   ozonetel: [['key', 'API key', ''], ['user', 'Username', ''], ['campaign', 'Campaign name', ''], ['agentId', 'Your agent ID', '']],
+  knowlarity: [['key', 'API key (x-api-key)', '', true], ['auth', 'Authorization key', '', true], ['number', 'Knowlarity (SR) number', '+91…']],
+  tata: [['token', 'API token', 'from Tata Tele Smartflo / Servetel', true], ['base', 'API base URL (optional)', 'https://api-smartflo.tatateleservices.com']],
+  custom: [['url', 'Call API URL', 'https://…'], ['headers', 'Headers (one per line)', 'Authorization: Bearer YOUR_KEY', true, true], ['body', 'Request body', '{"from":"{{callerId}}","to":"{{agent}}","connect_to":"{{customer}}"}', false, true], ['idPath', 'Call ID field in the reply (optional)', 'data.call_id']],
 };
-const NAMES = { vobiz: 'Vobiz', exotel: 'Exotel', ozonetel: 'Ozonetel' };
+const NAMES = { vobiz: 'Vobiz', plivo: 'Plivo', twilio: 'Twilio', exotel: 'Exotel', ozonetel: 'Ozonetel', knowlarity: 'Knowlarity', tata: 'Tata Tele Smartflo / Servetel', custom: 'Other provider (custom API)' };
+const HELP = { custom: 'For any provider with a "make a call" API. Copy the URL, headers and body from their docs. Placeholders: {{agent}} = staff phone, {{customer}} = customer number, {{callerId}} = your number, {{answerUrl}}, {{hangupUrl}}.' };
 const ghost = { background: 'transparent', border: '1px solid var(--line, #cfd8d3)', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', font: 'inherit' };
 const row = { display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'space-between', padding: '6px 0' };
 const inp = { width: '100%', padding: '8px 10px', border: '1px solid var(--line, #d8e0dc)', borderRadius: 8, font: 'inherit', marginBottom: 6 };
@@ -48,7 +55,10 @@ export default function TelephonyCard({ toast }) {
         <>
           <small className="muted">Enter the details from your telephony provider. Staff calls will ring your phone first, then connect the customer.</small>
           <select style={{ ...inp, marginTop: 8 }} value={prov} onChange={(e) => { setProv(e.target.value); setF({}); }} aria-label="Provider">{Object.entries(NAMES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>
-          {FIELDS[prov].map(([k, label, ph, secret]) => <input key={k} style={inp} type={secret ? 'password' : 'text'} autoComplete="off" placeholder={`${label}${ph ? ` · ${ph}` : ''}`} aria-label={label} value={f[k] || ''} onChange={(e) => setF({ ...f, [k]: e.target.value })} />)}
+          {HELP[prov] && <small className="muted" style={{ display: 'block', marginBottom: 6 }}>{HELP[prov]}</small>}
+          {FIELDS[prov].map(([k, label, ph, secret, multi]) => (multi
+            ? <textarea key={k} style={{ ...inp, height: 84, fontFamily: 'monospace', fontSize: 12 }} autoComplete="off" placeholder={`${label} · ${ph}`} aria-label={label} value={f[k] || ''} onChange={(e) => setF({ ...f, [k]: e.target.value })} />
+            : <input key={k} style={inp} type={secret ? 'password' : 'text'} autoComplete="off" placeholder={`${label}${ph ? ` · ${ph}` : ''}`} aria-label={label} value={f[k] || ''} onChange={(e) => setF({ ...f, [k]: e.target.value })} />))}
           {prov !== 'ozonetel' && <input style={inp} placeholder="Caller ID number (your DID) e.g. +918071582962" aria-label="Caller ID number" value={cid} onChange={(e) => setCid(e.target.value.replace(/[^\d+ ]/g, ''))} />}
           <button className="btn-primary" disabled={busy} onClick={connect}>{busy ? 'Connecting…' : 'Connect'}</button>
         </>
@@ -64,10 +74,12 @@ export default function TelephonyCard({ toast }) {
           </div>
           {t.dids.length > 1 && (<><div className="label-caps" style={{ marginTop: 10 }}>Staff caller ID</div>
             <select style={inp} value={t.callerId || ''} onChange={(e) => post('/api/telephony/save', { callerId: e.target.value }, 'Caller ID updated')} aria-label="Staff caller ID">{t.dids.map((d) => <option key={d}>{d}</option>)}</select></>)}
+          {t.provider === 'vobiz' && (<>
           <div className="label-caps" style={{ marginTop: 10 }}>Web calling (browser → customer)</div>
           {web.u ? <small className="muted">Set up on this device · login {web.u}</small> : <small className="muted">Not set up on this device yet.</small>}
           <div><button style={{ ...ghost, marginTop: 6 }} disabled={busy} onClick={setupWeb}>{web.u ? 'Set up again' : 'Set up web calling'}</button></div>
           {dbg && <textarea readOnly style={{ ...inp, marginTop: 6, fontSize: 11, height: 90 }} value={dbg} aria-label="Details to send to support" />}
+          </>)}
           <button style={{ ...ghost, marginTop: 10 }} disabled={busy} onClick={() => window.confirm('Disconnect the calling provider?') && post('/api/telephony/disconnect', {}, 'Disconnected')}>Disconnect</button>
         </>
       )}
