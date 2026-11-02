@@ -70,8 +70,8 @@ function OgScore({ close }) {
         <div className="og">
           <small>OG SCORE™</small>
           <div className="og__ring"><b>{og.score}</b><span>/ 100</span></div>
-          {og.delta ? <div className="og__up">{og.delta > 0 ? '▲ +' : '▼ '}{Math.abs(og.delta)} vs last week</div> : <div className="muted">{og.hasData ? 'Same as last week' : 'No scored calls yet'}</div>}
-          <div className="muted">Based on {og.scored} scored {og.scored === 1 ? 'item' : 'items'} in the last 7 days (practice reviews and customer ratings)</div>
+          {og.delta ? <div className="og__up">{og.delta > 0 ? '▲ +' : '▼ '}{Math.abs(og.delta)} vs previous period</div> : <div className="muted">{og.hasData ? 'Same as previous period' : 'No scored calls yet'}</div>}
+          <div className="muted">Based on {og.scored} scored {og.scored === 1 ? 'item' : 'items'} in {og.range} (practice reviews and customer ratings)</div>
           {low.length > 0 && (
             <div className="og__box red"><b>Your biggest lever right now</b>
               {low.map((x) => <p key={x.key}>{x.score < 65 ? '🔴' : '🟠'} <b>{x.skill} ({x.score})</b> — {x.next}</p>)}

@@ -84,7 +84,7 @@ export default function OgScoreModal({ close }) {
             <div>
               <div className="kd__num">{score}</div>
               {delta != null && delta !== 0 && <span className={`kd__delta kd__delta--${delta > 0 ? 'good' : 'bad'}`}>{delta > 0 ? '▲ +' : '▼ '}{Math.abs(delta)}</span>}
-              <div className="kd__muted">{DEMO || og.hasData ? 'vs similar prior period' : 'scored from your calls and practice'}</div>
+              <div className="kd__muted">{DEMO || og.hasData ? 'vs similar prior period' : `nothing scored in ${og.range || 'this period'} yet`}</div>
             </div>
             <div className="kd__stat"><div className="kd__sl">PERCENTILE</div><div className="kd__sv">{DEMO ? '72nd' : '—'}</div><div className="kd__muted">across all staff</div></div>
             <div className="kd__stat kd__tap" onClick={() => openOverlay('rank')} role="button"><div className="kd__sl">EXPERIENCE CENTRE RANK</div><div className="kd__sv">{DEMO ? '#3' : '—'}</div><div className="kd__muted">tap to see why</div></div>
@@ -97,7 +97,7 @@ export default function OgScoreModal({ close }) {
           </div>
 
           <div className="kd__card">
-            <div className="kd__sec kd__sec--tight">TREND · THIS WEEK
+            <div className="kd__sec kd__sec--tight">TREND · {DEMO ? 'THIS WEEK' : String(og.range || '').toUpperCase()}
               <span className="kd__legend"><i className="kd__ln kd__ln--gold" /> This period <i className="kd__ln kd__ln--dash kd__ln--goldl" /> Prior</span>
             </div>
             <div className="kd__chart"><Line data={data} options={opts} /></div>

@@ -26,7 +26,7 @@ export default function HeroHeader() {
     if (DEMO) {
       return k.label === 'LEADS CALLED' ? { ...k, value: String(2 + calledLeads) } : k.label === 'LEADS CREATED' ? { ...k, value: String(created) } : k.label === 'CSAT TODAY' && csatToday ? { ...k, value: `${csatToday}%`, tone: 'good' } : k;
     }
-    if (k.label === 'OG SCORE™') return { ...k, value: String(og.score), delta: og.delta ? `${og.delta > 0 ? '▲' : '▼'}${Math.abs(og.delta)}` : (og.hasData ? 'this week' : '–'), tone: og.hasData ? (og.delta < 0 ? 'bad' : 'good') : 'info' };
+    if (k.label === 'OG SCORE™') return { ...k, value: String(og.score), delta: og.delta ? `${og.delta > 0 ? '▲' : '▼'}${Math.abs(og.delta)}` : (og.hasData ? `in ${og.scored} scored` : '–'), tone: og.hasData ? (og.delta < 0 ? 'bad' : 'good') : 'info' };
     if (k.label === 'LEADS CREATED') return { ...k, value: String(created), delta: `new ${per}` };
     if (k.label === 'LEADS CALLED') return { ...k, value: String(calledLeads), delta: `in ${plural(calledToday.length, 'call')}` };
     if (k.label === 'AVG HANDLE TIME') return { ...k, value: ahtTxt, delta: `${plural(handled, 'call')} ${per}` };
