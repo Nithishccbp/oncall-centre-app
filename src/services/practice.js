@@ -32,15 +32,21 @@ export function stopRing() { if (ring) { clearInterval(ring.t); try { ring.ctx.c
 // Natural voice from the server (Gemini speech). Falls back to the best voice the browser has.
 let ctx = null; let cur = null; let ttsOk = true;
 const audioCtx = () => { if (!ctx || ctx.state === 'closed') ctx = new (window.AudioContext || window.webkitAudioContext)(); if (ctx.state === 'suspended') ctx.resume(); return ctx; };
-async function fetchVoice(text, persona, mood) {
-  if (!ttsOk) return null;
-  const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 9000);
+const FEMALE_VOICES = ['Kore', 'Aoede', 'Leda', 'Zephyr'];
+const isFemale = (persona) => FEMALE_VOICES.includes(persona?.voice);
+async function fetchOnce(text, persona, mood, ms) {
+  const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), ms);
   try {
     const r = await fetch('/api/ai-agent', { method: 'POST', signal: ctl.signal, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role: 'tts', text, voice: persona?.voice || 'Kore', style: [MOOD_STYLE[mood], persona?.trait].filter(Boolean).join('; ') }) });
     const d = await r.json();
     if (!d?.audio) { if (d?.source === 'no-key') ttsOk = false; return null; }
     return d;
   } catch { return null; } finally { clearTimeout(t); }
+}
+// Try twice before giving up, so the voice does not switch part-way through a call.
+async function fetchVoice(text, persona, mood) {
+  if (!ttsOk) return null;
+  return (await fetchOnce(text, persona, mood, 14000)) || (ttsOk ? fetchOnce(text, persona, mood, 14000) : null);
 }
 function playPcm(d) {
   return new Promise((resolve) => {
@@ -54,10 +60,19 @@ function playPcm(d) {
     } catch { resolve(); }
   });
 }
-const bestVoice = () => {
+const MALE_RE = /ravi|prabhat|rishi|hemant|madhur|david|mark|george|james|daniel|alex|guy|ryan|male|rishabh/i;
+const FEMALE_RE = /heera|kalpana|neerja|swara|zira|susan|samantha|aria|jenny|female|veena|lekha|priya|karen|moira|tessa/i;
+const picked = {};
+// One browser voice per customer, matching the name's gender, kept for the whole call.
+const bestVoice = (persona) => {
+  const key = persona?.name || 'x';
+  if (picked[key]) return picked[key];
+  const want = isFemale(persona) ? FEMALE_RE : MALE_RE; const avoid = isFemale(persona) ? MALE_RE : FEMALE_RE;
   const vs = window.speechSynthesis.getVoices();
-  const rank = (v) => (/natural|neural|online/i.test(v.name) ? 4 : 0) + (/google/i.test(v.name) ? 2 : 0) + (/en[-_]IN/i.test(v.lang) ? 3 : /^en/i.test(v.lang) ? 1 : 0);
-  return [...vs].sort((x, y) => rank(y) - rank(x))[0];
+  const rank = (v) => (want.test(v.name) ? 10 : 0) - (avoid.test(v.name) ? 10 : 0) + (/natural|neural|online/i.test(v.name) ? 4 : 0) + (/google/i.test(v.name) ? 2 : 0) + (/en[-_]IN/i.test(v.lang) ? 3 : /^en/i.test(v.lang) ? 1 : 0);
+  const v = [...vs].sort((x, y) => rank(y) - rank(x))[0];
+  if (v) picked[key] = v;
+  return v;
 };
 const browserSpeak = (text, persona) => new Promise((resolve) => {
   const synth = window.speechSynthesis;
@@ -65,8 +80,8 @@ const browserSpeak = (text, persona) => new Promise((resolve) => {
   const done = () => resolve();
   try { // a failure to speak must never freeze the call
     const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'en-IN'; u.pitch = persona?.pitch || 1; u.rate = 0.97;
-    const v = bestVoice();
+    u.lang = 'en-IN'; u.pitch = isFemale(persona) ? Math.max(1.1, persona?.pitch || 1.1) : Math.min(0.85, persona?.pitch || 0.85); u.rate = 0.97;
+    const v = bestVoice(persona);
     if (v) u.voice = v;
     u.onend = done; u.onerror = done;
     synth.cancel(); synth.speak(u);
