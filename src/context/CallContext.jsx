@@ -8,6 +8,7 @@ import { startPractice } from '../services/practice.js';
 import { pickPersona, personas } from '../data/practice.js';
 import { addSession, updateSession } from '../data/practiceLog.js';
 import { localReview, aiReview } from '../services/practiceReview.js';
+import { DEMO } from '../data/demo.js';
 import { buildScript, detectSopSteps, moodOf, nudges, outcomes, sentimentLabel } from '../data/calling.js';
 import { setAgentCaptions, setMuted, signal, startLiveCall, stopLiveCall } from '../services/liveCall.js';
 import { useConsent } from './ConsentContext.jsx';
@@ -53,7 +54,7 @@ const LINE_MS = 2600;
 
 const REC_KEY = 'og_recent_calls';
 const loadLocal = () => { try { return JSON.parse(localStorage.getItem(REC_KEY) || '[]')
-  .filter((c) => Date.now() - new Date(c.ts).getTime() < 30 * 864e5 && !/practice/i.test(c.duration || '') && !(c.local && c.dir === 'missed' && personas.some((p) => p.name === c.name))); } catch { return []; } };
+  .filter((c) => Date.now() - new Date(c.ts).getTime() < 30 * 864e5 && !/practice/i.test(c.duration || '') && !(c.local && c.dir === 'missed' && (!DEMO || personas.some((p) => p.name === c.name)))); } catch { return []; } };
 
 export function CallProvider({ children }) {
   const [call, dispatch] = useReducer(reducer, initial);
@@ -173,7 +174,7 @@ export function CallProvider({ children }) {
   /** Hang up. With a live customer we go to the wrap-up form; otherwise just close. */
   const end = useCallback(() => {
     if (call.status === 'ringing') logCall('out', call.name, '—', { note: 'Not connected' });
-    if (call.status === 'incoming' && call.mode !== 'practice') logCall('missed', call.name, '—');
+    if (DEMO && call.status === 'incoming' && call.mode !== 'practice') logCall('missed', call.name, '—'); // real missed calls come from the phone provider, not from this app
     if (call.mode !== 'sim') stopLiveCall();
     if (call.status === 'inCall' || call.status === 'consent') {
       if (call.status === 'consent') addLog(call.seconds, 'Call ended before consent was answered.');
