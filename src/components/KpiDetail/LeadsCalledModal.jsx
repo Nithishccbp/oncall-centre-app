@@ -5,7 +5,7 @@ import { CategoryScale, Chart as ChartJS, Filler, LinearScale, LineElement, Poin
 import Modal from '../Modal/Modal.jsx';
 import { useUi } from '../../context/UiContext.jsx';
 import { DEMO } from '../../data/demo.js';
-import { useKpiData } from '../../data/kpiStats.js';
+import { useKpiData, whenLabel, trendBuckets } from '../../data/kpiStats.js';
 import './KpiDetail.css';
 
 ChartJS.register(CategoryScale, LinearScale, LineElement, PointElement, Filler, Tooltip);
@@ -22,7 +22,7 @@ const fmt = (s) => `${Math.floor(s / 60)}m ${String(Math.round(s % 60)).padStart
 export default function LeadsCalledModal({ close }) {
   const { showToast } = useUi();
   const { calledToday, calledLeads, created } = useKpiData();
-  const { range } = useUi();
+  const { range, span } = useUi();
   const [q, setQ] = useState('');
   const [sort, setSort] = useState({ k: 'hour', asc: true });
   const [page, setPage] = useState(0);
@@ -32,7 +32,8 @@ export default function LeadsCalledModal({ close }) {
   const leadsN = DEMO ? 2 + calledLeads : calledLeads;
   const avg = n ? calls.reduce((s, c) => s + c.dur, 0) / n : 0;
   const quotes = calls.filter((c) => c.quote).length;
-  const line = CUTS.map((cut, i) => (i === 4 ? n : calls.filter((c) => c.hour < cut).length));
+  const tb = DEMO ? { labels: HOURS, line: CUTS.map((cut, i) => (i === 4 ? n : calls.filter((c) => c.hour < cut).length)) } : trendBuckets(span, calls, (c) => c.ts);
+  const line = tb.line;
 
   const rows = useMemo(() => calls.filter((c) => `${c.name} ${c.outcome}`.toLowerCase().includes(q.toLowerCase()))
     .sort((a, b) => {
@@ -55,10 +56,10 @@ export default function LeadsCalledModal({ close }) {
   };
 
   const data = {
-    labels: HOURS,
+    labels: tb.labels,
     datasets: [
-      { label: 'This period', data: line, borderColor: '#0f6e56', backgroundColor: 'rgba(15,110,86,.12)', fill: true, tension: 0, pointRadius: [0, 0, 0, 0, 5], pointHoverRadius: 5, pointBackgroundColor: '#0f6e56' },
-      { label: 'Prior', data: [0, 0, 0, 0, 0], borderColor: '#5dcaa5', borderDash: [5, 5], fill: false, pointRadius: 0 },
+      { label: 'This period', data: line, borderColor: '#0f6e56', backgroundColor: 'rgba(15,110,86,.12)', fill: true, tension: 0, pointRadius: line.map((_, i) => (i === line.length - 1 ? 5 : 0)), pointHoverRadius: 5, pointBackgroundColor: '#0f6e56' },
+      { label: 'Prior', data: line.map(() => 0), borderColor: '#5dcaa5', borderDash: [5, 5], fill: false, pointRadius: 0 },
     ],
   };
   const opts = {
@@ -117,7 +118,7 @@ export default function LeadsCalledModal({ close }) {
               <tbody>
                 {slice.map((r, i) => (
                   <tr key={`${r.time}-${i}`}>
-                    <td>Today {r.time}</td><td>{r.name}</td><td className="kd__r">{fmt(r.dur)}</td>
+                    <td>{r.ts ? whenLabel(r.ts) : `Today ${r.time}`}</td><td>{r.name}</td><td className="kd__r">{fmt(r.dur)}</td>
                     <td><span className="kd__pill kd__pill--good">{r.outcome}</span></td>
                   </tr>
                 ))}

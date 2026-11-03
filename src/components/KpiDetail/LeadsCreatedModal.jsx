@@ -5,7 +5,7 @@ import { Chart as ChartJS, Filler, LinearScale, LineElement, PointElement, Toolt
 import Modal from '../Modal/Modal.jsx';
 import { useUi } from '../../context/UiContext.jsx';
 import { DEMO } from '../../data/demo.js';
-import { useKpiData } from '../../data/kpiStats.js';
+import { useKpiData, trendBuckets } from '../../data/kpiStats.js';
 import { formatINR } from '../../data/selectors.js';
 import './KpiDetail.css';
 
@@ -28,7 +28,7 @@ const DEMO_ROWS = [
 const COLS = [['name', 'LEAD', ''], ['score', 'ATTRACTIVENESS', 'kd__r'], ['icp', 'ICP RATING', 'kd__r'], ['expectedValue', 'VALUE', 'kd__r'], ['next', 'NEXT STEP', '']];
 
 export default function LeadsCreatedModal({ close }) {
-  const { showToast, range } = useUi();
+  const { showToast, range, span } = useUi();
   const { created, calledToday } = useKpiData();
   const [q, setQ] = useState('');
   const [sort, setSort] = useState({ k: 'score', asc: false });
@@ -72,10 +72,11 @@ export default function LeadsCreatedModal({ close }) {
   };
 
   // Trend: x = 0..4 (9am, 12pm, 3pm, 5pm, Now). Sample data follows the design; real data counts leads created by each hour.
+  const tbc = DEMO ? { labels: LABELS, line: [] } : trendBuckets(span, rows, (r) => r.createdAt || new Date().toISOString());
   const thisPts = DEMO
     ? [[0, 0], [0.5, 1], [1, 1], [1.5, 2], [2.5, 2], [3, 3], [4, 3]]
-    : CUTS.map((cut, i) => [i, i === 4 ? total : rows.filter((r) => r.createdAt && hourOf(r.createdAt) < cut).length]);
-  const priorPts = DEMO ? [[0, 0], [0.5, 0], [1, 1], [2, 1], [2.5, 2], [4, 2]] : CUTS.map((_, i) => [i, 0]);
+    : tbc.line.map((y, i) => [i, y]);
+  const priorPts = DEMO ? [[0, 0], [0.5, 0], [1, 1], [2, 1], [2.5, 2], [4, 2]] : tbc.line.map((_, i) => [i, 0]);
   const ymax = DEMO ? 3.2 : Math.max(3, total);
   const data = {
     datasets: [
@@ -88,7 +89,7 @@ export default function LeadsCreatedModal({ close }) {
     interaction: { mode: 'nearest', intersect: false },
     plugins: { legend: { display: false }, tooltip: { callbacks: { title: () => '', label: (c) => `${c.parsed.y}${c.datasetIndex ? ' prior' : ''}` } } },
     scales: {
-      x: { type: 'linear', min: 0, max: 4, ticks: { stepSize: 1, callback: (v) => LABELS[v] || '', font: { size: 11 } }, grid: { display: false } },
+      x: { type: 'linear', min: 0, max: DEMO ? 4 : Math.max(1, tbc.line.length - 1), ticks: { stepSize: DEMO ? 1 : Math.max(1, Math.ceil(tbc.line.length / 8)), callback: (v) => (DEMO ? LABELS[v] : tbc.labels[v]) || '', font: { size: 11 } }, grid: { display: false } },
       y: { min: 0, max: ymax, afterBuildTicks: (a) => { a.ticks = (DEMO ? [0.4, 1.8, 3.2] : [...Array(Math.ceil(ymax) + 1).keys()]).map((value) => ({ value })); },
         ticks: { precision: DEMO ? 1 : 0, font: { size: 11 } }, grid: { color: '#e9e9ef', borderDash: [2, 3] } },
     },

@@ -63,3 +63,35 @@ export function useKpiData() {
     return { created, calledToday, calledLeads, week: weekC, ratedToday, csatToday, todaysList, handled, aht, lv };
   }, [ing.callsAll, ing.convs, ing.week, ing.version, app, lv, span]);
 }
+
+// ---- Shared by the KPI popups: honest date labels and a chart that matches the chosen range ----
+const DAY_MS = 864e5;
+const day0 = (t) => { const d = new Date(t); d.setHours(0, 0, 0, 0); return d.getTime(); };
+/** "Today 18:28", "Yesterday 18:28" or "2 Nov, 18:28": the real day a call or lead happened. */
+export function whenLabel(ts) {
+  const d = new Date(ts); if (Number.isNaN(d.getTime())) return '';
+  const hm = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  const diff = Math.round((day0(Date.now()) - day0(d)) / DAY_MS);
+  if (diff === 0) return `Today ${hm}`;
+  if (diff === 1) return `Yesterday ${hm}`;
+  return `${d.getDate()} ${d.toLocaleDateString('en-US', { month: 'short' })}, ${hm}`;
+}
+/** Cumulative count per bucket: by time of day for a single day, by day for longer ranges. */
+export function trendBuckets(span, items, tsOf) {
+  const ts = items.map(tsOf).filter(Boolean).map((x) => new Date(x).getTime());
+  const from = day0(span.from.getTime()); const to = Math.min(day0(span.to.getTime()), day0(Date.now()));
+  const days = Math.round((to - from) / DAY_MS) + 1;
+  if (days <= 1) {
+    const cuts = [9, 12, 15, 17];
+    const hr = (t) => { const d = new Date(t); return d.getHours() + d.getMinutes() / 60; };
+    return { labels: ['9am', '12pm', '3pm', '5pm', 'Now'], line: [...cuts.map((c) => ts.filter((t) => hr(t) < c).length), ts.length] };
+  }
+  const n = Math.min(days, 31); const start = to - (n - 1) * DAY_MS;
+  const labels = []; const line = [];
+  for (let i = 0; i < n; i += 1) {
+    const d = start + i * DAY_MS;
+    labels.push(n <= 7 ? new Date(d).toLocaleDateString('en-US', { weekday: 'short' }) : `${new Date(d).getDate()} ${new Date(d).toLocaleDateString('en-US', { month: 'short' })}`);
+    line.push(ts.filter((t) => t < d + DAY_MS).length);
+  }
+  return { labels, line };
+}
