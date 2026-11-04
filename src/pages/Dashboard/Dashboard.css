@@ -109,3 +109,8 @@ button.pill-range { cursor: pointer; }
 .cd__cap { margin: 18px 0 6px; font-size: 12px; font-weight: 800; letter-spacing: .6px; color: var(--muted); }
 .cd__sum { margin: 0; font-size: 15px; line-height: 1.55; }
 .cd__rate { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; } .cd__rate span { color: var(--muted); font-size: 14px; }
+
+.dlead { border-radius: 10px; transition: background .12s; }
+.dlead:hover { background: #f3faf6; }
+.dlead__go { color: #aab3ba; font-size: 18px; flex: none; }
+.dlead:hover .dlead__go { color: #0f6e56; }

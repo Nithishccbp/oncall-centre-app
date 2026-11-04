@@ -138,6 +138,7 @@ export function LeadsNext({ onOpen }) {
           <span className={`dlead__s ${l.score >= 80 ? 'hi' : ''}`}>{l.score}</span>
           <span className="dcall__n"><b>{l.name}</b><small>{l.slaLeft} · {l.actionNote || l.product}</small></span>
           <b className="dlead__v">{formatINR(l.expectedValue)}</b>
+          <i className="ti ti-chevron-right dlead__go" aria-hidden="true" />
         </button>
       ))}
     </section>
