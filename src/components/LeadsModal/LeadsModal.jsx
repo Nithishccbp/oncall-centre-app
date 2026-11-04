@@ -4,14 +4,16 @@ import Modal from '../Modal/Modal.jsx';
 import LeadCard from '../LeadCard/LeadCard.jsx';
 import { useLeadsModal } from '../../context/LeadsModalContext.jsx';
 import { leads } from '../../data/leads.js';
+import { DEMO } from '../../data/demo.js';
+import { getOutgoingPlan } from '../../data/selectors.js';
 import { useIngest } from '../../context/IngestContext.jsx';
 import './LeadsModal.css';
 
-const ordered = leads; // same order as the mock: Mukunda first
 
 export default function LeadsModal() {
   useIngest();
   const { open, startIndex, closeLeads } = useLeadsModal();
+  const ordered = DEMO ? leads : getOutgoingPlan(); // same order as the dashboard's 'Leads to call next' list (highest score first), so the lead you click is the lead you see
   const [idx, setIdx] = useState(0);
   const total = ordered.length;
   const lead = ordered[idx];
