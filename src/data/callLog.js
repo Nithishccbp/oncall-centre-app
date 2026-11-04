@@ -11,7 +11,7 @@ let list = load().filter((c) => !PRACTICE_NAMES.includes(c.name)).filter((c) => 
 
 export function logAppCall({ name, leadId, dur, outcome, summary, csat, comment }) {
   const ts = new Date().toISOString();
-  list = [{ id: `app-${Date.now()}`, ts, name: name || 'Lead', leadId: leadId || null, dur: dur || 0, outcome: outcome || 'Called', quote: /cost sheet|quote/i.test(summary || ''), csat: csat || 0, comment: comment || '' }, ...list].slice(0, 300);
+  list = [{ id: `app-${Date.now()}`, ts, name: name || 'Lead', leadId: leadId || null, dur: dur || 0, outcome: outcome || 'Called', summary: String(summary || '').slice(0, 700), quote: /cost sheet|quote/i.test(summary || ''), csat: csat || 0, comment: comment || '' }, ...list].slice(0, 300);
   try { localStorage.setItem(KEY, JSON.stringify(list)); } catch { /* ignore */ }
   subs.forEach((f) => f());
 }

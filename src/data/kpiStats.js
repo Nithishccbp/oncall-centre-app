@@ -30,7 +30,7 @@ export function useKpiData() {
     const local = app.filter((c) => !dup(c));
     const localR = local.filter((c) => inR(c.ts)).map((c) => {
       const d = new Date(c.ts);
-      return { ts: c.ts, time: hh(d), hour: d.getHours() + d.getMinutes() / 60, name: c.name, dir: 'out', dur: c.dur, outcome: c.outcome, quote: c.quote, leadId: c.leadId, stars: c.csat || 0, comment: c.comment || '', topic: `${c.outcome || 'Call'} · ${Math.floor(c.dur / 60)}m ${String(c.dur % 60).padStart(2, '0')}s` };
+      return { ts: c.ts, time: hh(d), hour: d.getHours() + d.getMinutes() / 60, name: c.name, dir: 'out', dur: c.dur, outcome: c.outcome, quote: c.quote, leadId: c.leadId, summary: c.summary || '', stars: c.csat || 0, comment: c.comment || '', topic: `${c.outcome || 'Call'} · ${Math.floor(c.dur / 60)}m ${String(c.dur % 60).padStart(2, '0')}s` };
     });
     const backendR = (ing.callsAll || []).filter((c) => inR(c.ts));
     const all = [...localR, ...backendR];
@@ -59,7 +59,7 @@ export function useKpiData() {
     const calledLeads = new Set(calledToday.map((c) => c.leadId || first(c.name))).size;
     const handled = all.length;
     const aht = handled ? Math.round(all.reduce((n, c) => n + (c.dur || 0), 0) / handled) : 0;
-    const todaysList = [...all].sort((a, b) => (a.ts < b.ts ? 1 : -1)).map((c) => ({ time: c.time, name: c.name, topic: c.topic, stars: c.stars || 0 }));
+    const todaysList = [...all].sort((a, b) => (a.ts < b.ts ? 1 : -1)).map((c) => ({ ts: c.ts, time: c.time, name: c.name, topic: c.topic, stars: c.stars || 0, dur: c.dur || 0, outcome: c.outcome || '', summary: c.summary || '', comment: c.comment || '' }));
     return { created, calledToday, calledLeads, week: weekC, ratedToday, csatToday, todaysList, handled, aht, lv };
   }, [ing.callsAll, ing.convs, ing.week, ing.version, app, lv, span]);
 }

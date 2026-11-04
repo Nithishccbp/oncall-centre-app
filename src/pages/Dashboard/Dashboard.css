@@ -84,3 +84,28 @@ button.pill-range { cursor: pointer; }
 .dash__sub { font-size: 13px; margin: 10px 0 4px; color: #374151; }
 .pill-queue--n { background: transparent; }
 .hero__pills { display: flex; flex-flow: row wrap; justify-content: flex-end; gap: 8px; max-width: 60%; }
+
+/* Calls card */
+.dcalls .dcard__head { align-items: center; margin-bottom: 8px; }
+.dcalls .label-caps i { margin-right: 6px; color: #0f6e56; }
+.dcalls__pills { display: flex; gap: 6px; }
+.dcalls__pill { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: #eef1f5; color: #46525c; }
+.dcalls__pill--g { background: #dff5ea; color: #0f6e56; }
+.dcall--row { cursor: pointer; border: 1px solid transparent; border-radius: 12px; padding: 10px 10px; margin-top: 4px; transition: background .12s, border-color .12s, transform .12s; }
+.dcall--row:hover { background: #f3faf6; border-color: #cfe9dc; }
+.dcall--row:focus-visible { outline: 3px solid #6d6bf5; outline-offset: 1px; }
+.dcall__av { flex: none; width: 38px; height: 38px; border-radius: 50%; background: #e1f5ee; color: #0f6e56; display: grid; place-items: center; font-weight: 800; font-size: 13px; }
+.dcall__r { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+.dcall__when { font-size: 12.5px; font-weight: 700; color: #46525c; }
+.dcall__nr { font-size: 12px; color: #8a949c; }
+.dcall__go { color: #aab3ba; font-size: 18px; }
+.dcall--row:hover .dcall__go { color: #0f6e56; }
+.cd { padding: 24px; }
+.cd__top { display: flex; align-items: center; gap: 12px; padding-right: 36px; }
+.cd__av { width: 48px; height: 48px; border-radius: 50%; background: #e1f5ee; color: #0f6e56; display: grid; place-items: center; font-weight: 800; }
+.cd__name { font-size: 19px; font-weight: 800; } .cd__sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
+.cd__chips { display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0 4px; }
+.cd__chip { display: inline-flex; gap: 6px; align-items: center; font-size: 13px; font-weight: 700; padding: 6px 12px; border-radius: 999px; background: #eef6f2; color: #0f6e56; }
+.cd__cap { margin: 18px 0 6px; font-size: 12px; font-weight: 800; letter-spacing: .6px; color: var(--muted); }
+.cd__sum { margin: 0; font-size: 15px; line-height: 1.55; }
+.cd__rate { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; } .cd__rate span { color: var(--muted); font-size: 14px; }
