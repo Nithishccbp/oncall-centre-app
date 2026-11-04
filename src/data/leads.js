@@ -48,6 +48,15 @@ if (!DEMO) {
 const PKEY = 'og_lead_phones';
 const loadPhones = () => { try { return JSON.parse(localStorage.getItem(PKEY) || '{}'); } catch { return {}; } };
 { const ph = loadPhones(); leads.forEach((l) => { if (ph[l.id]) l.phone = ph[l.id]; }); }
+// When this device first saw each lead (used to flag leads that sat untouched for days).
+const SKEY = 'og_lead_seen';
+const loadSeen = () => { try { return JSON.parse(localStorage.getItem(SKEY) || '{}'); } catch { return {}; } };
+export function leadAddedAt(l) {
+  if (l.createdAt) return new Date(l.createdAt).getTime();
+  const seen = loadSeen();
+  if (!seen[l.id]) { seen[l.id] = Date.now(); try { localStorage.setItem(SKEY, JSON.stringify(seen)); } catch { /* ignore */ } }
+  return seen[l.id];
+}
 export function setLeadPhone(id, phone) {
   const l = leads.find((x) => x.id === id); if (!l || !phone) return;
   l.phone = phone; touchLeads();
