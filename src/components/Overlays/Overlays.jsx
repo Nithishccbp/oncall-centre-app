@@ -55,7 +55,7 @@ function Notifications({ close }) {
         </div>
       ))}
       {list.length === 0 && <div className="empty" style={{ padding: '28px 8px', textAlign: 'center' }}>{notifications.length ? 'Nothing here' : "You're all caught up. Missed calls, follow-ups and new leads will show up here."}</div>}
-      {tab === 'all' && !more && <button className="loadmore" onClick={() => setMore(true)}>Load more ↓</button>}
+      {tab === 'all' && !more && notifications.length > 6 && <button className="loadmore" onClick={() => setMore(true)}>Load more ↓</button>}
     </Panel>
   );
 }
