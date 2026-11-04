@@ -51,6 +51,15 @@ export default async function handler(req, res) {
     return res.status(200).json(await a.status(cfg, String(req.query?.id || '')).catch((e) => ({ status: 'unknown', detail: e.message })));
   }
   const b = req.body || {};
+  if (op === 'check') { // plain-language health check of the calling set-up
+    const steps = []; const add = (name, ok, detail = '') => steps.push({ name, ok, detail });
+    add('Server storage connected', storeReady(), storeReady() ? '' : 'Connect Upstash Redis in Vercel (Storage tab).');
+    add('Calling provider connected', tel.ready, tel.ready ? `${tel.provider} · ${tel.authIdHint || 'saved'}` : (tel.provider === 'none' ? 'No provider saved. Open Settings > Telephony and connect one.' : `Missing: ${tel.missing.join(', ')}`));
+    add('Brand caller ID number set', !!tel.callerId, tel.callerId || 'Type the brand number (+91...) in Settings > Telephony.');
+    const a0 = adapterFor(cfg);
+    if (a0 && tel.ready) { const bad = await a0.verify(cfg).catch((e) => `Could not reach the provider (${e.message}).`); add('Provider accepts your keys', !bad, bad || 'Keys accepted'); }
+    return res.status(200).json({ steps, provider: tel.provider });
+  }
   if (op === 'disconnect') { await clearCfg(); return res.status(200).json({ ok: true }); }
   if (op === 'save') {
     const patch = {};

@@ -1,7 +1,7 @@
 // Settings > Telephony: connect the brand's calling provider (Vobiz, Plivo, Twilio, Exotel, Ozonetel, Knowlarity, Tata Tele, or any other API), activate numbers, pick the staff caller ID.
 // Secrets are sent to our server once and never come back to the browser.
 import { useEffect, useState } from 'react';
-import { api, getWebCreds, setWebCreds } from '../../services/phoneCall.js';
+import { api, getWebCreds, setWebCreds, getAgentPhone, normalizePhone } from '../../services/phoneCall.js';
 
 // [key, label, placeholder, secret, multiline]
 const FIELDS = {
@@ -30,6 +30,18 @@ export default function TelephonyCard({ toast }) {
   const [err, setErr] = useState('');
   const [web, setWeb] = useState(getWebCreds());
   const [dbg, setDbg] = useState('');
+  const [chk, setChk] = useState(null);
+  const runCheck = async () => {
+    setBusy(true); setErr(''); setChk(null);
+    const steps = [];
+    try { const r = await api('/api/telephony/check', { method: 'POST', body: '{}' }); steps.push(...(r.steps || [])); } catch (e) { steps.push({ name: 'Server reachable', ok: false, detail: e.message }); }
+    const prov = steps.length ? (t?.provider || '') : '';
+    if (prov === 'vobiz') { const w = getWebCreds(); steps.push({ name: 'Web-calling login saved on this device', ok: !!(w.u && w.p), detail: w.u ? `Login ${w.u}` : 'Click "Set up web calling" below, or type the login in the call options window.' }); }
+    else if (prov && prov !== 'none') { const n = normalizePhone(getAgentPhone()); steps.push({ name: 'Your own phone number saved on this device', ok: !!n, detail: n || 'It is asked once in the call options window (My phone → customer).' }); }
+    try { const r = await fetch('https://unpkg.com/vobiz-webrtc-sdk@1.0.3/dist/vobiz-webrtc-sdk.min.js', { method: 'HEAD', mode: 'no-cors' }); steps.push({ name: 'Browser calling kit reachable', ok: !!r, detail: '' }); } catch { steps.push({ name: 'Browser calling kit reachable', ok: false, detail: 'Check the internet connection or any blocker (VPN, firewall).' }); }
+    try { const m = await navigator.permissions.query({ name: 'microphone' }); steps.push({ name: 'Microphone allowed', ok: m.state === 'granted', detail: m.state === 'granted' ? '' : m.state === 'denied' ? 'Blocked. Click the lock icon in the address bar and allow the microphone.' : 'Not asked yet. The browser will ask when you place a call: click Allow.' }); } catch { /* ignore */ }
+    setChk(steps); setBusy(false);
+  };
   const setupWeb = async () => {
     setBusy(true); setErr(''); setDbg('');
     try { const r = await api('/api/telephony/websetup', { method: 'POST', body: '{}' }); if (r.ok) { const c = { u: r.username, p: r.password }; setWebCreds(c); setWeb(c); toast('Web calling is set up'); } else { setErr(r.error); setDbg(JSON.stringify(r.steps)); } }
@@ -83,6 +95,14 @@ export default function TelephonyCard({ toast }) {
           <button style={{ ...ghost, marginTop: 10 }} disabled={busy} onClick={() => window.confirm('Disconnect the calling provider?') && post('/api/telephony/disconnect', {}, 'Disconnected')}>Disconnect</button>
         </>
       )}
+      <div style={{ marginTop: 10 }}>
+        <button style={ghost} disabled={busy} onClick={runCheck}>Check my calling setup</button>
+        {chk && (
+          <div style={{ marginTop: 8, fontSize: 13 }}>
+            {chk.map((s) => <div key={s.name} style={{ display: 'flex', gap: 8, padding: '4px 0', alignItems: 'flex-start' }}><b style={{ color: s.ok ? '#0f6e56' : '#b3261e' }}>{s.ok ? '✓' : '✗'}</b><span><b>{s.name}</b>{s.detail ? <><br /><small className="muted">{s.detail}</small></> : null}</span></div>)}
+          </div>
+        )}
+      </div>
       {!t.canSave && <p className="pc__warn">Saving needs Upstash Redis connected in Vercel (Storage tab).</p>}
       {err && <p className="pc__warn">{err}</p>}
       {t.missing?.length > 0 && t.provider !== 'none' && !ready && <small className="muted">Missing: {t.missing.join(', ')}</small>}
