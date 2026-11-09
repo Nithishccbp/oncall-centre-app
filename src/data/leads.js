@@ -37,7 +37,7 @@ export const touchLeads = () => { lver += 1; lsubs.forEach((f) => f()); };
 export const useLeadsVersion = () => useSyncExternalStore((f) => { lsubs.add(f); return () => lsubs.delete(f); }, () => lver);
 // Three leads with no number yet: the agent types the number when calling, and it is remembered on this device.
 if (!DEMO) {
-  [['Mukunda', 'Tower A · 2 BHK', 9800000, 90], ['Prabhas', 'Tower B · 3 BHK', 14200000, 85], ['Arjun', 'Tower A · 3 BHK', 13500000, 80]].forEach(([name, prod, price, score], i) => leads.unshift({
+  [['Mukunda', 'Tower A · 2 BHK', 9800000, 90], ['Prabhas', 'Tower B · 3 BHK', 14200000, 85], ['Arjun', 'Tower A · 3 BHK', 13500000, 80], ['Sai Kiran', 'Tower B · 2 BHK', 9200000, 78], ['Harsha', 'Tower A · 2 BHK', 9800000, 74], ['Vamsi', 'Tower B · 3 BHK', 14200000, 70], ['Teja', 'Tower A · 3 BHK', 13500000, 66], ['Charan', 'Tower B · 2 BHK', 9200000, 62]].forEach(([name, prod, price, score], i) => leads.unshift({
     id: `nonum-${i + 1}`, name, initials: name.slice(0, 2).toUpperCase(), avatarBg: '#e1f5ee', avatarColor: '#0f6e56',
     product: prod, price, interest: `Interested: ${prod}`, crossSell: 'Covered parking', emiNote: 'Not discussed yet, share the payment plan early', story: 'New lead, no phone number yet.',
     status: 'Open', score, icp: score, intent: score, expectedValue: price, slaLeft: 'New lead', actionNote: 'Number to be added before calling', phone: '',
