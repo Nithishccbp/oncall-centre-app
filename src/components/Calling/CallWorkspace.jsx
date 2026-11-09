@@ -32,6 +32,33 @@ function ActiveCallCard() {
   );
 }
 
+const face = (t) => (t < 20 ? '😠' : t < 40 ? '😕' : t < 60 ? '😐' : t < 80 ? '🙂' : '😍');
+// Practice only: how much the AI customer trusts you right now, plus a private one-line tip for your next sentence.
+function PracticeMeter() {
+  const { meter } = useCall();
+  const [flash, setFlash] = useState(null);
+  useEffect(() => { if (meter && meter.delta) { setFlash(meter.delta); const t = setTimeout(() => setFlash(null), 2200); return () => clearTimeout(t); } return undefined; }, [meter?.trust, meter?.delta]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (!meter) return null;
+  const t = meter.trust ?? 50; const tone = t >= 60 ? 'pos' : t >= 35 ? 'neu' : 'neg';
+  const h = meter.hist || [t]; const pts = h.map((v, i) => `${h.length < 2 ? 0 : (i / (h.length - 1)) * 100},${30 - (v / 100) * 28}`).join(' ');
+  return (
+    <section className={`pm pm--${tone}`} aria-live="polite">
+      <div className="pm__top">
+        <span className="pm__face" aria-hidden="true">{face(t)}</span>
+        <div className="pm__mid">
+          <div className="pm__lbl">Customer trust <span className="pm__hint">{t <= 15 ? 'About to hang up!' : t >= 85 ? 'Close it now!' : ''}</span></div>
+          <div className="pm__bar" role="progressbar" aria-valuenow={t} aria-valuemin={0} aria-valuemax={100}><i style={{ width: `${t}%` }} /></div>
+        </div>
+        <b className="pm__n">{t}%{flash ? <em className={flash > 0 ? 'up' : 'dn'}>{flash > 0 ? `+${flash}` : `−${Math.abs(flash)}`}</em> : null}</b>
+      </div>
+      {h.length > 1 && <svg className="pm__spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"><polyline points={pts} fill="none" strokeWidth="2" vectorEffect="non-scaling-stroke" /></svg>}
+      {meter.whisper && !meter.result && <div className="pm__whisper"><i className="ti ti-ear" /> <b>Avani whispers</b> {meter.whisper}</div>}
+      {meter.result === 'won' && <div className="pm__end pm__end--won">🏆 You won the customer over</div>}
+      {meter.result === 'lost' && <div className="pm__end pm__end--lost">📵 The customer hung up</div>}
+    </section>
+  );
+}
+
 function Nudge({ n }) {
   const { openOverlay } = useUi();
   const { withdrawConsent } = useCall();
@@ -73,10 +100,12 @@ function LiveTranscript() {
   );
 }
 
+function PracticeGate() { const { call } = useCall(); return call.mode === 'practice' ? <PracticeMeter /> : null; }
+
 export default function CallWorkspace() {
   return (
     <div className="cw page-pad">
-      <div className="cw__main"><ActiveCallCard /><LiveTranscript /></div>
+      <div className="cw__main"><ActiveCallCard /><PracticeGate /><LiveTranscript /></div>
       <AiAssist />
     </div>
   );

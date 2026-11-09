@@ -7,9 +7,9 @@ const load = () => { try { return JSON.parse(localStorage.getItem(KEY) || '[]');
 let list = load();
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(list.slice(0, 60))); } catch { /* ignore */ } subs.forEach((f) => f()); };
 
-export function addSession({ persona, lines, seconds, review }) {
+export function addSession({ persona, lines, seconds, review, ...extra }) {
   const id = `ps-${Date.now()}`;
-  list = [{ id, ts: new Date().toISOString(), persona, lines, seconds, review }, ...list].slice(0, 60);
+  list = [{ id, ts: new Date().toISOString(), persona, lines, seconds, review, ...extra }, ...list].slice(0, 60);
   save();
   return id;
 }

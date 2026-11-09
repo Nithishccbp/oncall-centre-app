@@ -33,7 +33,11 @@ const MOODS = {
   worried: 'MOOD: you are WORRIED and anxious about money, the loan, builder delays and making a mistake. Sound hesitant. Need facts and reassurance; calm down only when the agent is empathetic and specific, not when they just say "do not worry".',
   friendly: 'MOOD: you are warm, friendly and curious.',
 };
+const LANGS = { hi: 'LANGUAGE: speak in natural Hinglish (Hindi mixed with English, written in Roman letters), the way people talk in Hyderabad and Bengaluru.', te: 'LANGUAGE: speak in Telugu (written in Roman letters, with a few English words like "site visit", "EMI", "loan"), the way a Hyderabad buyer would.', en: '' };
 const customerSystem = (p = {}, mood = '') => [
+  LANGS[p.lang] || '',
+  p.scenario ? `SCENARIO (a real past call you are recreating, stay true to it): ${String(p.scenario).slice(0, 600)}` : '',
+  p.boss ? `BOSS RULE: ${String(p.boss).slice(0, 400)}` : '',
   MOODS[mood] ? `${MOODS[mood]} If this mood is different from how you sounded earlier in the call, shift naturally, the way a real person's mood turns (for example "hmm, wait, that does not sound right").` : '',
   `You are ${p.name || 'a customer'}, a real person phoning Godrej Properties about apartments at Lakeside Towers, Whitefield, Bengaluru, India. You are talking to a presales agent who is practising their call skills.`,
   `You are interested in: ${p.product || 'a 2 BHK'}. Your budget: ${p.budget || 'about 95 lakh'}. Your personality: ${p.trait || 'practical'}.`,
@@ -58,6 +62,29 @@ export async function customerReply(messages, persona = {}, mood = '') {
     const reply = data?.candidates?.[0]?.content?.parts?.map((p) => p.text).join(' ').trim();
     return reply ? { reply, source: 'gemini' } : { reply: null, source: 'empty' };
   } catch { return { reply: null, source: 'error' }; }
+}
+
+/** Live coach: judges the agent's LAST reply. Returns { delta: -20..20, whisper } where delta moves the customer's trust. */
+export async function coachTurn(messages, persona = {}, mood = '', trust = 50) {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) return { coach: null, source: 'no-key' };
+  const model = process.env.GEMINI_MODEL || 'gemini-flash-latest';
+  const transcript = messages.slice(-10).map((m) => `${m.role === 'agent' ? 'AGENT' : 'CUSTOMER'}: ${String(m.text).slice(0, 300)}`).join('\n');
+  const prompt = `You are a live sales coach whispering to a real-estate presales agent (Godrej, Lakeside Towers) during a practice call. The customer (${persona.name || 'a buyer'}) feels ${mood || 'neutral'} and their trust in the agent is ${trust} out of 100. Judge ONLY the agent's last reply. Raise trust (+5 to +18) for empathy, a direct specific answer, a smart question, or a concrete next step. Lower trust (-5 to -20) for rambling, vagueness, pushiness, ignoring the concern, arguing or a wrong claim. 0 to +3 for filler.
+Return JSON: {"delta":-20..20,"whisper":"one short tip for the agent's NEXT sentence, max 12 words, imperative, no quotes"}.
+
+${transcript}`;
+  try {
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: prompt }] }], generationConfig: { maxOutputTokens: 120, temperature: 0.2, responseMimeType: 'application/json', thinkingConfig: { thinkingBudget: 0 } } }),
+    });
+    const data = await r.json();
+    const v = JSON.parse(data?.candidates?.[0]?.content?.parts?.map((p) => p.text).join('') || '{}');
+    const d = Math.round(Number(v.delta));
+    if (!Number.isFinite(d)) return { coach: null, source: 'empty' };
+    return { coach: { delta: Math.max(-20, Math.min(20, d)), whisper: String(v.whisper || '').slice(0, 110) }, source: 'gemini' };
+  } catch { return { coach: null, source: 'error' }; }
 }
 
 /** Natural speaking voice for the AI customer (Gemini text-to-speech). Returns raw 16-bit PCM, 24 kHz mono, base64. */

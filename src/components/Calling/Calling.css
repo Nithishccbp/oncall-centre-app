@@ -256,3 +256,24 @@
 .np__go { width: 100%; border: 0; border-radius: 12px; background: #0f6e56; color: #fff; font-weight: 800; font-size: 15.5px; padding: 14px; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; }
 .np__go:hover:not(:disabled) { background: #0b5a46; } .np__go:disabled { opacity: .45; cursor: not-allowed; }
 .np__more { display: block; margin: 12px auto 0; background: none; border: 0; color: var(--muted); font-size: 12.5px; font-weight: 600; cursor: pointer; text-decoration: underline; }
+
+/* Practice trust meter + whisper */
+.pm { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+.pm__top { display: flex; align-items: center; gap: 12px; }
+.pm__face { font-size: 30px; line-height: 1; }
+.pm__mid { flex: 1; min-width: 0; }
+.pm__lbl { font-size: 12px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; color: var(--muted); display: flex; gap: 8px; align-items: center; }
+.pm__hint { color: #c0392b; letter-spacing: 0; text-transform: none; }
+.pm__bar { height: 10px; border-radius: 6px; background: #edf0f2; margin-top: 6px; overflow: hidden; }
+.pm__bar i { display: block; height: 100%; border-radius: 6px; transition: width .6s ease, background .3s; background: #0f6e56; }
+.pm--neu .pm__bar i { background: #c8860a; } .pm--neg .pm__bar i { background: #e24b4a; }
+.pm__n { font-size: 20px; min-width: 62px; text-align: right; position: relative; }
+.pm__n em { position: absolute; right: 0; top: -14px; font-size: 13px; font-style: normal; animation: pmup 2.2s ease-out forwards; }
+.pm__n em.up { color: #0f6e56; } .pm__n em.dn { color: #e24b4a; }
+@keyframes pmup { from { opacity: 1; transform: translateY(6px); } to { opacity: 0; transform: translateY(-6px); } }
+.pm__spark { width: 100%; height: 30px; } .pm__spark polyline { stroke: #6d6bf5; }
+.pm__whisper { background: #f1efff; color: #3b3a99; border-radius: 12px; padding: 9px 12px; font-size: 14px; line-height: 1.4; }
+.pm__whisper b { margin-right: 6px; }
+.pm__end { text-align: center; font-weight: 800; padding: 10px; border-radius: 12px; }
+.pm__end--won { background: #dff5ea; color: #0f6e56; } .pm__end--lost { background: #fdecec; color: #c0392b; }
+@media (prefers-reduced-motion: reduce) { .pm__bar i { transition: none; } .pm__n em { animation: none; } }

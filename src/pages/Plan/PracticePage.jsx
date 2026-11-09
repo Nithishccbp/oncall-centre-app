@@ -15,6 +15,9 @@ const when = (iso) => {
 };
 const dur = (s) => `${Math.floor(s / 60)}m ${String(s % 60).padStart(2, '0')}s`;
 const tone = (n) => (n >= 75 ? 'good' : n >= 50 ? 'warn' : 'bad');
+const LANGS = [['en', 'English', 'Plain English'], ['hi', 'Hinglish', 'Hindi + English mix'], ['te', 'Telugu', 'Telugu + English words'], ['switch', 'Surprise switch', 'Starts English, turns Hindi mid-call']];
+const langName = (id) => (LANGS.find((l) => l[0] === id) || LANGS[0])[1];
+const resultChip = (r) => (r === 'won' ? '🏆 Won them over' : r === 'lost' ? '📵 Customer hung up' : null);
 const Stars = ({ n }) => <span className="pr__stars" aria-label={`${n} of 5`}>{'★'.repeat(n)}<i>{'★'.repeat(5 - n)}</i></span>;
 
 export default function PracticePage() {
@@ -24,6 +27,7 @@ export default function PracticePage() {
   const [openId, setOpenId] = useState(sp.get('s'));
   useEffect(() => { if (sp.get('s')) setOpenId(sp.get('s')); }, [sp]);
   const [mood, setMood] = useState('mixed');
+  const [lang, setLang] = useState('en');
   const moodOf = (id) => moods.find((m) => m.id === id) || moods[4];
   const open = sessions.find((s) => s.id === openId) || null;
 
@@ -50,7 +54,7 @@ export default function PracticePage() {
           <div className="pr__herotxt">
             <h2>Call with {open.persona?.name}</h2>
             <div className="muted">{when(open.ts)} · {dur(open.seconds || 0)} · {open.persona?.product}</div>
-            <span className="pr__chip">{moodOf(open.persona?.mood).emoji} {moodOf(open.persona?.mood).label} customer</span>
+            <span className="pr__chip">{moodOf(open.persona?.mood).emoji} {moodOf(open.persona?.mood).label} customer</span>{open.persona?.lang && open.persona.lang !== 'en' && <span className="pr__chip">🗣️ {langName(open.persona.lang)}</span>}{resultChip(open.result) && <span className="pr__chip">{resultChip(open.result)}</span>}{open.trust != null && <span className="pr__chip">🤝 Trust at the end: {open.trust}%</span>}
             <Stars n={r.stars} />
             <p>{r.summary}</p>
             {r.source !== 'ai' && <small className="muted">Quick review shown. The AI coach's detailed review replaces it in a moment if it is available.</small>}
@@ -75,7 +79,7 @@ export default function PracticePage() {
           {open.lines.map((l, i) => (<div key={i} className={`pr__line pr__line--${l.who}`}><b>{l.who === 'agent' ? 'You' : open.persona?.name}</b><span>{l.text}</span></div>))}
         </div>
         <div className="pr__btns">
-          <button className="btn-primary" disabled={busy} onClick={() => { close(); practiceCall(open.persona?.mood || 'mixed'); }}><i className="ti ti-phone-ringing" /> Practise again</button>
+          <button className="btn-primary" disabled={busy} onClick={() => { close(); practiceCall(open.persona?.mood || 'mixed', { lang: open.persona?.lang || 'en' }); }}><i className="ti ti-phone-ringing" /> Practise again</button>
           <button className="pr__del" onClick={() => { removeSession(open.id); close(); }}><i className="ti ti-trash" /> Delete session</button>
         </div>
       </div>
@@ -94,10 +98,18 @@ export default function PracticePage() {
           </button>
         ))}
       </div>
+      <div className="label-caps pr__h">Pick the language</div>
+      <div className="pr__moods">
+        {LANGS.map(([id, label, desc]) => (
+          <button key={id} className={`pr__mood ${lang === id ? 'on' : ''}`} aria-pressed={lang === id} onClick={() => setLang(id)}>
+            <span className="pr__emo">🗣️</span><b>{label}</b><small>{desc}</small>
+          </button>
+        ))}
+      </div>
       <div className="card pr__start">
-        <div><b>Ready when you are</b><div className="muted">A random buyer will ring you, feeling <b>{moodOf(mood).label.toLowerCase()}</b>. Pick up, speak, and hang up when you are done to see your strict review.</div>
+        <div><b>Ready when you are</b><div className="muted">A random buyer will ring you, feeling <b>{moodOf(mood).label.toLowerCase()}</b>. Watch the trust meter: it rises when you answer well and the customer hangs up if it hits zero. Pick up, speak, and hang up when you are done to see your strict review.</div>
           {!practiceSupported() && <div className="pr__warn">Practising needs Chrome or Edge with a microphone.</div>}</div>
-        <button className="btn-primary" disabled={busy} onClick={() => practiceCall(mood)}><i className="ti ti-phone-ringing" /> {busy ? 'A call is on' : 'Start practice call'}</button>
+        <button className="btn-primary" disabled={busy} onClick={() => practiceCall(mood, { lang })}><i className="ti ti-phone-ringing" /> {busy ? 'A call is on' : 'Start practice call'}</button>
       </div>
       {stats.n > 0 && (
         <div className="summary card">
@@ -112,7 +124,7 @@ export default function PracticePage() {
       {sessions.map((s) => (
         <button key={s.id} className="row pr__row" onClick={() => setOpenId(s.id)}>
           <span className={`pr__mini pr__score--${tone(s.review.score)}`}>{s.review.score}</span>
-          <span className="row__txt"><span className="row__name">{s.persona?.name} <span className="pr__chip">{moodOf(s.persona?.mood).emoji} {moodOf(s.persona?.mood).label}</span></span>
+          <span className="row__txt"><span className="row__name">{s.persona?.name} <span className="pr__chip">{moodOf(s.persona?.mood).emoji} {moodOf(s.persona?.mood).label}</span>{s.persona?.lang && s.persona.lang !== 'en' && <span className="pr__chip">🗣️ {langName(s.persona.lang)}</span>}{resultChip(s.result) && <span className="pr__chip">{resultChip(s.result)}</span>}</span>
             <span className="row__sub">{when(s.ts)} · {dur(s.seconds || 0)} · {s.persona?.product}</span></span>
           <Stars n={s.review.stars} /><i className="ti ti-chevron-right row__chev" />
         </button>

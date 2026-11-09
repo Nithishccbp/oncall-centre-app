@@ -135,11 +135,13 @@ export function CallProvider({ children }) {
 
   // Practise a call: once the agent picks up, the AI customer starts talking.
   const practiceOn = useRef(false);
+  const [meter, setMeter] = useState(null); // live trust meter + coach whisper for practice calls
+  const meterRef = useRef(null); meterRef.current = meter;
   useEffect(() => {
     if (call.mode !== 'practice' || call.status !== 'inCall') { if (call.status !== 'inCall') practiceOn.current = false; return; }
     if (practiceOn.current) return;
     practiceOn.current = true;
-    startPractice({ persona: call.persona, mood: call.mood, onLine: onLiveLine, onEnd: (m) => { showToast(m); dispatch({ type: 'HANGUP_REMOTE' }); }, onError: (m) => showToast(m) });
+    startPractice({ persona: call.persona, mood: call.mood, lang: call.persona?.lang || 'en', onLine: onLiveLine, onMeter: (m) => setMeter((o) => ({ ...(o || {}), ...m, hist: [...((o && o.hist) || []), m.trust].slice(-30) })), onEnd: (m, r) => { showToast(m); if (r) setMeter((o) => ({ ...(o || {}), result: r })); dispatch({ type: 'HANGUP_REMOTE' }); }, onError: (m) => showToast(m) });
   }, [call.status, call.mode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const startCall = useCallback((name) => dispatch({ type: 'START', name }), []);
@@ -148,7 +150,7 @@ export function CallProvider({ children }) {
     const pick = name || (leads.length ? leads[Math.floor(Math.random() * leads.length)].name : 'Unknown caller');
     dispatch({ type: 'INCOMING', name: pick });
   }, []);
-  const practiceCall = useCallback((mood = 'mixed') => dispatch({ type: 'PRACTICE_INCOMING', persona: pickPersona(), mood: typeof mood === 'string' ? mood : 'mixed' }), []);
+  const practiceCall = useCallback((mood = 'mixed', opts = {}) => { setMeter(null); dispatch({ type: 'PRACTICE_INCOMING', persona: { ...(opts.persona || pickPersona()), lang: opts.lang || 'en', boss: opts.boss, scenario: opts.scenario, bossId: opts.bossId, replayOf: opts.replayOf }, mood: typeof mood === 'string' ? mood : 'mixed' }); }, []);
   const acceptIncoming = useCallback(() => {
     begin();
     if (call.mode === 'practice') { dispatch({ type: 'CONNECT', script: [] }); dispatch({ type: 'GO_LIVE' }); return; } // practice: no consent step, nothing is recorded
@@ -188,14 +190,16 @@ export function CallProvider({ children }) {
   /** A practice call never goes to Recent, Incoming or the dashboard numbers: it is saved under Practise a call, with a review. */
   const finishPractice = useCallback(() => {
     const lines = call.shown.filter((l) => (l.who === 'agent' || l.who === 'cust') && l.text).map((l) => ({ who: l.who, text: l.text }));
-    const persona = { name: call.persona?.name, product: call.persona?.product, budget: call.persona?.budget, mood: call.mood || 'mixed' };
+    const persona = { name: call.persona?.name, product: call.persona?.product, budget: call.persona?.budget, mood: call.mood || 'mixed', lang: call.persona?.lang || 'en', bossId: call.persona?.bossId || null, replayOf: call.persona?.replayOf || null };
+    const m = meterRef.current;
     const spoke = lines.some((l) => l.who === 'agent');
     let id = null;
     if (spoke) {
-      id = addSession({ persona, lines, seconds: call.seconds, review: localReview(lines, call.seconds, call.mood) });
+      id = addSession({ persona, lines, seconds: call.seconds, review: localReview(lines, call.seconds, call.mood), trust: m?.trust ?? null, result: m?.result || null });
       aiReview(lines, persona, call.mood).then((r) => { if (r) updateSession(id, { review: { ...r, seconds: call.seconds } }); });
     } else showToast('No conversation to review. Say a few lines next time.');
     dispatch({ type: 'RESET' });
+    setMeter(null);
     resetConsent();
     return id;
   }, [call.shown, call.persona, call.seconds, resetConsent, showToast]);
@@ -223,10 +227,10 @@ export function CallProvider({ children }) {
   const sentiment = useMemo(() => ({ value: call.sentiment, label: sentimentLabel(call.sentiment) }), [call.sentiment]);
 
   const value = useMemo(() => ({
-    call, lead, recent, mergeRecent, sentiment, dispatch, startCall, placeCall, simulateIncoming, practiceCall, finishPractice, acceptIncoming, goLive, toggleSop,
+    meter, call, lead, recent, mergeRecent, sentiment, dispatch, startCall, placeCall, simulateIncoming, practiceCall, finishPractice, acceptIncoming, goLive, toggleSop,
     addAgentLine, triggerNudge, withdrawConsent, end, finishWrapup,
     leadFor: (name) => leadByFirstName(name),
-  }), [call, lead, recent, mergeRecent, sentiment, startCall, placeCall, simulateIncoming, practiceCall, finishPractice, acceptIncoming, goLive, toggleSop, addAgentLine, triggerNudge, withdrawConsent, end, finishWrapup]);
+  }), [meter, call, lead, recent, mergeRecent, sentiment, startCall, placeCall, simulateIncoming, practiceCall, finishPractice, acceptIncoming, goLive, toggleSop, addAgentLine, triggerNudge, withdrawConsent, end, finishWrapup]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
