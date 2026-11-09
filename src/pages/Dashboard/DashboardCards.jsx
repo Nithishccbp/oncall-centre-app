@@ -1,5 +1,6 @@
 // Progress, who's waiting, earnings and tasks cards for the dashboard.
 import { useState } from 'react';
+import { useLeadsVersion } from '../../data/leads.js';
 import { Link } from 'react-router-dom';
 import Modal from '../../components/Modal/Modal.jsx';
 import { earnings, tasks, waiting, todaysCalls, thanks, visits } from '../../data/dashboard.js';
@@ -127,6 +128,7 @@ export function TodaysCalls() {
 
 export function LeadsNext({ onOpen }) {
   useIngest();
+  useLeadsVersion();
   const list = getOutgoingPlan().slice(0, 3);
   const total = getOutgoingPlan().reduce((n, l) => n + l.expectedValue, 0);
   return (
@@ -136,7 +138,7 @@ export function LeadsNext({ onOpen }) {
       {list.map((l, i) => (
         <button key={l.id} className="dlead" onClick={() => onOpen(i)}>
           <span className={`dlead__s ${l.score >= 80 ? 'hi' : ''}`}>{l.score}</span>
-          <span className="dcall__n"><b>{l.name}</b><small>{l.slaLeft} · {l.actionNote || l.product}</small></span>
+          <span className="dcall__n"><b>{l.name}</b><small>{l.phone || 'No number'} · {l.actionNote || l.product}</small></span>
           <b className="dlead__v">{formatINR(l.expectedValue)}</b>
           <i className="ti ti-chevron-right dlead__go" aria-hidden="true" />
         </button>

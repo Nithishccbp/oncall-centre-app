@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import Pager from '../../components/Pager/Pager.jsx';
 import { getOutgoingPlan } from '../../data/selectors.js';
 import { useCall } from '../../context/CallContext.jsx';
+import { useLeadsVersion } from '../../data/leads.js';
 
 const PAGE_SIZE = 2;
 const scoreColor = (s) => (s >= 80 ? '#0f6e56' : s >= 55 ? '#c8860a' : '#e24b4a');
@@ -11,7 +12,7 @@ import { useIngest } from '../../context/IngestContext.jsx';
 
 export default function OutgoingCalls() {
   const { version } = useIngest();
-  const bump = 0;
+  const bump = useLeadsVersion();
   const plan = useMemo(getOutgoingPlan, [version, bump]);
   const { startCall } = useCall();
   const [page, setPage] = useState(0);
@@ -33,7 +34,8 @@ export default function OutgoingCalls() {
             <div className="row" key={l.id}>
               <button className="row__head" aria-expanded={open} onClick={() => setOpenId(open ? null : l.id)}>
                 <span className="row__av" style={{ background: l.avatarBg, color: l.avatarColor }}>{l.initials}</span>
-                <span className="row__txt"><div className="row__name">{l.name}</div><div className="row__sub">{l.interest}</div></span>
+                <span className="row__txt"><div className="row__name">{l.name}</div><div className="row__sub">{l.interest}</div>
+                  <div className="row__sub row__ph" style={{ color: l.phone ? undefined : '#c8860a', fontWeight: 600 }}><i className="ti ti-phone" /> {l.phone || 'No number'}</div></span>
                 <span className="row__score"><b style={{ color: scoreColor(l.score) }}>{l.score}</b><small>score</small></span>
                 <i className={`ti ${open ? 'ti-chevron-up' : 'ti-chevron-down'} row__chev`} />
               </button>
@@ -46,6 +48,7 @@ export default function OutgoingCalls() {
                     <div className="tile"><small>Cross-sell</small><b>{l.crossSell}</b></div>
                   </div>
                   <div className="emi"><small>EMI / financing</small><span>{l.emiNote}</span></div>
+                  <div className="emi"><small>Phone</small><span>{l.phone || 'No number yet. You will be asked for it when you place the call.'}</span></div>
                   <button className="btn-call" onClick={() => startCall(l.name)}><i className="ti ti-phone" /> Place call</button>
                 </div>
               )}
