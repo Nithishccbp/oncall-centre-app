@@ -82,7 +82,7 @@ export function useImpact(days, A) {
     const gain = saved + extraRevenue;
     const roi = cost > 0 && (calls.length || sessions.length) ? gain / cost : null;
 
-    return { days, calls: calls.length, withNotes: withNotes.length, rows, waiting, atRisk, contacted, interested, hot, visits,
+    return { days, calls: calls.length, callRows: calls, notesRows: withNotes, ratedRows: rated, sessionRows: ps, withNotes: withNotes.length, rows, waiting, atRisk, contacted, interested, hot, visits,
       valueAll: sum(rows), valueWaiting: sum(waiting), valueAtRisk: sum(atRisk), valueContacted: sum(contacted), valueInterested: sum(interested), valueHot: sum(hot), valueVisits: sum(visits),
       avgSpeed: mean(speeds), medSpeed: median(speeds), slaPct: speeds.length ? Math.round((speeds.filter((m) => m <= SLA).length / speeds.length) * 100) : null, SLA,
       objections, stepRate, csat, ratedCount: rated.length, practice: { n: ps.length, avg: ps.length ? Math.round(mean(ps.map((s) => s.review.score))) : null, delta: pDelta, lift, afterN: after.length, otherN: other.length },

@@ -3,20 +3,60 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCall } from '../../context/CallContext.jsx';
 import { OBJECTIONS } from '../../services/callNotes.js';
-import { useImpact, useAssumptions, DEFAULTS, inr, ageText } from '../../data/impact.js';
+import Modal from '../../components/Modal/Modal.jsx';
+import { useImpact, useAssumptions, inr, ageText } from '../../data/impact.js';
 import './Impact.css';
 
 const pct = (n) => (n == null ? '—' : `${n}%`);
 const mins = (n) => (n == null ? '—' : n < 60 ? `${Math.max(1, Math.round(n))} min` : n < 1440 ? `${(n / 60).toFixed(1).replace(/\.0$/, '')} h` : `${(n / 1440).toFixed(1).replace(/\.0$/, '')} d`);
 
-function Tile({ icon, label, value, sub, tone }) {
+function Tile({ icon, label, value, sub, tone, onOpen }) {
   return (
-    <div className={`im__tile ${tone ? `im__tile--${tone}` : ''}`}>
+    <button className={`im__tile ${tone ? `im__tile--${tone}` : ''}`} onClick={onOpen} aria-label={`${label}: open details`}>
       <span className="im__ti"><i className={`ti ${icon}`} /></span>
       <b>{value}</b><span className="im__tl">{label}</span>{sub && <small>{sub}</small>}
-    </div>
+      <i className="ti ti-chevron-right im__tgo" aria-hidden="true" />
+    </button>
   );
 }
+
+const when = (ts) => { const t = new Date(ts); const n = new Date(); const same = t.toDateString() === n.toDateString(); return `${same ? 'Today' : t.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}, ${t.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false })}`; };
+const Empty = ({ t }) => <div className="empty">{t}</div>;
+const LeadList = ({ rows, onCall, extra }) => (rows.length === 0 ? <Empty t="Nothing here. Good news." /> : rows.map((r) => (
+  <button key={r.lead.id} className="im__lead" onClick={() => onCall(r.lead.name)} aria-label={`Call ${r.lead.name}`}>
+    <span className="im__lav" style={{ background: r.lead.avatarBg, color: r.lead.avatarColor }}>{r.lead.initials}</span>
+    <span className="im__ln"><b>{r.lead.name}</b><small>{extra(r)}</small></span>
+    <span className="im__lv">{inr(r.value)}</span>
+    <span className={`im__go ${r.age >= 864e5 ? 'hot' : ''}`}><i className="ti ti-phone" /> Call</span>
+  </button>
+)));
+
+// What sits behind each tile.
+function Detail({ k, d, onCall, close }) {
+  const nm = (c) => c.name || 'Lead';
+  if (k === 'risk') return <LeadList rows={d.atRisk} onCall={onCall} extra={(r) => `${r.lead.product} · no call for ${ageText(r.age)}`} />;
+  if (k === 'waiting') return <LeadList rows={d.waiting} onCall={onCall} extra={(r) => `${r.lead.product} · waiting ${ageText(r.age)}`} />;
+  if (k === 'speed') return d.contacted.length === 0 ? <Empty t="No lead has been called yet." /> : [...d.contacted].sort((a, b) => b.speed - a.speed).map((r) => (
+    <div key={r.lead.id} className="im__row"><span className="im__ln"><b>{r.lead.name}</b><small>arrived {when(r.added)} · first call {when(r.firstCall)}</small></span><span className={`im__pill ${r.speed / 60000 <= d.SLA ? 'ok' : 'bad'}`}>{ageText(r.speed)}</span></div>
+  ));
+  if (k === 'csat') return d.ratedRows.length === 0 ? <Empty t="No rated calls yet. The AI rates a call from the conversation when it has enough to judge." /> : d.ratedRows.map((c) => (
+    <div key={c.id} className="im__row"><span className="im__ln"><b>{nm(c)}</b><small>{when(c.ts)}{c.comment ? ` · ${c.comment}` : ''}</small></span><span className="im__stars">{'★'.repeat(c.csat)}<i>{'★'.repeat(5 - c.csat)}</i></span></div>
+  ));
+  if (k === 'notes') return d.notesRows.length === 0 ? <Empty t="No call has CRM notes yet. They are captured in the wrap-up window after a call." /> : d.notesRows.map((c) => (
+    <div key={c.id} className="im__row im__row--col"><div className="im__rt"><b>{nm(c)}</b><small>{when(c.ts)}</small></div>
+      <div className="im__tags">{c.notes.budget && <span>💰 {c.notes.budget}</span>}{c.notes.timeline && <span>🗓️ {c.notes.timeline}</span>}{c.notes.objection && c.notes.objection !== 'none' && <span>⚠️ {OBJECTIONS[c.notes.objection]}</span>}{c.notes.nextStep && <span>➡️ {c.notes.nextStep}</span>}{c.notes.siteVisit && <span>📍 Site visit</span>}{c.notes.interest && <span>{c.notes.interest === 'hot' ? '🔥 Hot' : c.notes.interest === 'cold' ? '❄️ Cold' : '🌤️ Warm'}</span>}</div></div>
+  ));
+  if (k === 'practice') return (
+    <>
+      {d.sessionRows.length === 0 ? <Empty t="No practice calls in this period." /> : d.sessionRows.map((s) => (
+        <div key={s.id} className="im__row"><span className="im__ln"><b>{s.persona?.name || 'Practice call'}</b><small>{when(s.ts)}{s.result === 'won' ? ' · won them over' : s.result === 'lost' ? ' · customer hung up' : ''}</small></span><span className="im__pill ok">{s.review?.score ?? '—'}</span></div>
+      ))}
+      <Link className="im__link" to="/plan/practice" onClick={close}>Open Practise a call <i className="ti ti-arrow-right" /></Link>
+    </>
+  );
+  return null;
+}
+const TITLES = { risk: 'Value at risk', waiting: 'Waiting for a first call', speed: 'First call speed', csat: 'Customer satisfaction', notes: 'Calls with CRM notes', practice: 'Practice sessions' };
 
 function Funnel({ d }) {
   const steps = [
@@ -41,7 +81,8 @@ function Funnel({ d }) {
 
 export default function ImpactPage() {
   const [days, setDays] = useState(30);
-  const [A, setA, reset] = useAssumptions();
+  const [A] = useAssumptions();
+  const [open, setOpen] = useState(null);
   const d = useImpact(days, A);
   const navigate = useNavigate();
   const { startCall, call } = useCall();
@@ -85,27 +126,15 @@ export default function ImpactPage() {
       </section>
 
       <div className="im__tiles">
-        <Tile icon="ti-flame" tone={d.valueAtRisk ? 'bad' : undefined} label="Value at risk" value={inr(d.valueAtRisk)} sub={`${d.atRisk.length} lead${d.atRisk.length === 1 ? '' : 's'} idle over 24 h`} />
-        <Tile icon="ti-hourglass" tone={d.waiting.length ? 'warn' : undefined} label="Waiting for a first call" value={d.waiting.length} sub={`${inr(d.valueWaiting)} in play`} />
-        <Tile icon="ti-bolt" label="First call speed" value={mins(d.medSpeed)} sub={d.slaPct == null ? 'no calls yet' : `${d.slaPct}% within ${d.SLA} min`} />
-        <Tile icon="ti-mood-smile" label="Customer satisfaction" value={pct(d.csat)} sub={d.ratedCount ? `from ${d.ratedCount} rated call${d.ratedCount > 1 ? 's' : ''}` : 'read from the conversation'} />
-        <Tile icon="ti-wand" label="Calls with CRM notes" value={d.withNotes} sub={d.stepRate == null ? 'next steps captured: —' : `${Math.round(d.stepRate * 100)}% ended with a next step`} />
-        <Tile icon="ti-phone-ringing" label="Practice sessions" value={d.practice.n} sub={d.practice.avg == null ? 'none this period' : `average score ${d.practice.avg}`} />
+        <Tile icon="ti-flame" tone={d.valueAtRisk ? 'bad' : undefined} label="Value at risk" onOpen={() => setOpen('risk')} value={inr(d.valueAtRisk)} sub={`${d.atRisk.length} lead${d.atRisk.length === 1 ? '' : 's'} idle over 24 h`} />
+        <Tile icon="ti-hourglass" tone={d.waiting.length ? 'warn' : undefined} label="Waiting for a first call" onOpen={() => setOpen('waiting')} value={d.waiting.length} sub={`${inr(d.valueWaiting)} in play`} />
+        <Tile icon="ti-bolt" label="First call speed" onOpen={() => setOpen('speed')} value={mins(d.medSpeed)} sub={d.slaPct == null ? 'no calls yet' : `${d.slaPct}% within ${d.SLA} min`} />
+        <Tile icon="ti-mood-smile" label="Customer satisfaction" onOpen={() => setOpen('csat')} value={pct(d.csat)} sub={d.ratedCount ? `from ${d.ratedCount} rated call${d.ratedCount > 1 ? 's' : ''}` : 'read from the conversation'} />
+        <Tile icon="ti-wand" label="Calls with CRM notes" onOpen={() => setOpen('notes')} value={d.withNotes} sub={d.stepRate == null ? 'next steps captured: —' : `${Math.round(d.stepRate * 100)}% ended with a next step`} />
+        <Tile icon="ti-phone-ringing" label="Practice sessions" onOpen={() => setOpen('practice')} value={d.practice.n} sub={d.practice.avg == null ? 'none this period' : `average score ${d.practice.avg}`} />
       </div>
 
       <div className="im__two">
-        <section className="card im__card">
-          <div className="im__ch"><b className="label-caps">Money on the table</b><span className="muted">{d.waiting.length} waiting</span></div>
-          {d.waiting.length === 0 && <div className="empty">{d.rows.length ? 'Every lead has had a first call. Nice.' : 'No leads yet.'}</div>}
-          {d.waiting.slice(0, 6).map((r) => (
-            <button key={r.lead.id} className="im__lead" onClick={() => callNow(r.lead.name)} aria-label={`Call ${r.lead.name}`}>
-              <span className="im__lav" style={{ background: r.lead.avatarBg, color: r.lead.avatarColor }}>{r.lead.initials}</span>
-              <span className="im__ln"><b>{r.lead.name}</b><small>{r.lead.product} · waiting {ageText(r.age)}</small></span>
-              <span className="im__lv">{inr(r.value)}</span>
-              <span className={`im__go ${r.age >= 864e5 ? 'hot' : ''}`}><i className="ti ti-phone" /> Call</span>
-            </button>
-          ))}
-        </section>
         <section className="card im__card">
           <div className="im__ch"><b className="label-caps">Lead funnel</b><span className="muted">from your calls</span></div>
           <Funnel d={d} />
@@ -141,23 +170,15 @@ export default function ImpactPage() {
         ))}
       </section>
 
-      <section className="card im__card">
-        <div className="im__ch"><b className="label-caps">How the return is worked out</b><button className="im__reset" onClick={reset}>Reset to defaults</button></div>
-        <p className="im__note">Change these to match your business. The return is an estimate, and every line below is shown so anyone can check it.</p>
-        <div className="im__as">
-          {[['toolCost', 'Tool cost per month (₹)', 1000], ['hourCost', 'Agent cost per hour (₹)', 50], ['minSaved', 'Minutes saved per call by auto notes', 1], ['baselineVisit', 'Site visits you would get anyway (% of contacted leads)', 1], ['visitToBooking', 'Site visits that become bookings (%)', 1], ['margin', 'Your earnings per booking (% of deal value)', 0.5]].map(([k, l, step]) => (
-            <label key={k}>{l}<input type="number" min="0" step={step} value={A[k]} onChange={(e) => setA(k, Math.max(0, Number(e.target.value) || 0))} /></label>
-          ))}
-        </div>
-        <div className="im__calc">
-          <div><span>Time saved</span><b>{d.withNotes} calls × {A.minSaved} min = {d.hours.toFixed(1)} h × ₹{A.hourCost} = <em>{inr(d.saved)}</em></b></div>
-          <div><span>Extra site visits</span><b>{d.visits.length} planned − {d.baseline.toFixed(1)} expected anyway = <em>{d.extraVisits.toFixed(1)}</em></b></div>
-          <div><span>Extra revenue</span><b>{d.extraVisits.toFixed(1)} × {A.visitToBooking}% booking × {inr(d.revPerBooking)} per booking = <em>{inr(d.extraRevenue)}</em></b></div>
-          <div><span>Cost for {days} days</span><b>₹{A.toolCost.toLocaleString('en-IN')} × {days}/30 = <em>{inr(d.cost)}</em></b></div>
-          <div className="im__tot"><span>Return</span><b>({inr(d.saved)} + {inr(d.extraRevenue)}) ÷ {inr(d.cost)} = <em>{d.roi == null ? '—' : `${d.roi.toFixed(1)}×`}</em></b></div>
-        </div>
-        {JSON.stringify(A) === JSON.stringify(DEFAULTS) && <p className="im__note">These are starting values, not your real figures. Enter your own to get a number you can quote.</p>}
-      </section>
+      <Modal open={!!open} onClose={() => setOpen(null)} width={520} label={open ? TITLES[open] : 'Details'}>
+        {open && (
+          <div className="im__dm">
+            <h2>{TITLES[open]}</h2>
+            <p className="muted">Last {days} days</p>
+            <div className="im__dl"><Detail k={open} d={d} onCall={(n) => { setOpen(null); callNow(n); }} close={() => setOpen(null)} /></div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }
