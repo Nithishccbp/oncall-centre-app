@@ -277,3 +277,7 @@
 .pm__end { text-align: center; font-weight: 800; padding: 10px; border-radius: 12px; }
 .pm__end--won { background: #dff5ea; color: #0f6e56; } .pm__end--lost { background: #fdecec; color: #c0392b; }
 @media (prefers-reduced-motion: reduce) { .pm__bar i { transition: none; } .pm__n em { animation: none; } }
+
+.wu__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 6px 0 8px; }
+.wu__grid label { display: flex; flex-direction: column; gap: 3px; font-size: 11px; font-weight: 700; color: var(--muted); letter-spacing: .3px; }
+.wu__grid input, .wu__grid select { height: 36px; border: 1.5px solid var(--line); border-radius: 10px; padding: 0 10px; font: inherit; font-size: 14px; font-weight: 500; color: inherit; background: #fff; min-width: 0; }

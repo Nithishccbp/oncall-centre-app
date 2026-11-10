@@ -18,6 +18,7 @@ import RecentCalls from './pages/Plan/RecentCalls.jsx';
 import PracticePage from './pages/Plan/PracticePage.jsx';
 import CalendarPage from './pages/Calendar/CalendarPage.jsx';
 import Avani from './pages/Avani/Avani.jsx';
+import ImpactPage from './pages/Impact/ImpactPage.jsx';
 import PulseHome from './pages/Pulse/PulseHome.jsx';
 import ChannelChat from './pages/Pulse/ChannelChat.jsx';
 
@@ -44,6 +45,7 @@ export default function App() {
               </Route>
               <Route path="calendar" element={<CalendarPage />} />
               <Route path="avani" element={<Avani />} />
+              <Route path="impact" element={<ImpactPage />} />
               <Route path="pulse" element={<PulseHome />} />
               <Route path="pulse/:channelId" element={<ChannelChat />} />
               <Route path="*" element={<Navigate to="/" replace />} />

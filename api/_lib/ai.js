@@ -152,6 +152,28 @@ ${transcript}`;
   } catch { return { csat: null, source: 'error' }; }
 }
 
+/** Reads a real call and pulls out the CRM facts an agent would otherwise type by hand. */
+export async function extractNotes(messages) {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) return { notes: null, source: 'no-key' };
+  const model = process.env.GEMINI_MODEL || 'gemini-flash-latest';
+  const transcript = messages.slice(-80).map((m) => `${m.role === 'agent' ? 'AGENT' : 'CUSTOMER'}: ${String(m.text).slice(0, 400)}`).join('\n');
+  const prompt = `You fill in CRM notes for a real-estate presales call (Godrej Properties). The conversation may mix English, Hindi, Telugu. Use ONLY facts said in the call; leave a field empty when it was not mentioned.
+Return JSON: {"summary":"max 2 short sentences","budget":"e.g. ₹95 lakh or empty","timeline":"when they plan to buy or visit, or empty","objection":"price|loan|possession|location|family|competitor|time|trust|none","nextStep":"the agreed next step in under 10 words, or empty","siteVisit":true or false (a site visit was agreed or clearly planned),"interest":"hot|warm|cold"}.
+
+${transcript}`;
+  try {
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: prompt }] }], generationConfig: { maxOutputTokens: 400, temperature: 0.1, responseMimeType: 'application/json', thinkingConfig: { thinkingBudget: 0 } } }),
+    });
+    const data = await r.json();
+    const v = JSON.parse(data?.candidates?.[0]?.content?.parts?.map((p) => p.text).join('') || '{}');
+    const ob = ['price', 'loan', 'possession', 'location', 'family', 'competitor', 'time', 'trust', 'none'];
+    return { notes: { summary: String(v.summary || '').slice(0, 300), budget: String(v.budget || '').slice(0, 40), timeline: String(v.timeline || '').slice(0, 60), objection: ob.includes(v.objection) ? v.objection : 'none', nextStep: String(v.nextStep || '').slice(0, 80), siteVisit: v.siteVisit === true, interest: ['hot', 'warm', 'cold'].includes(v.interest) ? v.interest : 'warm' }, source: 'gemini' };
+  } catch { return { notes: null, source: 'error' }; }
+}
+
 /** Offline rulebook so the call never goes silent if Gemini is down. */
 export function fallbackReply(heard, turn, lead = {}) {
   const t = String(heard || '').toLowerCase();
