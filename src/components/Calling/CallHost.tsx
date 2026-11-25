@@ -1,0 +1,265 @@
+// Global calling pieces: pre-call SOP check, incoming card, consent gate, wrap-up, rights panel, status bar, DEMO strip, keypad + dial button.
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import Modal from '../Modal/Modal';
+import ConsentGate from './ConsentGate';
+import ConsentBar from './ConsentBar';
+import ConsentLog from './ConsentLog';
+import RightsPanel from './RightsPanel';
+import WrapUpModal from './WrapUpModal';
+import ConsentCard from './ConsentCard';
+import { useCall, fmtClock } from '../../context/CallContext';
+import { startRing, stopRing } from '../../services/practice';
+import { loadConfig, normalizePhone, getAgentPhone, setAgentPhone, getWebCreds, setWebCreds } from '../../services/phoneCall';
+import { checkpointsFor, leadMeta, pitchFor } from '../../data/calling';
+import { setLeadPhone } from '../../data/leads';
+import { prepFor } from '../../data/prep';
+import { user } from '../../data/dashboard';
+import { formatINR } from '../../data/selectors';
+import './Calling.css';
+
+const initials = (name: any) => name.split(' ').map((p: any) => p[0]).join('').slice(0, 2).toUpperCase();
+
+/** "Before you call X": product to champion, pitching language, cross-sell, ideal home-loan EMI, SOP checkpoints. */
+const modes = [
+  { id: 'webphone', label: '🎧 Web → customer', group: 'phone', hint: 'Talk through this browser (microphone and speaker). The call goes straight to the customer, who sees the brand number. No staff phone needed.' },
+  { id: 'staffphone', label: '☎️ My phone → customer', group: 'phone', hint: 'Your telephony provider (Vobiz, Plivo, Twilio, Exotel, Ozonetel, Knowlarity, Tata Tele or your own) rings YOUR phone, then connects the customer. The customer sees the brand number.' },
+  { id: 'phone', label: '📞 Phone number', group: 'phone', hint: 'Real call to a normal mobile or landline number, spoken through this browser (Twilio).' },
+  { id: 'aiphone', label: '🤖 AI → phone', group: 'phone', hint: 'Avani, our AI agent, rings a real phone number and talks to the customer (Vonage or Twilio, plus Gemini).' },
+  { id: 'sim', label: 'Practice', hint: 'Simulated customer — no mic needed.' },
+  { id: 'human', label: 'Human (web)', hint: 'Real two-way voice with a person on the customer page.' },
+  { id: 'ai', label: 'AI (web)', hint: 'Our AI agent (Avani) phones the person on the customer page.' },
+];
+
+function NumberPrompt({ lead, first, onClose, onCall, onMore }: any) {
+  const [txt, setTxt] = useState('');
+  const digits = txt.replace(/\D/g, '');
+  const n = normalizePhone(txt);
+  const ok = digits.length === 10 || (digits.length >= 11 && !!n);
+  const fmt = (v: any) => { const d = v.replace(/\D/g, '').slice(0, 10); return d.length > 5 ? `${d.slice(0, 5)} ${d.slice(5)}` : d; };
+  return (
+    <Modal open onClose={onClose} width={400} label="Enter phone number">
+      <div className="np">
+        <div className="np__top">
+          <span className="np__av">{initials(lead?.name || first)}</span>
+          <div><div className="np__name">Call {first}</div><div className="np__sub">{lead?.interest || 'New lead'}</div></div>
+        </div>
+        <label className="np__lbl" htmlFor="np-num">Customer's mobile number</label>
+        <div className={`np__field${txt && !ok ? ' bad' : ''}`}>
+          <span className="np__cc">🇮🇳 +91</span>
+          <input id="np-num" className="np__in" autoFocus value={txt} onChange={(e) => setTxt(txt.trim().startsWith('+') || e.target.value.trim().startsWith('+') ? e.target.value.replace(/[^\d+ ]/g, '').slice(0, 16) : fmt(e.target.value))} onKeyDown={(e) => { if (e.key === 'Enter' && ok) onCall(n); }} inputMode="tel" placeholder="98765 43210" aria-label="Customer phone number" />
+        </div>
+        <div className="np__hint">{txt && !ok ? 'Type the full 10-digit mobile number.' : 'Type it once. We remember it for this lead.'}</div>
+        <button className="np__go" disabled={!ok} onClick={() => onCall(n)}><i className="ti ti-phone" /> Call {first}</button>
+        <button type="button" className="np__more" onClick={onMore}>More call options</button>
+      </div>
+    </Modal>
+  );
+}
+
+function PrepBrief({ onReady, onBack, onChange }: any) {
+  const { call, lead } = useCall();
+  const p = prepFor(lead)!;
+  return (
+    <Modal open onClose={onBack} width={440} label="Before you talk">
+      <div className="pb__head">
+        <span className="pb__ic">📝</span>
+        <div><b>Before you talk to {call.name.split(' ')[0]}</b><small>Avani’s brief · 20 seconds</small></div>
+      </div>
+      <div className="pb__chip">{p.stage}</div>
+      <p className="pb__sum">{p.summary}</p>
+      <div className="pb__cap">Remember</div>
+      {p.notes.map((n) => <div key={n} className="pb__note">✓ {n}</div>)}
+      <div className="pb__money">💳 {p.money}</div>
+      <div className="pb__last">Last touch: {p.last}</div>
+      <button className="pb__go" onClick={onReady}><i className="ti ti-phone" /> I’m ready · call</button>
+      <div className="pb__last center">Recording starts when they pick up, so their consent is on the call.</div>
+      <button className="pb__chg" onClick={onChange}>Change how I call</button>
+    </Modal>
+  );
+}
+
+function PreCall({ onPlace }: any) {
+  const { call, lead, end } = useCall();
+  const [setup, setSetup] = useState(false); // the call-options window only opens when needed or asked for
+  const [mode, setMode] = useState('phone');
+  const [ep, setEp] = useState<any>(getWebCreds());
+  const [myPhone, setMyPhone] = useState(getAgentPhone() || user.phone || '');
+  const [code, setCode] = useState('');
+  const [phone, setPhone] = useState(lead?.phone || (/^[\d+ ]{8,}$/.test(call.name || '') ? call.name : ''));
+  const [cfg, setCfg] = useState<any>(null);
+  useEffect(() => { loadConfig().then((c) => { setCfg(c); if (c.staffPhone) setMode('webphone'); else if (!c.phone && !c.aiPhone) setMode('human'); }); }, []);
+  const isPhone = ['phone', 'aiphone', 'staffphone', 'webphone'].includes(mode);
+  const epOk = mode !== 'webphone' || !!(ep.u && ep.p);
+  const brandNo = cfg?.telephony?.callerId; const myN = normalizePhone(myPhone); const custN = normalizePhone(phone);
+  const clash = mode !== 'staffphone' ? '' : myN && myN === brandNo ? 'That is the brand number. Type YOUR OWN mobile number here (the phone the provider should ring first).' : myN && custN && myN === custN ? 'Your number and the customer number are the same. Use a different phone for the customer.' : custN && custN === brandNo ? 'The customer number is the brand number. Type the customer\'s own number.' : '';
+  const myOk = mode !== 'staffphone' || (!!myN && !clash);
+  const needCode = mode === 'human' || mode === 'ai';
+  const phoneOk = !!normalizePhone(phone);
+  const ready = !isPhone || !cfg || (mode === 'webphone' ? (cfg.staffPhone && cfg.telephony?.provider === 'vobiz') : mode === 'staffphone' ? cfg.staffPhone : mode === 'phone' ? cfg.phone : cfg.aiPhone);
+  const canPlace = (!needCode || code.length >= 5) && (!isPhone || (phoneOk && ready && myOk && epOk));
+  const first = call.name.split(' ')[0];
+  const meta = leadMeta(lead);
+  const modeSaved = () => { try { return localStorage.getItem('og_call_mode'); } catch { return null; } };
+  // Pick the best way to call from what is already saved, so the agent goes straight: Place call -> brief -> call.
+  const tryAuto = (override: any) => {
+    if (!cfg) return null;
+    const cust = override || normalizePhone(lead?.phone || phone) || '';
+    const web = getWebCreds();
+    const okWeb = cfg.staffPhone && cfg.telephony?.provider === 'vobiz' && web.u && web.p;
+    let m = null;
+    // Calls go straight to the customer: the browser (web) call first. The staff-phone route (rings the agent first) is never picked automatically.
+    const saved = modeSaved() === 'staffphone' ? null : modeSaved();
+    for (const c of ['webphone', saved, 'phone']) {
+      if ((c === 'webphone' && okWeb) || (c === 'phone' && cfg.phone)) { m = c; break; }
+    }
+    // Other providers (Plivo, Twilio, Exotel, ...) call through the staff phone: it rings the agent, then connects the customer.
+    if (!m && cfg.staffPhone && cfg.telephony?.provider && cfg.telephony.provider !== 'vobiz' && normalizePhone(getAgentPhone() || '')) m = 'staffphone';
+    if (!m) { if (!cfg.reachable || (!cfg.staffPhone && !cfg.phone && !cfg.aiPhone)) m = 'sim'; else return null; }
+    if (m !== 'sim' && !cust) return null;
+    return { mode: m, code: '', phone: cust, autoConsent: !!cfg.transcripts };
+  };
+  const noNum = !!lead && !normalizePhone(lead.phone || '');
+  const [askNum, setAskNum] = useState(false);
+  // Calling already works but this lead has no number: ask for just the number, nothing else.
+  const go = () => { const o = (tryAuto as any)(); if (o) onPlace(o); else if (noNum && tryAuto('+910000000000')) setAskNum(true); else setSetup(true); };
+  const callNum = (numN: any) => { setLeadPhone(lead!.id, numN); const o = tryAuto(numN); if (o) onPlace(o); else { setPhone(numN); setAskNum(false); setSetup(true); } };
+  useEffect(() => { if (cfg && !lead && !setup) go(); }, [cfg]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (askNum && !setup) return <NumberPrompt lead={lead} first={first} onClose={() => setAskNum(false)} onCall={callNum} onMore={() => { setAskNum(false); setSetup(true); }} />;
+  if (!setup) return lead ? <PrepBrief onReady={go} onBack={end} onChange={() => setSetup(true)} /> : null;
+  return (
+    <Modal open onClose={lead ? () => setSetup(false) : end} width={460} flush label="Before you call">
+      <div className="pc__head">
+        <span className="pc__av">{initials(call.name)}</span>
+        <div><div className="pc__title">Before you call {first}</div><div className="pc__sub">Lead SOP parameters · review, then place the call</div></div>
+      </div>
+      <div className="pc__scroll">
+        {lead ? (
+          <>
+            <div className="pc__champ">
+              <span className="pc__emoji">🛏️</span>
+              <div><small>PRODUCT TO CHAMPION</small><b>{lead.product}</b>
+                <span>{formatINR(lead.price)} <s>{formatINR(meta.mrp)}</s></span></div>
+            </div>
+            <p className="pc__why">{lead.actionNote}{lead.signals?.[0]?.quote ? ` — ${lead.signals[0].quote.split(' — ')[0]}` : ''}.</p>
+            <div className="pc__cap">PITCHING LANGUAGE</div>
+            <blockquote className="pc__quote">{pitchFor(lead)}</blockquote>
+            <div className="pc__two">
+              <div><small>💊 Cross-sell</small><b>{lead.crossSell}</b></div>
+              <div><small>Ideal home-loan EMI</small><b className="green">{formatINR(meta.idealEmi)}/mo</b><span>12-month zero-interest home-loan EMI</span></div>
+            </div>
+            <div className="pc__cap center">LEAD SOP CHECKPOINTS</div>
+            {checkpointsFor(lead).map((c) => (
+              <div key={c.category} className={`pc__cp ${c.relevant ? 'rel' : ''}`}>
+                <span className="pc__dot" />
+                <div><b>{c.category}{c.relevant && <em> · relevant here</em>}</b><span>{c.text}</span></div>
+              </div>
+            ))}
+          </>
+        ) : (
+          <p className="muted pc__none">No lead record for {call.name} yet — qualify the need first, then offer the right product.</p>
+        )}
+      </div>
+      <div className="pc__foot">
+        <div className="pc__modes" role="radiogroup" aria-label="Call type">
+          {modes.map((m) => <button key={m.id} role="radio" aria-checked={mode === m.id} className={mode === m.id ? 'on' : ''} onClick={() => setMode(m.id)}>{m.label}</button>)}
+        </div>
+        <p className="pc__hint">{modes.find((m) => m.id === mode)!.hint} <a href="/audiotest" target="_blank" rel="noreferrer">Test mic and speaker</a></p>
+        {isPhone && (
+          <label className="pc__code">Customer's real phone number
+            <input className="pc__tel" value={phone} onChange={(e) => setPhone(e.target.value.replace(/[^\d+ ]/g, '').slice(0, 16))} inputMode="tel" placeholder="e.g. 98765 43210 or +91…" aria-label="Customer phone number" />
+            <small className="pc__note">{phone && !phoneOk ? 'This number does not look right.' : (noNum ? 'This lead has no number yet. Type it here, it is saved for next time.' : 'Demo leads have fake numbers — type a real one you can answer.')}</small>
+          </label>
+        )}
+        {mode === 'webphone' && (
+          <label className="pc__code">Your Vobiz web-calling login (saved on this device only)
+            <input className="pc__tel" value={ep.u || ''} onChange={(e) => { const n = { ...ep, u: e.target.value.replace(/[^A-Za-z0-9]/g, '') }; setEp(n); setWebCreds(n); }} placeholder="Endpoint username" aria-label="Endpoint username" autoComplete="off" />
+            <input className="pc__tel" type="password" style={{ marginTop: 6 }} value={ep.p || ''} onChange={(e) => { const n = { ...ep, p: e.target.value }; setEp(n); setWebCreds(n); }} placeholder="Endpoint password" aria-label="Endpoint password" autoComplete="off" />
+            <small className="pc__note">{cfg?.telephony?.callerId ? `Customer will see ${cfg.telephony.callerId}. ` : ''}Allow the microphone when the browser asks.</small>
+          </label>
+        )}
+        {mode === 'staffphone' && (
+          <label className="pc__code">YOUR mobile number — saved once. The app rings you first, then connects the customer
+            <input className="pc__tel" value={myPhone} onChange={(e) => { const v = e.target.value.replace(/[^\d+ ]/g, '').slice(0, 16); setMyPhone(v); setAgentPhone(v); }} inputMode="tel" placeholder="e.g. 98765 43210" aria-label="Your phone number" />
+            <small className="pc__note" style={clash ? { color: '#c0392b', fontWeight: 600 } : undefined}>{clash || (brandNo ? `Customer will see ${brandNo} as the caller. Do not enter that number here.` : 'Caller ID comes from the provider setup.')}</small>
+          </label>
+        )}
+        {isPhone && cfg && !ready && <p className="pc__warn">{mode === 'staffphone' ? `Provider calling is not set up yet. Open Settings > Telephony and connect it. Missing: ${(cfg.telephony?.missing || ['Provider']).join(', ')}.` : 'Phone calling is not switched on for this site yet. Add the Vonage keys (VONAGE_SETUP.md) or the Twilio keys in Vercel, then redeploy.'}</p>}
+        {isPhone && cfg && !cfg.reachable && <p className="pc__warn">The /api server is not reachable here. Phone calls work on the deployed Vercel site (or with “vercel dev”), not plain “npm run dev”.</p>}
+        {needCode && (
+          <label className="pc__code">Customer line code
+            <input value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 5))} inputMode="numeric" placeholder="5 digits shown on /customer" aria-label="Customer line code" />
+          </label>
+        )}
+        <button className="pc__place" disabled={!canPlace} onClick={() => { try { localStorage.setItem('og_call_mode', mode); } catch { /* ignore */ } if (lead && normalizePhone(phone) && isPhone) setLeadPhone(lead!.id, normalizePhone(phone as string) as string); onPlace({ mode, code, phone: normalizePhone(phone) || '', autoConsent: !!cfg?.transcripts }); }}><i className="ti ti-phone" /> {mode === 'sim' ? 'Skip · Place the call' : 'Place the live call'}</button>
+        <p>These are the same Lead SOP checkpoints your manager set — reviewing them takes 10 seconds and keeps the call on-target.</p>
+      </div>
+    </Modal>
+  );
+}
+
+function Incoming() {
+  const { call, lead, end, acceptIncoming } = useCall();
+  const navigate = useNavigate();
+  const practice = call.mode === 'practice';
+  useEffect(() => { if (!practice) return undefined; startRing(); return stopRing; }, [practice]);
+  return (
+    <Modal open onClose={end} width={380} label="Incoming call">
+      <div className="incall">
+        <div className="call-av pulse">{initials(call.name)}</div>
+        <div className="incall__status">{practice ? 'Incoming call · Practice' : 'Incoming call'}</div>
+        <div className="incall__name">{call.name}</div>
+        {lead && <div className="muted">Interested: {lead.product}</div>}
+        {practice && <div className="muted">Interested: {call.persona?.product} · an AI customer, nothing is recorded</div>}
+        <div className="incall__btns">
+          <button className="round decline" onClick={end} aria-label="Decline"><i className="ti ti-phone-off" /></button>
+          <button className="round accept" onClick={() => { navigate('/plan/outgoing'); acceptIncoming(); }} aria-label="Accept"><i className="ti ti-phone" /></button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function Keypad({ onClose, startCall }: any) {
+  const [num, setNum] = useState('');
+  return (
+    <Modal open onClose={onClose} width={320} label="Keypad">
+      <div className="kp-num">{num || 'Enter number'}</div>
+      <div className="kp-grid">
+        {'123456789*0#'.split('').map((d) => <button key={d} onClick={() => setNum(num + d)}>{d}</button>)}
+      </div>
+      <button className="btn-primary call-wide" disabled={!num} onClick={() => { onClose(); startCall(num); }}><i className="ti ti-phone" /> Call</button>
+    </Modal>
+  );
+}
+
+export default function CallHost() {
+  const { call, placeCall, startCall } = useCall();
+  const [pad, setPad] = useState(false);
+  const [gate, setGate] = useState(false); // the full "ask on WhatsApp / other language" consent window
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const live = ['ringing', 'consent', 'inCall'].includes(call.status);
+
+  const place = (opts: any) => { if (!pathname.startsWith('/plan')) navigate('/plan/outgoing'); placeCall(opts); };
+
+  return (
+    <>
+      {call.status === 'precheck' && <PreCall onPlace={place} />}
+      {call.status === 'incoming' && <Incoming />}
+      <ConsentGate show={gate} />
+      <ConsentCard onMore={() => setGate(true)} gateOpen={gate} onDone={() => setGate(false)} />
+      <WrapUpModal />
+      <RightsPanel />
+      <ConsentLog />
+      <ConsentBar />
+      {live && !pathname.startsWith('/plan') && (
+        <button className="call-pill" onClick={() => navigate('/plan/outgoing')}>
+          <span className="call-pill__dot" /> {call.name} · {fmtClock(call.seconds)} · Return to call
+        </button>
+      )}
+      <button className="dial-fab" onClick={() => setPad(true)} aria-label="Open keypad"><i className="ti ti-keyboard" /></button>
+      {pad && <Keypad onClose={() => setPad(false)} startCall={startCall} />}
+    </>
+  );
+}

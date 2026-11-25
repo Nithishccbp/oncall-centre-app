@@ -1,0 +1,16 @@
+{
+  "name": "On-Ground.ai Call Centre",
+  "short_name": "OG Calls",
+  "description": "Calls, leads, practice and impact for call centre agents",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1b4d3e",
+  "theme_color": "#1b4d3e",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

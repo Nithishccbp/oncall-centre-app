@@ -39,3 +39,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 @media (max-width: 768px) {
   input { font-size: 16px; }
 }
+
+/* installed-app polish: respect the phone's notch / gesture bar, no pull-to-refresh jank, no tap flash */
+html, body { overscroll-behavior-y: none; -webkit-tap-highlight-color: transparent; }
+body { padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }

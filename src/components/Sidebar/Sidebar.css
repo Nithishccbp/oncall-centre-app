@@ -33,3 +33,5 @@
 
 @media (max-width: 768px) { .sidebar { display: none; } }
 .sb-tile--green { background: rgba(34, 197, 94, 0.22); color: #6ee7a0; } .is-active .sb-tile--green { background: #16a34a; color: #fff; }
+
+.sb-lbl{display:flex;flex-direction:column;align-items:flex-start;gap:2px}.sb-badge{font-style:normal;font-size:10px;font-weight:800;letter-spacing:.4px;border-radius:999px;padding:1px 8px;color:#fff}.sb-badge--red{background:#e5532d}.sb-badge--purple{background:#6d28d9}

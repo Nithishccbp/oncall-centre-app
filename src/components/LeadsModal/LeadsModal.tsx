@@ -1,0 +1,62 @@
+// Global Leads modal: header, dot pager, previous/next, lead card and missed footer.
+import { useEffect, useState } from 'react';
+import Modal from '../Modal/Modal';
+import LeadCard from '../LeadCard/LeadCard';
+import { useLeadsModal } from '../../context/LeadsModalContext';
+import { leads } from '../../data/leads';
+import { DEMO } from '../../data/demo';
+import { getOutgoingPlan } from '../../data/selectors';
+import { useIngest } from '../../context/IngestContext';
+import './LeadsModal.css';
+
+
+export default function LeadsModal() {
+  useIngest();
+  const { open, startIndex, closeLeads } = useLeadsModal();
+  const ordered = DEMO ? leads : getOutgoingPlan(); // same order as the dashboard's 'Leads to call next' list (highest score first), so the lead you click is the lead you see
+  const [idx, setIdx] = useState(0);
+  const total = ordered.length;
+  const lead = ordered[idx];
+  const winBack = ordered.filter((l) => l.status !== 'Open').length;
+
+  useEffect(() => { if (open) setIdx(startIndex); }, [open, startIndex]);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const onKey = (e: any) => {
+      if (e.key === 'ArrowRight') setIdx((i) => Math.min(i + 1, total - 1));
+      if (e.key === 'ArrowLeft') setIdx((i) => Math.max(i - 1, 0));
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open, total]);
+
+  if (!lead) {
+    return <Modal open={open} onClose={closeLeads} width={430} label="Leads"><div className="empty">No leads yet. They appear here once conversations arrive from the backend.</div></Modal>;
+  }
+  return (
+    <Modal open={open} onClose={closeLeads} width={430} flush label="Leads">
+      <div className="lm-head">
+        <i className="ti ti-users lm-head__icon" />
+        <div>
+          <div className="lm-head__title">Leads</div>
+          <div className="lm-head__sub">Lead {idx + 1} of {total} · time left to close</div>
+        </div>
+      </div>
+      <div className="lm-pager">
+        <button className="lm-nav" style={{ visibility: idx === 0 ? 'hidden' : 'visible' }} onClick={() => setIdx(idx - 1)} aria-label="Previous lead"><i className="ti ti-chevron-left" /></button>
+        <div className="lm-dots" aria-hidden="true">
+          {ordered.map((l, i) => <span key={l.id} className={i === idx ? 'is-on' : ''} />)}
+        </div>
+        <button className="lm-nav" style={{ visibility: idx === total - 1 ? 'hidden' : 'visible' }} onClick={() => setIdx(idx + 1)} aria-label="Next lead"><i className="ti ti-chevron-right" /></button>
+      </div>
+      <div className="lm-scroll"><LeadCard lead={lead} key={lead.id} /></div>
+      {winBack > 0 && (
+        <div className="lm-footer">
+          <span className="lm-footer__dot" />
+          <b>{winBack} TO WIN BACK</b> · still worth a call, we'll help
+        </div>
+      )}
+    </Modal>
+  );
+}

@@ -110,3 +110,9 @@ Updated to the "3.5 Real estate · Presales call centre · Web" mock. Existing c
 `POST /api/ingest/conversation` (and `/api/ingest/batch`) receive finished conversations; the web app polls `GET /api/conversations` every 30 s and lands them in Leads, Plan (Recent / Incoming), Dashboard, Calendar, Pulse and Avani.
 Set `INGEST_API_KEY` in Vercel and connect Upstash Redis so data survives restarts. Sample: `docs/sample-conversation.json`; the full contract is in the backend PDF.
 Test: `curl -X POST https://oncall-centre-app.vercel.app/api/ingest/conversation -H "Authorization: Bearer $INGEST_API_KEY" -H "Content-Type: application/json" -d @docs/sample-conversation.json`
+
+## TypeScript
+All code is TypeScript (.ts/.tsx). Check types: `npm run typecheck` (or `npx tsc --noEmit`).
+
+## Android
+See ANDROID.md (install from Chrome or build an APK from GitHub Actions).
