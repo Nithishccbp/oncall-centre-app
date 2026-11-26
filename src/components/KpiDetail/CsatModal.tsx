@@ -13,12 +13,12 @@ ChartJS.register(CategoryScale, LinearScale, LineElement, PointElement, Filler, 
 
 const PAGE = 8;
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Today'];
-const PRIOR = DEMO ? [90, 90, 89, 91, 90, 90, 91] : [0, 0, 0, 0, 0, 0, 0];
+const PRIOR: (number | null)[] = DEMO ? [90, 90, 89, 91, 90, 90, 91] : [null, null, null, null, null, null, null];
 const DEMO_CALLS = [
   ['09:00', 'Priya I.', 4, 'Clear on EMI'], ['09:17', 'Suresh N.', 5, 'Quick resolution'], ['10:34', 'Meera K.', 5, 'Patient and polite'],
-  ['10:51', 'Anil P.', 5, 'Explained RERA possession date well'], ['11:08', 'Divya R.', 4, 'Fixed possession date'], ['12:25', 'Karthik S.', 5, 'Good product advice'],
-  ['12:42', 'Leena M.', 5, 'Fast callback'], ['13:16', 'Sneha B.', 4, 'Friendly'], ['13:40', 'Ravi T.', 5, 'Helpful with the cost sheet'],
-  ['14:05', 'Nisha G.', 4, 'Listened well'], ['14:30', 'Arjun V.', 5, 'Sorted my loan doubt'], ['15:02', 'Pooja D.', 5, 'Polite'],
+  ['10:51', 'Anil P.', 5, 'Explained warranty well'], ['11:08', 'Divya R.', 4, 'Fixed delivery date'], ['12:25', 'Karthik S.', 5, 'Good product advice'],
+  ['12:42', 'Leena M.', 5, 'Fast callback'], ['13:16', 'Sneha B.', 4, 'Friendly'], ['13:40', 'Ravi T.', 5, 'Helpful with the price list'],
+  ['14:05', 'Nisha G.', 4, 'Listened well'], ['14:30', 'Arjun V.', 5, 'Sorted my credit-terms doubt'], ['15:02', 'Pooja D.', 5, 'Polite'],
   ['15:20', 'Manoj K.', 3, 'Long wait before pick-up'], ['15:48', 'Hema L.', 5, 'Excellent'],
 ].map(([time, name, stars, comment]) => ({ time, name, stars, comment }));
 
@@ -38,7 +38,7 @@ export default function CsatModal({ close }: any) {
   const split = [5, 4, 3, 2, 1].map((n) => [n, calls.filter((c) => c.stars === n).length]).filter(([n, c]) => c || n >= 3);
   const lowest = total ? Math.min(...calls.map((c: any) => c.stars as number)) : 0;
   const lowCall = calls.find((c) => c.stars === lowest);
-  const thisLine = DEMO ? csatLast7.map((x) => x.v) : [0, 0, 0, 0, 0, 0, pct];
+  const thisLine = DEMO ? csatLast7.map((x) => x.v) : [null, null, null, null, null, null, pct] as (number | null)[];
 
   const rows = useMemo(() => calls.filter((c) => `${c.name} ${c.comment}`.toLowerCase().includes(q.toLowerCase()))
     .sort((a, b) => {
@@ -60,21 +60,36 @@ export default function CsatModal({ close }: any) {
     URL.revokeObjectURL(a.href);
   };
 
+  const nums = [...thisLine, ...PRIOR].filter((v): v is number => typeof v === 'number' && v > 0);
+  const lo = nums.length ? Math.max(0, Math.floor(Math.min(...nums) / 5) * 5 - 5) : 0;
+  const hi = nums.length ? Math.min(100, Math.ceil(Math.max(...nums) / 5) * 5 + 1) : 100;
+  const grad = (ctx: any) => {
+    const { chart } = ctx; const a = chart.chartArea;
+    if (!a) return 'rgba(26,86,196,.15)';
+    const g = chart.ctx.createLinearGradient(0, a.top, 0, a.bottom);
+    g.addColorStop(0, 'rgba(26,86,196,.38)'); g.addColorStop(1, 'rgba(26,86,196,0)');
+    return g;
+  };
   const data = {
     labels: DAYS,
     datasets: [
-      { label: 'This period', data: thisLine, borderColor: '#1a56c4', backgroundColor: 'rgba(26,86,196,.12)', fill: true, tension: 0, pointRadius: [0, 0, 0, 0, 0, 0, 5], pointHoverRadius: 5, pointBackgroundColor: '#1a56c4' },
-      { label: 'Prior', data: PRIOR, borderColor: '#9db8ea', borderDash: [5, 5], fill: false, tension: 0.3, pointRadius: 0 },
+      { label: 'This period', data: thisLine, borderColor: '#1a56c4', backgroundColor: grad, fill: true, tension: 0.4, borderWidth: 3, spanGaps: true,
+        pointRadius: [0, 0, 0, 0, 0, 0, 7], pointHoverRadius: 8, pointBackgroundColor: '#fff', pointBorderColor: '#1a56c4', pointBorderWidth: 3, pointHoverBorderWidth: 3 },
+      { label: 'Prior', data: PRIOR, borderColor: '#9db8ea', borderDash: [6, 6], borderWidth: 2, fill: false, tension: 0.4, pointRadius: 0, pointHoverRadius: 4, spanGaps: true },
     ],
   };
   const opts = {
     responsive: true, maintainAspectRatio: false,
+    animation: { duration: 1100, easing: 'easeOutQuart' },
     interaction: { mode: 'index', intersect: false },
-    plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c: any) => `${c.parsed.y}%${c.datasetIndex ? ' prior' : ''}` } } },
+    plugins: {
+      legend: { display: false },
+      tooltip: { backgroundColor: '#12306b', padding: 10, displayColors: false, titleFont: { weight: '700' },
+        callbacks: { label: (c: any) => `${c.dataset.label}: ${c.parsed.y}%` } },
+    },
     scales: {
-      y: DEMO ? { min: 85, max: 94, ticks: { stepSize: 4.5, callback: (v: any) => `${Math.round(v)}%`, font: { size: 11 } }, grid: { color: '#eee' } }
-        : { min: 0, max: 100, ticks: { callback: (v: any) => `${v}%`, font: { size: 11 } }, grid: { color: '#eee' } },
-      x: { ticks: { font: { size: 11 } }, grid: { display: false } },
+      y: { min: lo, max: hi, ticks: { callback: (v: any) => `${Math.round(v)}%`, font: { size: 11 }, maxTicksLimit: 5 }, grid: { color: '#eef1f7' }, border: { display: false } },
+      x: { ticks: { font: { size: 11 } }, grid: { display: false }, border: { display: false } },
     },
   };
   const th = (k: any, label: any) => (

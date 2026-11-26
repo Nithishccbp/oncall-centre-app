@@ -27,10 +27,10 @@ export default function Today() {
       </div>
       <div className="kpis">
         <div className="k"><div><b>{k.done}</b> <span style={{ color: '#6f6a60' }}>/ {k.plan} calls</span></div><div><div className="prog"><i style={{ width: Math.round((k.done * 100) / k.plan) + '%' }} /></div><small>{k.note}</small></div></div>
-        <div className="k cl" onClick={() => openKpi('stCsat')}><div><b>{k.csat}</b> <em className="up">{k.csatD}</em><small>CSAT · team {k.team}</small></div><Spark v={sp.csat} color="#2563EB" /></div>
-        <div className="k cl" onClick={() => openKpi('og')}><div><b>{k.sop}</b> <em className="up">{k.sopD}</em><small>SOP score</small></div><Spark v={sp.sop} color="#1f7a55" /></div>
+        <div className="k cl" onClick={() => openKpi('kpi-csat')}><div><b>{k.csat}</b> <em className="up">{k.csatD}</em><small>CSAT · team {k.team}</small></div><Spark v={sp.csat} color="#2563EB" /></div>
+        <div className="k cl" onClick={() => openKpi('kpi-og')}><div><b>{k.sop}</b> <em className="up">{k.sopD}</em><small>SOP score</small></div><Spark v={sp.sop} color="#1f7a55" /></div>
         <div className="k"><div><b>{k.booked}</b> <em className="up">{k.bookedV}</em><small>Booked today</small></div><Spark v={sp.booked} color="#D97706" /></div>
-        <div className="k cl" onClick={() => openKpi('stAht')}><div><b>{k.aht}</b> <em className="up">{k.ahtD}</em><small>Avg handle</small></div><Spark v={sp.aht} color="#6B3FA0" inv /></div>
+        <div className="k cl" onClick={() => openKpi('kpi-aht')}><div><b>{k.aht}</b> <em className="up">{k.ahtD}</em><small>Avg handle</small></div><Spark v={sp.aht} color="#6B3FA0" inv /></div>
       </div>
       <div className="card plan">
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}><span className="h3">Your plan</span><span style={{ marginLeft: 'auto', fontSize: 11.5, color: '#2563EB', fontWeight: 600 }}><span style={{ display: 'inline-block', width: 18, height: 8, borderRadius: 3, background: 'repeating-linear-gradient(45deg,#cfe0ff,#cfe0ff 3px,#f4f8ff 3px,#f4f8ff 6px)', verticalAlign: 'middle', marginRight: 6 }} />Peak · {D.in} covers</span></div>
