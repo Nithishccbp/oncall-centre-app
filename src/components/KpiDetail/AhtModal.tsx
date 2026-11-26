@@ -26,7 +26,7 @@ export default function AhtModal({ close }: any) {
   const days = useMemo(() => (DEMO
     ? DAYS.map((day, i) => ({ day, calls: callsLast7[i].v, aht: DEMO_AHT[i], i }))
     : (week || DAYS.map((day) => ({ day, calls: 0, aht: 0 }))).map((d, i) => ({ ...d, i }))), [week]);
-  const prior = DEMO ? DEMO_PRIOR : days.map(() => 0);
+  const prior: (number | null)[] = DEMO ? DEMO_PRIOR : days.map(() => null);
 
   const totalCalls = days.reduce((n, d) => n + d.calls, 0);
   const busiest = totalCalls ? [...days].sort((a, b) => b.calls - a.calls)[0] : null;
@@ -34,6 +34,9 @@ export default function AhtModal({ close }: any) {
   const best = withCalls.length ? [...withCalls].sort((a, b) => a.aht! - b.aht!)[0] : null;
   const today = days[6];
   const maxCalls = Math.max(1, ...days.map((d) => d.calls));
+
+  const first = withCalls.length > 1 ? withCalls[0].aht : 0;
+  const delta: number | null = DEMO ? -8 : first && today.calls ? Math.round(((today.aht! - first!) / first) * 100) : null;
 
   const rows = days.filter((d) => d.day.toLowerCase().includes(q.toLowerCase())).sort((a, b) => {
     const x = (a as any)[sort.k]; const y = (b as any)[sort.k];
@@ -51,22 +54,37 @@ export default function AhtModal({ close }: any) {
     URL.revokeObjectURL(a.href);
   };
 
-  const vals = days.map((d) => d.aht);
-  const lo = DEMO ? 250 : 0; const hi = DEMO ? 302 : Math.max(60, ...(vals as number[]));
+  const vals: (number | null)[] = days.map((d) => (DEMO || d.calls ? d.aht ?? null : null));
+  const nums = [...vals, ...prior].filter((v): v is number => typeof v === 'number' && v > 0);
+  const lo = nums.length ? Math.max(0, Math.floor((Math.min(...nums) - 10) / 30) * 30) : 0;
+  const hi = nums.length ? Math.ceil((Math.max(...nums) + 10) / 30) * 30 : 300;
+  const grad = (ctx: any) => {
+    const a = ctx.chart.chartArea;
+    if (!a) return 'rgba(26,63,168,.15)';
+    const g = ctx.chart.ctx.createLinearGradient(0, a.top, 0, a.bottom);
+    g.addColorStop(0, 'rgba(26,63,168,.38)'); g.addColorStop(1, 'rgba(26,63,168,0)');
+    return g;
+  };
   const data = {
     labels: DAYS,
     datasets: [
-      { label: 'This period', data: vals, borderColor: '#1a3fa8', backgroundColor: 'rgba(26,63,168,.14)', fill: true, tension: 0.25, pointRadius: [0, 0, 0, 0, 0, 0, 5], pointHoverRadius: 5, pointBackgroundColor: '#1a3fa8' },
-      { label: 'Prior', data: prior, borderColor: '#9db8ea', borderDash: [5, 5], fill: false, tension: 0.3, pointRadius: 0 },
+      { label: 'This period', data: vals, borderColor: '#1a3fa8', backgroundColor: grad, fill: true, tension: 0.4, borderWidth: 3, spanGaps: true,
+        pointRadius: [0, 0, 0, 0, 0, 0, 7], pointHoverRadius: 8, pointBackgroundColor: '#fff', pointBorderColor: '#1a3fa8', pointBorderWidth: 3, pointHoverBorderWidth: 3 },
+      { label: 'Prior', data: prior, borderColor: '#9db8ea', borderDash: [6, 6], borderWidth: 2, fill: false, tension: 0.4, pointRadius: 0, pointHoverRadius: 4, spanGaps: true },
     ],
   };
   const opts = {
     responsive: true, maintainAspectRatio: false,
+    animation: { duration: 1100, easing: 'easeOutQuart' },
     interaction: { mode: 'index', intersect: false },
-    plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c: any) => `${short(c.parsed.y)}${c.datasetIndex ? ' prior' : ''}` } } },
+    plugins: {
+      legend: { display: false },
+      tooltip: { backgroundColor: '#12306b', padding: 10, displayColors: false,
+        callbacks: { label: (c: any) => `${c.dataset.label}: ${short(c.parsed.y)}` } },
+    },
     scales: {
-      y: { min: lo, max: hi, ticks: { stepSize: (hi - lo) / 2, callback: (v: any) => short(v), font: { size: 11 } }, grid: { color: '#eee' } },
-      x: { ticks: { font: { size: 11 } }, grid: { display: false } },
+      y: { min: lo, max: hi, ticks: { maxTicksLimit: 4, callback: (v: any) => short(v), font: { size: 11 } }, grid: { color: '#eef1f7' }, border: { display: false } },
+      x: { ticks: { font: { size: 11 } }, grid: { display: false }, border: { display: false } },
     },
   };
   const th = (k: any, label: any, cls = '') => (
@@ -88,7 +106,7 @@ export default function AhtModal({ close }: any) {
           <div className="kd__stats kd__stats--4">
             <div>
               <div className="kd__num kd__num--md">{today.calls ? fmt(today.aht) : '0m 00s'}</div>
-              {DEMO && <span className="kd__delta kd__delta--good">▼ 8%</span>}
+              {delta !== null && <span className={`kd__delta kd__delta--${delta <= 0 ? 'good' : 'bad'}`}>{delta <= 0 ? '▼' : '▲'} {Math.abs(delta)}%</span>}
               <div className="kd__muted">vs similar prior period</div>
             </div>
             <div className="kd__stat"><div className="kd__sl">CALLS THIS WEEK</div><div className="kd__sv">{totalCalls}</div></div>
@@ -100,7 +118,7 @@ export default function AhtModal({ close }: any) {
             <i className="ti ti-bulb" />
             <span>{!totalCalls ? 'No calls handled yet. Handle time will appear here after your first call.'
               : DEMO ? <>Handle time has fallen every day this week, and CSAT is up 6 pts since Monday. Keep the <b>recap-then-close</b> ending.</>
-                : <>Your busiest day was <b>{busiest!.day}</b> with {busiest!.calls} calls. Best handle time: <b>{fmt(best!.aht)}</b> ({best!.day.toLowerCase()}).</>}</span>
+                : <>Your busiest day was <b>{busiest!.day}</b> with {busiest!.calls} calls. Best handle time: <b>{fmt(best!.aht)}</b> ({best!.day.toLowerCase()}).{delta !== null && delta < 0 ? ' Handle time is trending down — keep it up.' : ''}</>}</span>
           </div>
 
           <div className="kd__two">
